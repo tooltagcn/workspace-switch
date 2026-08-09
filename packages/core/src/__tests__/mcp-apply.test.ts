@@ -56,6 +56,9 @@ describe('applyMcpToAgent', () => {
       env: {},
       description: null,
       tags: [],
+      testStatus: 'untested',
+      testError: null,
+      testedAt: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ...overrides,
@@ -65,6 +68,7 @@ describe('applyMcpToAgent', () => {
   it('merge mode: creates new file when none exists', () => {
     const mcp = makeMcpServer();
     const result = applyMcpToAgent(db, {
+      agentId: 'claude-code',
       agentConfigDir: agentDir,
       template: claudeTemplate,
       mcps: [mcp],
@@ -83,6 +87,7 @@ describe('applyMcpToAgent', () => {
 
     const mcp = makeMcpServer();
     const result = applyMcpToAgent(db, {
+      agentId: 'claude-code',
       agentConfigDir: agentDir,
       template: claudeTemplate,
       mcps: [mcp],
@@ -101,6 +106,7 @@ describe('applyMcpToAgent', () => {
 
     const mcp = makeMcpServer();
     const result = applyMcpToAgent(db, {
+      agentId: 'claude-code',
       agentConfigDir: agentDir,
       template: claudeTemplate,
       mcps: [mcp],
@@ -121,6 +127,7 @@ describe('applyMcpToAgent', () => {
     };
     expect(() =>
       applyMcpToAgent(db, {
+        agentId: 'claude-code',
         agentConfigDir: agentDir,
         template: noMcpTemplate,
         mcps: [makeMcpServer()],
@@ -132,6 +139,7 @@ describe('applyMcpToAgent', () => {
   it('records resource_agent in DB', () => {
     const mcp = createMcp(db, { name: 'db-test', transport: 'stdio', command: 'cmd' });
     applyMcpToAgent(db, {
+      agentId: 'claude-code',
       agentConfigDir: agentDir,
       template: claudeTemplate,
       mcps: [mcp],
@@ -149,6 +157,7 @@ describe('applyMcpToAgent', () => {
   it('atomic write: file is written correctly', () => {
     const mcp = makeMcpServer();
     applyMcpToAgent(db, {
+      agentId: 'claude-code',
       agentConfigDir: agentDir,
       template: claudeTemplate,
       mcps: [mcp],
@@ -170,6 +179,7 @@ describe('applyMcpToAgent', () => {
     const mcp = makeMcpServer();
     expect(() =>
       applyMcpToAgent(db, {
+        agentId: 'claude-code',
         agentConfigDir: agentDir,
         template: failTemplate,
         mcps: [mcp],
@@ -204,6 +214,9 @@ describe('previewMcpApply', () => {
       env: {},
       description: null,
       tags: [],
+      testStatus: 'untested',
+      testError: null,
+      testedAt: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ...overrides,

@@ -136,7 +136,7 @@ describe('Agent Sync', () => {
   });
 
   describe('syncMcpToWorkspace', () => {
-    it('renders MCP from trusted source to agent config', () => {
+    it('renders MCP from trusted source to agent config', async () => {
       const schema = {
         name: 'test-server',
         transport: 'stdio' as const,
@@ -153,7 +153,7 @@ describe('Agent Sync', () => {
         "INSERT INTO resource_agent (resource_type, resource_id, agent_id, symlinked) VALUES ('mcp', ?, ?, 0)",
       ).run(mcp.id, agent.id);
 
-      const result = syncMcpToWorkspace(db, agent, template, 'test-server', workspaceDir);
+      const result = await syncMcpToWorkspace(db, agent, template, 'test-server', workspaceDir);
 
       expect(result.success).toBe(true);
 
@@ -163,21 +163,21 @@ describe('Agent Sync', () => {
       expect(after.other).toBe('data');
     });
 
-    it('returns error when trusted MCP source not found', () => {
-      const result = syncMcpToWorkspace(db, agent, template, 'nonexistent', workspaceDir);
+    it('returns error when trusted MCP source not found', async () => {
+      const result = await syncMcpToWorkspace(db, agent, template, 'nonexistent', workspaceDir);
       expect(result.success).toBe(false);
       expect(result.error).toContain('Trusted MCP source not found');
     });
 
-    it('returns error when agent does not support MCP', () => {
+    it('returns error when agent does not support MCP', async () => {
       const noMcpTemplate: AgentTemplate = { ...template, mcpFile: null, mcpField: null };
-      const result = syncMcpToWorkspace(db, agent, noMcpTemplate, 'test', workspaceDir);
+      const result = await syncMcpToWorkspace(db, agent, noMcpTemplate, 'test', workspaceDir);
       expect(result.success).toBe(false);
     });
   });
 
   describe('syncAgentAll', () => {
-    it('syncs all skills and MCPs for an agent', () => {
+    it('syncs all skills and MCPs for an agent', async () => {
       const trustedSkill = path.join(workspaceDir, 'skills', 'my-skill');
       fs.mkdirSync(trustedSkill, { recursive: true });
       fs.writeFileSync(path.join(trustedSkill, 'SKILL.md'), 'content');
@@ -199,14 +199,14 @@ describe('Agent Sync', () => {
       fs.mkdirSync(agentSkillDir, { recursive: true });
 
       const symlink = createMockSymlink();
-      const result = syncAgentAll(db, agent, template, workspaceDir, symlink);
+      const result = await syncAgentAll(db, agent, template, workspaceDir, symlink);
 
       expect(result.succeeded).toBe(2);
       expect(result.failed).toBe(0);
       expect(result.results).toHaveLength(2);
     });
 
-    it('continues on partial failure', () => {
+    it('continues on partial failure', async () => {
       const trustedSkill = path.join(workspaceDir, 'skills', 'good-skill');
       fs.mkdirSync(trustedSkill, { recursive: true });
 
@@ -224,15 +224,15 @@ describe('Agent Sync', () => {
       fs.mkdirSync(agentSkillDir, { recursive: true });
 
       const symlink = createMockSymlink();
-      const result = syncAgentAll(db, agent, template, workspaceDir, symlink);
+      const result = await syncAgentAll(db, agent, template, workspaceDir, symlink);
 
       expect(result.succeeded).toBe(1);
       expect(result.failed).toBe(1);
     });
 
-    it('returns zero results when agent has no resources', () => {
+    it('returns zero results when agent has no resources', async () => {
       const symlink = createMockSymlink();
-      const result = syncAgentAll(db, agent, template, workspaceDir, symlink);
+      const result = await syncAgentAll(db, agent, template, workspaceDir, symlink);
       expect(result.results).toHaveLength(0);
       expect(result.succeeded).toBe(0);
       expect(result.failed).toBe(0);

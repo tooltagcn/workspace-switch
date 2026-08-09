@@ -1,10 +1,15 @@
 import type Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import type { Agent } from '../agent/types.js';
+import type { AgentTemplate } from '../agent/template-types.js';
 import type { SymlinkPlatform } from './platform.js';
-import type { SyncResult } from './agent-sync.js';
+import type { SyncResult, SyncAgentAllResult } from './agent-sync.js';
 import type { Project, ProjectSkill } from '../project/types.js';
+import type { SecretStore } from '../mcp/types.js';
+import { loadMcpFromWorkspace } from '../mcp/storage.js';
+import { parseConfigFile, serializeConfigFile, buildMcpEntry } from '../mcp/renderer.js';
 
 function resolveProjectAgentPath(project: Project, agent: Agent): string | null {
   if (!agent.skillDir) return null;
@@ -164,21 +169,316 @@ export function getProjectSkillList(db: Database.Database, projectId: string): P
   return result;
 }
 
+export async function syncProjectMcpToWorkspace(
+  db: Database.Database,
+  project: Project,
+  agent: Agent,
+  template: AgentTemplate,
+  mcpName: string,
+  workspaceDir: string,
+  secretStore?: SecretStore,
+): Promise<SyncResult> {
+  if (!template.mcpFile || !template.mcpField) {
+    return { name: mcpName, type: 'mcp', success: false, error: 'Agent does not support MCP' };
+  }
+
+  if (!fs.existsSync(project.path)) {
+    return { name: mcpName, type: 'mcp', success: false, error: `Project path does not exist: ${project.path}` };
+  }
+
+  const trustedSchema = loadMcpFromWorkspace(workspaceDir, mcpName);
+  if (!trustedSchema) {
+    return { name: mcpName, type: 'mcp', success: false, error: `Trusted MCP source not found: ${mcpName}` };
+  }
+
+  const agentConfigPath = path.join(project.path, agent.configDirName, template.mcpFile);
+
+  try {
+    let existing: Record<string, unknown> = {};
+    const before = fs.existsSync(agentConfigPath) ? fs.readFileSync(agentConfigPath, 'utf-8') : null;
+    if (before) {
+      existing = parseConfigFile(before, template);
+    }
+
+    const schemaWithSecrets = { ...trustedSchema };
+    if (trustedSchema.env) {
+      schemaWithSecrets.env = { ...trustedSchema.env };
+      if (secretStore) {
+        for (const [key, value] of Object.entries(schemaWithSecrets.env)) {
+          if (typeof value === 'string' && value.startsWith('env:')) {
+            const varName = value.slice(4);
+            const resolved = await secretStore.getSecret(mcpName, varName);
+            if (resolved !== null) {
+              schemaWithSecrets.env[key] = resolved;
+            }
+          }
+        }
+      }
+    }
+
+    const field = template.mcpField;
+    const existingSection = (existing[field] as Record<string, unknown>) ?? {};
+    const merged = { ...existingSection, [mcpName]: buildMcpEntry(schemaWithSecrets) };
+    const afterObj = { ...existing, [field]: merged };
+    const after = serializeConfigFile(afterObj, template);
+
+    const dir = path.dirname(agentConfigPath);
+    const tmpPath = path.join(dir, `.${randomUUID()}.tmp`);
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(tmpPath, after, 'utf-8');
+      fs.renameSync(tmpPath, agentConfigPath);
+    } catch (err) {
+      try {
+        fs.unlinkSync(tmpPath);
+      } catch {
+        // ignore cleanup failure
+      }
+      if (before !== null) {
+        try {
+          fs.writeFileSync(agentConfigPath, before, 'utf-8');
+        } catch {
+          // best-effort rollback
+        }
+      }
+      throw err;
+    }
+
+    const mcpRow = db.prepare('SELECT id, config_hash FROM mcp WHERE name = ?').get(mcpName) as { id: string; config_hash: string | null } | undefined;
+    if (!mcpRow) {
+      return { name: mcpName, type: 'mcp', success: false, error: `MCP not found in database: ${mcpName}` };
+    }
+
+    const now = new Date().toISOString();
+    const existingRecord = db
+      .prepare(
+        `SELECT 1 FROM project_resource_agent
+         WHERE resource_type = 'mcp' AND resource_id = ? AND project_id = ? AND agent_id = ?`,
+      )
+      .get(mcpRow.id, project.id, agent.id);
+
+    if (existingRecord) {
+      db.prepare(
+        `UPDATE project_resource_agent SET target_path = ?, applied_config_hash = ?, applied_at = ?
+         WHERE resource_type = 'mcp' AND resource_id = ? AND project_id = ? AND agent_id = ?`,
+      ).run(agentConfigPath, mcpRow.config_hash, now, mcpRow.id, project.id, agent.id);
+    } else {
+      db.prepare(
+        `INSERT INTO project_resource_agent (resource_type, resource_id, project_id, agent_id, target_path, symlinked, applied_config_hash, applied_at)
+         VALUES ('mcp', ?, ?, ?, ?, 0, ?, ?)`,
+      ).run(mcpRow.id, project.id, agent.id, agentConfigPath, mcpRow.config_hash, now);
+    }
+
+    return { name: mcpName, type: 'mcp', success: true, error: null };
+  } catch (err) {
+    return { name: mcpName, type: 'mcp', success: false, error: String(err) };
+  }
+}
+
+export function unsyncProjectMcpFromWorkspace(
+  db: Database.Database,
+  project: Project,
+  agent: Agent,
+  template: AgentTemplate,
+  mcpName: string,
+): SyncResult {
+  if (!template.mcpFile || !template.mcpField) {
+    return { name: mcpName, type: 'mcp', success: false, error: 'Agent does not support MCP' };
+  }
+
+  const agentConfigPath = path.join(project.path, agent.configDirName, template.mcpFile);
+
+  try {
+    const mcpRow = db.prepare('SELECT id FROM mcp WHERE name = ?').get(mcpName) as { id: string } | undefined;
+    if (!mcpRow) {
+      return { name: mcpName, type: 'mcp', success: false, error: `MCP not found in database: ${mcpName}` };
+    }
+
+    const existingRecord = db
+      .prepare(
+        `SELECT 1 FROM project_resource_agent
+         WHERE resource_type = 'mcp' AND resource_id = ? AND project_id = ? AND agent_id = ?`,
+      )
+      .get(mcpRow.id, project.id, agent.id);
+
+    if (!existingRecord) {
+      return { name: mcpName, type: 'mcp', success: false, error: `MCP '${mcpName}' is not applied to project '${project.id}' and agent '${agent.id}'` };
+    }
+
+    if (!fs.existsSync(agentConfigPath)) {
+      db.prepare(
+        `DELETE FROM project_resource_agent
+         WHERE resource_type = 'mcp' AND resource_id = ? AND project_id = ? AND agent_id = ?`,
+      ).run(mcpRow.id, project.id, agent.id);
+      return { name: mcpName, type: 'mcp', success: true, error: null };
+    }
+
+    const before = fs.readFileSync(agentConfigPath, 'utf-8');
+    let existing: Record<string, unknown> = {};
+    try {
+      existing = parseConfigFile(before, template);
+    } catch {
+      existing = {};
+    }
+
+    const field = template.mcpField;
+    const existingSection = (existing[field] as Record<string, unknown>) ?? {};
+    delete existingSection[mcpName];
+    const afterObj = { ...existing, [field]: existingSection };
+    const after = serializeConfigFile(afterObj, template);
+
+    const dir = path.dirname(agentConfigPath);
+    const tmpPath = path.join(dir, `.${randomUUID()}.tmp`);
+    try {
+      fs.writeFileSync(tmpPath, after, 'utf-8');
+      fs.renameSync(tmpPath, agentConfigPath);
+    } catch (err) {
+      try {
+        fs.unlinkSync(tmpPath);
+      } catch {
+        // ignore cleanup failure
+      }
+      try {
+        fs.writeFileSync(agentConfigPath, before, 'utf-8');
+      } catch {
+        // best-effort rollback
+      }
+      throw err;
+    }
+
+    db.prepare(
+      `DELETE FROM project_resource_agent
+       WHERE resource_type = 'mcp' AND resource_id = ? AND project_id = ? AND agent_id = ?`,
+    ).run(mcpRow.id, project.id, agent.id);
+
+    return { name: mcpName, type: 'mcp', success: true, error: null };
+  } catch (err) {
+    return { name: mcpName, type: 'mcp', success: false, error: String(err) };
+  }
+}
+
 export function cleanupProjectResources(
   db: Database.Database,
   projectId: string,
   symlink: SymlinkPlatform,
 ): void {
-  const rows = db
+  // Clean up skill symlinks
+  const skillRows = db
     .prepare(
-      `SELECT target_path FROM project_resource_agent WHERE project_id = ? AND target_path IS NOT NULL`,
+      `SELECT target_path FROM project_resource_agent WHERE project_id = ? AND resource_type = 'skill' AND target_path IS NOT NULL`,
     )
     .all(projectId) as { target_path: string }[];
 
-  for (const row of rows) {
+  for (const row of skillRows) {
     try {
       if (fs.existsSync(row.target_path)) {
         symlink.removeSymlink(row.target_path);
+      }
+    } catch {
+      // best-effort cleanup
+    }
+  }
+
+  // Clean up MCP config entries
+  const mcpRows = db
+    .prepare(
+      `SELECT pra.*, m.name as mcp_name, a.config_dir_name, a.id as agent_id
+       FROM project_resource_agent pra
+       JOIN mcp m ON m.id = pra.resource_id
+       JOIN agent a ON a.id = pra.agent_id
+       WHERE pra.project_id = ? AND pra.resource_type = 'mcp'`,
+    )
+    .all(projectId) as { target_path: string; mcp_name: string; config_dir_name: string; agent_id: string }[];
+
+  // Group by target_path to avoid processing the same file multiple times
+  const filesToClean = new Map<string, string[]>();
+  for (const row of mcpRows) {
+    if (row.target_path) {
+      const existing = filesToClean.get(row.target_path) ?? [];
+      existing.push(row.mcp_name);
+      filesToClean.set(row.target_path, existing);
+    }
+  }
+
+  for (const [filePath, mcpNames] of filesToClean) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const ext = path.extname(filePath).toLowerCase();
+
+      if (ext === '.json') {
+        let parsed: Record<string, unknown> = {};
+        try {
+          parsed = JSON.parse(content);
+        } catch {
+          continue;
+        }
+
+        for (const field of ['mcpServers', 'mcp', 'servers']) {
+          if (parsed[field] && typeof parsed[field] === 'object') {
+            const section = parsed[field] as Record<string, unknown>;
+            for (const mcpName of mcpNames) {
+              delete section[mcpName];
+            }
+          }
+        }
+
+        fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2) + '\n', 'utf-8');
+      } else if (ext === '.toml') {
+        const lines = content.split('\n');
+        const result: string[] = [];
+        let skip = false;
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          const sectionMatch = trimmed.match(/^\[([^\]]+)\]$/);
+          if (sectionMatch) {
+            const sectionPath = sectionMatch[1];
+            const isTarget = mcpNames.some((name) =>
+              sectionPath === `mcpServers.${name}` || sectionPath === `mcp.${name}` || sectionPath === `servers.${name}`,
+            );
+            skip = isTarget;
+          }
+          if (!skip) {
+            result.push(line);
+          }
+        }
+
+        fs.writeFileSync(filePath, result.join('\n'), 'utf-8');
+      } else if (ext === '.yaml' || ext === '.yml') {
+        const lines = content.split('\n');
+        const result: string[] = [];
+        let skip = false;
+        let skipIndent = -1;
+
+        for (const line of lines) {
+          if (!line.trim()) {
+            if (!skip) result.push(line);
+            continue;
+          }
+
+          const indent = line.length - line.trimStart().length;
+          const trimmed = line.trim();
+
+          if (skip) {
+            if (indent > skipIndent) {
+              continue;
+            }
+            skip = false;
+            skipIndent = -1;
+          }
+
+          const isMcpEntry = mcpNames.some((name) => trimmed === `${name}:` || trimmed.startsWith(`${name}:`));
+          if (isMcpEntry && indent >= 2) {
+            skip = true;
+            skipIndent = indent;
+            continue;
+          }
+
+          result.push(line);
+        }
+
+        fs.writeFileSync(filePath, result.join('\n'), 'utf-8');
       }
     } catch {
       // best-effort cleanup

@@ -25,8 +25,6 @@ AI coding agent guide. Read before any work.
 | File | Purpose |
 |------|---------|
 | `docs/PRD.md` | 产品需求（事实源） |
-| `docs/task.md` | 任务清单（`[x]` 标记完成） |
-| `docs/sessions/session-*.md` | 开发会话记录 |
 
 ## Rules
 

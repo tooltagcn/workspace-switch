@@ -1,4 +1,4 @@
-export type TargetFormat = 'json-map' | 'toml-table';
+export type TargetFormat = 'json-map' | 'toml-table' | 'yaml';
 
 export interface AgentTemplate {
   id: string;

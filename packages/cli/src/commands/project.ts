@@ -249,4 +249,112 @@ export function registerProject(program: Command): void {
         cleanupContext(ctx);
       }
     });
+
+  const mcp = project
+    .command('mcp')
+    .description('Manage project-level MCP servers');
+
+  mcp
+    .command('list')
+    .description('List MCP servers applied to a project')
+    .argument('<projectId>', 'Project ID')
+    .action(async (projectId: string, _options, cmd) => {
+      const ctx = createContext(cmd);
+      try {
+        const rows = ctx.db.prepare(
+          `SELECT m.id, m.name, m.description,
+                  GROUP_CONCAT(DISTINCT a.name) AS agent_names
+           FROM project_resource_agent pra
+           JOIN mcp m ON m.id = pra.resource_id
+           JOIN agent a ON a.id = pra.agent_id
+           WHERE pra.project_id = ? AND pra.resource_type = 'mcp'
+           GROUP BY pra.resource_id
+           ORDER BY m.name ASC`,
+        ).all(projectId) as { id: string; name: string; description: string | null; agent_names: string | null }[];
+
+        if (ctx.json) {
+          outputJson(rows);
+        } else {
+          outputTable(
+            ['MCP ID', 'Name', 'Description', 'Applied To'],
+            rows.map((r) => [r.id, r.name, r.description ?? '-', r.agent_names ?? '-']),
+          );
+        }
+      } finally {
+        cleanupContext(ctx);
+      }
+    });
+
+  mcp
+    .command('apply')
+    .description('Apply an MCP server to a project agent')
+    .argument('<projectId>', 'Project ID')
+    .requiredOption('--mcp <mcpName>', 'MCP server name')
+    .requiredOption('--agent <agentId>', 'Agent ID')
+    .action(async (projectId: string, options, cmd) => {
+      const ctx = createContext(cmd);
+      try {
+        const { syncProjectMcpToWorkspace, getProject, getAgent: getAgentFn, getTemplate, createSecretStore } = await import('@ws/core');
+        const proj = getProject(ctx.db, projectId);
+        if (!proj) {
+          fail(`Project not found: ${projectId}`);
+          return;
+        }
+        const agent = getAgentFn(ctx.db, options.agent);
+        if (!agent) {
+          fail(`Agent not found: ${options.agent}`);
+          return;
+        }
+        const template = getTemplate(agent.id);
+        if (!template) {
+          fail(`No template found for agent: ${options.agent}`);
+          return;
+        }
+        const secretStore = await createSecretStore(ctx.db);
+        const result = await syncProjectMcpToWorkspace(ctx.db, proj, agent, template, options.mcp, ctx.dataDir, secretStore);
+        if (result.success) {
+          success(`MCP "${result.name}" applied to project`);
+        } else {
+          fail(`Failed to apply MCP: ${result.error}`);
+        }
+      } finally {
+        cleanupContext(ctx);
+      }
+    });
+
+  mcp
+    .command('unapply')
+    .description('Unapply an MCP server from a project agent')
+    .argument('<projectId>', 'Project ID')
+    .requiredOption('--mcp <mcpName>', 'MCP server name')
+    .requiredOption('--agent <agentId>', 'Agent ID')
+    .action(async (projectId: string, options, cmd) => {
+      const ctx = createContext(cmd);
+      try {
+        const { unsyncProjectMcpFromWorkspace, getProject, getAgent: getAgentFn, getTemplate } = await import('@ws/core');
+        const proj = getProject(ctx.db, projectId);
+        if (!proj) {
+          fail(`Project not found: ${projectId}`);
+          return;
+        }
+        const agent = getAgentFn(ctx.db, options.agent);
+        if (!agent) {
+          fail(`Agent not found: ${options.agent}`);
+          return;
+        }
+        const template = getTemplate(agent.id);
+        if (!template) {
+          fail(`No template found for agent: ${options.agent}`);
+          return;
+        }
+        const result = unsyncProjectMcpFromWorkspace(ctx.db, proj, agent, template, options.mcp);
+        if (result.success) {
+          success(`MCP "${result.name}" unapplied from project`);
+        } else {
+          fail(`Failed to unapply MCP: ${result.error}`);
+        }
+      } finally {
+        cleanupContext(ctx);
+      }
+    });
 }

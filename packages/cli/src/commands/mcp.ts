@@ -14,6 +14,8 @@ import {
   applyMcpToAgent,
   previewMcpApply,
   syncMcpToWorkspace,
+  unsyncMcpFromWorkspace,
+  unsyncAllMcpsFromAgent,
   scanMcpsFromAgents,
   scanHomeHiddenFolders,
   scanMcpsFromFolders,
@@ -22,6 +24,7 @@ import {
   validateWsSchema,
   checkMcpConsistency,
   fixMcpConsistency,
+  createSecretStore,
 } from '@ws/core';
 import type { McpTransport, ScannedMcp, ScanMode, WsMcpSchema } from '@ws/core';
 import { createContext, cleanupContext } from '../lib/context.js';
@@ -41,18 +44,66 @@ export function registerMcp(program: Command): void {
       try {
         const filter = options.tag ? { tags: [options.tag] } : undefined;
         const mcps = listMcps(ctx.db, filter);
+
+        const appliedMcps = ctx.db
+          .prepare(
+            `SELECT pra.resource_id, pra.agent_id, pra.applied_config_hash,
+                    m.config_hash, a.name as agent_name
+             FROM resource_agent pra
+             JOIN mcp m ON m.id = pra.resource_id
+             JOIN agent a ON a.id = pra.agent_id
+             WHERE pra.resource_type = 'mcp'`,
+          )
+          .all() as {
+          resource_id: string;
+          agent_id: string;
+          applied_config_hash: string | null;
+          config_hash: string | null;
+          agent_name: string;
+        }[];
+
+        const appliedMap = new Map<string, { agents: string[]; outOfSync: boolean }>();
+        for (const applied of appliedMcps) {
+          const existing = appliedMap.get(applied.resource_id);
+          const isOutOfSync = applied.applied_config_hash && applied.config_hash && applied.applied_config_hash !== applied.config_hash;
+
+          if (existing) {
+            existing.agents.push(applied.agent_name);
+            if (isOutOfSync) existing.outOfSync = true;
+          } else {
+            appliedMap.set(applied.resource_id, {
+              agents: [applied.agent_name],
+              outOfSync: isOutOfSync,
+            });
+          }
+        }
+
         if (ctx.json) {
-          outputJson(mcps);
+          const enriched = mcps.map((m) => {
+            const applied = appliedMap.get(m.id);
+            return {
+              ...m,
+              applied: applied ? { agents: applied.agents, outOfSync: applied.outOfSync } : null,
+            };
+          });
+          outputJson(enriched);
         } else {
           outputTable(
-            ['ID', 'Name', 'Transport', 'Command/URL', 'Tags'],
-            mcps.map((m) => [
-              m.id,
-              m.name,
-              m.transport ?? '-',
-              m.command ?? m.url ?? '-',
-              m.tags.join(', ') || '-',
-            ]),
+            ['ID', 'Name', 'Transport', 'Command/URL', 'Tags', 'Applied To', 'Status'],
+            mcps.map((m) => {
+              const applied = appliedMap.get(m.id);
+              const appliedTo = applied ? applied.agents.join(', ') : '-';
+              const status = applied ? (applied.outOfSync ? '⚠ Out of sync' : '✓ Applied') : '-';
+              return [
+                m.id,
+                m.name,
+                m.transport ?? '-',
+                m.command ?? m.url ?? '-',
+                m.tags.join(', ') || '-',
+                appliedTo,
+                status,
+              ];
+            }),
           );
         }
       } finally {
@@ -69,6 +120,7 @@ export function registerMcp(program: Command): void {
     .option('--url <url>', 'URL (for sse/http)')
     .option('--args <args...>', 'Command arguments')
     .option('--env <pairs...>', 'Environment variables (KEY=VALUE)')
+    .option('--secret-env <pairs...>', 'Secret environment variables (KEY=VALUE, stored securely)')
     .option('--description <desc>', 'Description')
     .action(async (options, cmd) => {
       const ctx = createContext(cmd);
@@ -79,6 +131,19 @@ export function registerMcp(program: Command): void {
             const eqIdx = pair.indexOf('=');
             if (eqIdx > 0) {
               env[pair.slice(0, eqIdx)] = pair.slice(eqIdx + 1);
+            }
+          }
+        }
+
+        if (options.secretEnv) {
+          const secretStore = await createSecretStore(ctx.db);
+          for (const pair of options.secretEnv) {
+            const eqIdx = pair.indexOf('=');
+            if (eqIdx > 0) {
+              const key = pair.slice(0, eqIdx);
+              const value = pair.slice(eqIdx + 1);
+              await secretStore.storeSecret(options.name, key, value);
+              env[key] = `env:${key}`;
             }
           }
         }
@@ -123,6 +188,8 @@ export function registerMcp(program: Command): void {
     .option('--transport <type>', 'Transport type')
     .option('--command <cmd>', 'Command')
     .option('--url <url>', 'URL')
+    .option('--env <pairs...>', 'Environment variables (KEY=VALUE)')
+    .option('--secret-env <pairs...>', 'Secret environment variables (KEY=VALUE, stored securely)')
     .option('--description <desc>', 'Description')
     .action(async (options, cmd) => {
       const ctx = createContext(cmd);
@@ -133,6 +200,37 @@ export function registerMcp(program: Command): void {
         if (options.command !== undefined) patch.command = options.command;
         if (options.url !== undefined) patch.url = options.url;
         if (options.description !== undefined) patch.description = options.description;
+
+        if (options.env || options.secretEnv) {
+          const existing = getMcp(ctx.db, options.id);
+          if (!existing) fail(`MCP server not found: ${options.id}`);
+
+          const env: Record<string, string> = { ...existing.env };
+
+          if (options.env) {
+            for (const pair of options.env) {
+              const eqIdx = pair.indexOf('=');
+              if (eqIdx > 0) {
+                env[pair.slice(0, eqIdx)] = pair.slice(eqIdx + 1);
+              }
+            }
+          }
+
+          if (options.secretEnv) {
+            const secretStore = await createSecretStore(ctx.db);
+            for (const pair of options.secretEnv) {
+              const eqIdx = pair.indexOf('=');
+              if (eqIdx > 0) {
+                const key = pair.slice(0, eqIdx);
+                const value = pair.slice(eqIdx + 1);
+                await secretStore.storeSecret(existing.name, key, value);
+                env[key] = `env:${key}`;
+              }
+            }
+          }
+
+          patch.env = env;
+        }
 
         const updated = updateMcp(ctx.db, options.id, patch);
         if (!updated) fail(`MCP server not found: ${options.id}`);
@@ -157,6 +255,13 @@ export function registerMcp(program: Command): void {
         const existing = getMcp(ctx.db, options.id);
         if (!existing) fail(`MCP server not found: ${options.id}`);
 
+        try {
+          const secretStore = await createSecretStore(ctx.db);
+          await secretStore.deleteAllSecretsForMcp(existing!.name);
+        } catch {
+          // Secret cleanup is best-effort
+        }
+
         deleteMcp(ctx.db, options.id);
 
         if (ctx.json) {
@@ -173,6 +278,7 @@ export function registerMcp(program: Command): void {
     .command('apply')
     .description('Apply MCP servers to an agent config')
     .requiredOption('--agent <agentId>', 'Agent ID')
+    .option('--mcp <name>', 'Apply specific MCP server (omit for all)')
     .option('--strict', 'Strict mode (replace all MCP entries)', false)
     .action(async (options, cmd) => {
       const ctx = createContext(cmd);
@@ -184,35 +290,54 @@ export function registerMcp(program: Command): void {
         if (!template) fail(`No template found for agent: ${agent!.id}`);
         if (!template.mcpFile || !template.mcpField) fail('Agent template does not support MCP');
 
-        const mcps = listMcps(ctx.db);
-        if (mcps.length === 0) {
-          if (ctx.json) outputJson({ message: 'No MCP servers to apply' });
-          else success('No MCP servers configured.');
-          return;
-        }
-
         const userRoot = agent!.userRoot ?? path.join(process.env.HOME ?? '~', template.configDirName);
 
-        // Preview
-        const preview = previewMcpApply({
-          agentConfigDir: userRoot,
-          template,
-          mcps,
-          mode: options.strict ? 'strict' : 'merge',
-        });
+        if (options.mcp) {
+          const mcpName = options.mcp;
+          const mcp = getMcp(ctx.db, mcpName);
+          if (!mcp) fail(`MCP not found: ${mcpName}`);
 
-        if (ctx.json) {
-          outputJson(preview);
+          const workspaceDir = ctx.dataDir;
+          const secretStore = await createSecretStore(ctx.db);
+          const result = await syncMcpToWorkspace(ctx.db, agent!, template, mcpName, workspaceDir, secretStore);
+
+          if (!result.success) {
+            fail(`Failed to apply MCP: ${result.error}`);
+          }
+
+          if (ctx.json) {
+            outputJson({ success: true, mcp: mcpName, agent: options.agent });
+          } else {
+            success(`MCP "${mcpName}" applied to agent "${agent!.name}"`);
+          }
         } else {
-          console.log(preview.diff);
-          // Apply
-          const result = applyMcpToAgent(ctx.db, {
+          const mcps = listMcps(ctx.db);
+          if (mcps.length === 0) {
+            if (ctx.json) outputJson({ message: 'No MCP servers to apply' });
+            else success('No MCP servers configured.');
+            return;
+          }
+
+          const preview = previewMcpApply({
             agentConfigDir: userRoot,
             template,
             mcps,
             mode: options.strict ? 'strict' : 'merge',
           });
-          success(`MCP applied to ${result.filePath}`);
+
+          if (ctx.json) {
+            outputJson(preview);
+          } else {
+            console.log(preview.diff);
+            const result = applyMcpToAgent(ctx.db, {
+              agentId: agent!.id,
+              agentConfigDir: userRoot,
+              template,
+              mcps,
+              mode: options.strict ? 'strict' : 'merge',
+            });
+            success(`MCP applied to ${result.filePath}`);
+          }
         }
       } finally {
         cleanupContext(ctx);
@@ -223,6 +348,7 @@ export function registerMcp(program: Command): void {
     .command('unapply')
     .description('Remove MCP entries from an agent config')
     .requiredOption('--agent <agentId>', 'Agent ID')
+    .option('--mcp <name>', 'Remove specific MCP server (omit for all)')
     .action(async (options, cmd) => {
       const ctx = createContext(cmd);
       try {
@@ -233,28 +359,30 @@ export function registerMcp(program: Command): void {
         if (!template) fail(`No template found for agent: ${agent!.id}`);
         if (!template.mcpFile || !template.mcpField) fail('Agent template does not support MCP');
 
-        const userRoot = agent!.userRoot ?? path.join(process.env.HOME ?? '~', template.configDirName);
-        const filePath = path.join(userRoot, template.mcpFile);
+        if (options.mcp) {
+          const mcpName = options.mcp;
+          const result = unsyncMcpFromWorkspace(ctx.db, agent!, template, mcpName);
 
-        if (fs.existsSync(filePath)) {
-          const content = fs.readFileSync(filePath, 'utf-8');
-          let parsed: Record<string, unknown>;
-          try {
-            parsed = JSON.parse(content);
-          } catch {
-            parsed = {};
+          if (!result.success) {
+            fail(`Failed to unapply MCP: ${result.error}`);
           }
-          const field = template.mcpField;
-          if (field && parsed[field]) {
-            delete parsed[field];
-            fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2) + '\n', 'utf-8');
-          }
-        }
 
-        if (ctx.json) {
-          outputJson({ success: true, agent: options.agent });
+          if (ctx.json) {
+            outputJson({ success: true, mcp: mcpName, agent: options.agent });
+          } else {
+            success(`MCP "${mcpName}" removed from agent "${agent!.name}"`);
+          }
         } else {
-          success(`MCP entries removed from agent "${agent!.name}"`);
+          const result = unsyncAllMcpsFromAgent(ctx.db, agent!, template);
+
+          if (ctx.json) {
+            outputJson({ success: true, agent: options.agent, ...result });
+          } else {
+            success(`Removed ${result.succeeded} MCP(s) from agent "${agent!.name}"`);
+            if (result.failed > 0) {
+              fail(`Failed to remove ${result.failed} MCP(s)`);
+            }
+          }
         }
       } finally {
         cleanupContext(ctx);
@@ -310,11 +438,12 @@ export function registerMcp(program: Command): void {
 
           // Step 2: sync to agents
           const agents = listAgents(ctx.db).filter((a) => a.enabled);
+          const secretStore = await createSecretStore(ctx.db);
           for (const agent of agents) {
             const tmpl = getTemplate(agent.id);
             if (!tmpl) continue;
             for (const r of results) {
-              syncMcpToWorkspace(ctx.db, agent, tmpl, r.name, ctx.dataDir);
+              await syncMcpToWorkspace(ctx.db, agent, tmpl, r.name, ctx.dataDir, secretStore);
             }
           }
           success('Sync complete.');
@@ -343,12 +472,40 @@ export function registerMcp(program: Command): void {
           return;
         }
 
-        const toSync = result.items.filter((i) => i.action === 'sync');
-        const toDelete = result.items.filter((i) => i.action === 'delete');
+        const toSync = result.items.filter((i) => i.action === 'sync' && !i.outOfSync && !i.missingFile);
+        const toDelete = result.items.filter((i) => i.action === 'delete' && !i.orphaned);
+        const outOfSync = result.items.filter((i) => i.outOfSync);
+        const orphaned = result.items.filter((i) => i.orphaned);
+        const missingFiles = result.items.filter((i) => i.missingFile);
+
+        if (orphaned.length > 0) {
+          outputTable(
+            ['Resource ID', 'Agent', 'Issue'],
+            orphaned.map((i) => [i.name, i.agentName || 'Unknown', '⚠ Orphaned record']),
+          );
+          console.log(`${orphaned.length} orphaned record(s) found (MCP or agent deleted).`);
+        }
+
+        if (missingFiles.length > 0) {
+          outputTable(
+            ['MCP Name', 'Agent', 'Issue'],
+            missingFiles.map((i) => [i.name, i.agentName || 'Unknown', '⚠ Config file missing']),
+          );
+          console.log(`${missingFiles.length} MCP(s) with missing config files.`);
+        }
+
+        if (outOfSync.length > 0) {
+          outputTable(
+            ['MCP Name', 'Agent', 'Status'],
+            outOfSync.map((i) => [i.name, i.agentName || 'Unknown', '⚠ Out of sync']),
+          );
+          console.log(`\n${outOfSync.length} MCP server(s) have been modified since they were applied.`);
+          console.log('Run "ws mcp sync" to re-apply them.');
+        }
 
         outputTable(
           ['Name', 'Location', 'Action'],
-          result.items.map((i) => [i.name, i.location, i.action]),
+          [...toSync, ...toDelete].map((i) => [i.name, i.location, i.action]),
         );
 
         if (options.apply) {
@@ -359,6 +516,26 @@ export function registerMcp(program: Command): void {
           if (fixResult.deleted.length > 0) {
             success(`Removed from database: ${fixResult.deleted.join(', ')}`);
           }
+
+          if (orphaned.length > 0) {
+            for (const item of orphaned) {
+              ctx.db
+                .prepare(
+                  `DELETE FROM resource_agent WHERE resource_type = 'mcp' AND resource_id = ? AND agent_id = ?`,
+                )
+                .run(item.name.replace('orphaned-', ''), item.agentId);
+            }
+            success(`Removed ${orphaned.length} orphaned record(s).`);
+          }
+
+          if (missingFiles.length > 0) {
+            success(`${missingFiles.length} MCP(s) with missing files detected. Run "ws mcp sync" to re-apply them.`);
+          }
+
+          if (outOfSync.length > 0) {
+            success(`${outOfSync.length} out-of-sync MCP(s) detected. Run "ws mcp sync" to re-apply them.`);
+          }
+
           success('All discrepancies fixed.');
         } else {
           if (toSync.length > 0) {
@@ -367,7 +544,9 @@ export function registerMcp(program: Command): void {
           if (toDelete.length > 0) {
             console.log(`${toDelete.length} MCP server(s) in database but not in directory.`);
           }
-          console.log('\nUse --apply to fix all discrepancies.');
+          if (orphaned.length === 0 && missingFiles.length === 0 && outOfSync.length === 0 && (toSync.length > 0 || toDelete.length > 0)) {
+            console.log('\nUse --apply to fix all discrepancies.');
+          }
         }
       } finally {
         cleanupContext(ctx);

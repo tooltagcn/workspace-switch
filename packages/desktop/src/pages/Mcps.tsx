@@ -3,19 +3,63 @@ import { useEffect, useState } from 'react';
 import { useMcpStore, type McpServer } from '../stores/mcpStore.js';
 import { api } from '../lib/ipc.js';
 import ApplyToAgentDialog from './components/ApplyToAgentDialog.js';
+import type { ApplyResource } from './components/ApplyToAgentDialog.js';
+import UnapplyFromAgentDialog from './components/UnapplyFromAgentDialog.js';
 import BulkActionBar from '../components/BulkActionBar.js';
+import McpDebugPanel from '../components/McpDebugPanel.js';
 
-function McpDetail({ mcp, onClose, onApply }: { mcp: McpServer; onClose: () => void; onApply: () => void }) {
+function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose: () => void; onApply: () => void; onDebug: () => void }) {
   const { t } = useTranslation();
+  const { testMcp, testingMcpIds } = useMcpStore();
   const [showEnv, setShowEnv] = useState(false);
+  const [showTools, setShowTools] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(false);
+  const [tools, setTools] = useState<Array<{ id: string; name: string; description: string | null }>>([]);
+  const [prompts, setPrompts] = useState<Array<{ id: string; name: string; description: string | null }>>([]);
+  const isTesting = testingMcpIds.has(mcp.id);
+
+  useEffect(() => {
+    if (mcp.testStatus === 'passed') {
+      api.getMcpTools(mcp.id).then(setTools).catch(() => {});
+      api.getMcpPrompts(mcp.id).then(setPrompts).catch(() => {});
+    }
+  }, [mcp.id, mcp.testStatus]);
+
+  const statusColor: Record<string, string> = {
+    untested: 'bg-gray-100 text-gray-600',
+    passed: 'bg-green-100 text-green-700',
+    failed: 'bg-red-100 text-red-700',
+    config_changed: 'bg-yellow-100 text-yellow-700',
+  };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 w-96">
+    <div className="bg-white rounded-lg shadow p-6 w-96 max-h-[80vh] overflow-auto">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">{mcp.name}</h3>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
       </div>
       <div className="space-y-3">
+        <div>
+          <span className="text-sm text-gray-500">{t('mcp.testStatus')}</span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`text-xs px-2 py-0.5 rounded ${statusColor[mcp.testStatus] ?? statusColor.untested}`}>
+              {t(`mcp.statusLabels.${mcp.testStatus}` as any)}
+            </span>
+            <button
+              onClick={() => testMcp(mcp.id)}
+              disabled={isTesting}
+              className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            >
+              {isTesting ? t('mcp.testing') : t('mcp.test')}
+            </button>
+          </div>
+          {mcp.testStatus === 'failed' && mcp.testError && (
+            <p className="text-xs text-red-500 mt-1 break-all">{mcp.testError}</p>
+          )}
+          {mcp.testedAt && (
+            <p className="text-xs text-gray-400 mt-1">{new Date(mcp.testedAt).toLocaleString()}</p>
+          )}
+        </div>
         <div>
           <span className="text-sm text-gray-500">{t('mcp.transport')}</span>
           <p className="text-sm mt-1">
@@ -58,6 +102,54 @@ function McpDetail({ mcp, onClose, onApply }: { mcp: McpServer; onClose: () => v
             )}
           </div>
         )}
+        {mcp.testStatus === 'passed' && (
+          <>
+            <div>
+              <button
+                onClick={() => setShowTools(!showTools)}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                {t('mcp.tools')} ({tools.length}) {showTools ? '▾' : '▸'}
+              </button>
+              {showTools && (
+                <div className="mt-2 space-y-1">
+                  {tools.length === 0 ? (
+                    <p className="text-xs text-gray-400">{t('mcp.noTools')}</p>
+                  ) : (
+                    tools.map((tool) => (
+                      <div key={tool.id} className="text-xs p-2 bg-gray-50 rounded">
+                        <div className="font-mono font-medium text-gray-700">{tool.name}</div>
+                        {tool.description && <div className="text-gray-500 mt-0.5">{tool.description}</div>}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <div>
+              <button
+                onClick={() => setShowPrompts(!showPrompts)}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                {t('mcp.prompts')} ({prompts.length}) {showPrompts ? '▾' : '▸'}
+              </button>
+              {showPrompts && (
+                <div className="mt-2 space-y-1">
+                  {prompts.length === 0 ? (
+                    <p className="text-xs text-gray-400">{t('mcp.noPrompts')}</p>
+                  ) : (
+                    prompts.map((p) => (
+                      <div key={p.id} className="text-xs p-2 bg-gray-50 rounded">
+                        <div className="font-mono font-medium text-gray-700">{p.name}</div>
+                        {p.description && <div className="text-gray-500 mt-0.5">{p.description}</div>}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
         <div>
           <span className="text-sm text-gray-500">{t('common.tags')}</span>
           <div className="flex flex-wrap gap-1 mt-1">
@@ -70,12 +162,20 @@ function McpDetail({ mcp, onClose, onApply }: { mcp: McpServer; onClose: () => v
             )}
           </div>
         </div>
-        <button
-          onClick={onApply}
-          className="w-full mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
-        >
-          {t('skill.apply')}
-        </button>
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={onDebug}
+            className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm"
+          >
+            {t('mcp.debug')}
+          </button>
+          <button
+            onClick={onApply}
+            className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
+          >
+            {t('skill.apply')}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -595,16 +695,26 @@ function McpDoctorDialog({ onClose }: { onClose: () => void }) {
 
 export default function Mcps() {
   const { t } = useTranslation();
-  const { mcps, loading, fetchMcps, deleteMcp } = useMcpStore();
+  const { mcps, loading, fetchMcps, deleteMcp, testMcp, testingMcpIds, batchTesting, batchProgress, startBatchTest, syncMcp } = useMcpStore();
   const [selectedMcp, setSelectedMcp] = useState<McpServer | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingMcp, setEditingMcp] = useState<McpServer | null>(null);
   const [showReverseScan, setShowReverseScan] = useState(false);
   const [showDoctor, setShowDoctor] = useState(false);
   const [showApplyDialog, setShowApplyDialog] = useState(false);
+  const [debugMcp, setDebugMcp] = useState<McpServer | null>(null);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [bulkAction, setBulkAction] = useState<'tag' | 'apply' | 'unapply' | 'delete' | null>(null);
+  const [bulkApplyResources, setBulkApplyResources] = useState<ApplyResource[] | null>(null);
+  const [bulkUnapplyResources, setBulkUnapplyResources] = useState<ApplyResource[] | null>(null);
+
+  const statusColor: Record<string, string> = {
+    untested: 'bg-gray-100 text-gray-600',
+    passed: 'bg-green-100 text-green-700',
+    failed: 'bg-red-100 text-red-700',
+    config_changed: 'bg-yellow-100 text-yellow-700',
+  };
 
   const toggleBulk = (id: string) => {
     setBulkSelected((prev) => {
@@ -625,7 +735,15 @@ export default function Mcps() {
 
   const handleBulkAction = (action: 'tag' | 'apply' | 'unapply' | 'delete') => {
     setBulkAction(action);
-    setShowBulkConfirm(true);
+    const selected = mcps.filter((m) => bulkSelected.has(m.id));
+    const mapped = selected.map((m) => ({ id: m.id, name: m.name }));
+    if (action === 'apply') {
+      setBulkApplyResources(mapped);
+    } else if (action === 'unapply') {
+      setBulkUnapplyResources(mapped);
+    } else {
+      setShowBulkConfirm(true);
+    }
   };
 
   const confirmBulkAction = async () => {
@@ -653,6 +771,13 @@ export default function Mcps() {
         <h2 className="text-2xl font-bold">{t('mcp.title')}</h2>
         <div className="flex gap-2">
           <button
+            onClick={() => startBatchTest()}
+            disabled={batchTesting || mcps.length === 0}
+            className="px-4 py-2 border border-green-500 text-green-600 rounded-lg hover:bg-green-50 disabled:opacity-50"
+          >
+            {batchTesting ? t('mcp.batchTesting') : t('mcp.batchTest')}
+          </button>
+          <button
             onClick={() => setShowDoctor(true)}
             className="px-4 py-2 border border-yellow-500 text-yellow-600 rounded-lg hover:bg-yellow-50"
           >
@@ -673,6 +798,41 @@ export default function Mcps() {
         </div>
       </div>
 
+      {batchTesting && batchProgress && (
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-medium text-blue-700">
+              {t('mcp.batchTesting')} - {batchProgress.currentMcpName}
+            </span>
+            <span className="text-sm text-blue-600">
+              {batchProgress.completed}/{batchProgress.total}
+            </span>
+          </div>
+          <div className="w-full bg-blue-200 rounded-full h-2">
+            <div
+              className="bg-blue-500 h-2 rounded-full transition-all"
+              style={{ width: `${batchProgress.total > 0 ? (batchProgress.completed / batchProgress.total) * 100 : 0}%` }}
+            />
+          </div>
+          <div className="flex gap-4 mt-1 text-xs text-blue-600">
+            <span>{t('mcp.batchPassed')}: {batchProgress.passed}</span>
+            <span>{t('mcp.batchFailed')}: {batchProgress.failed}</span>
+          </div>
+        </div>
+      )}
+      {!batchTesting && batchProgress && (
+        <div className="mb-4 p-3 bg-green-50 rounded-lg flex items-center justify-between">
+          <span className="text-sm font-medium text-green-700">
+            {t('mcp.batchComplete')}
+          </span>
+          <div className="flex gap-4 text-sm">
+            <span className="text-green-600">{t('mcp.batchPassed')}: {batchProgress.passed}</span>
+            <span className="text-red-600">{t('mcp.batchFailed')}: {batchProgress.failed}</span>
+            <span className="text-gray-600">{t('mcp.batchTest')}: {batchProgress.total}</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-6">
         <div className="flex-1">
           {mcps.length === 0 ? (
@@ -690,6 +850,8 @@ export default function Mcps() {
                   </th>
                   <th className="px-4 py-2 text-left">{t('mcp.name')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.transport')}</th>
+                  <th className="px-4 py-2 text-left">{t('mcp.testStatus')}</th>
+                  <th className="px-4 py-2 text-left">{t('mcp.appliedTo')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.command')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.env')}</th>
                   <th className="px-4 py-2 text-left">{t('common.actions')}</th>
@@ -715,6 +877,37 @@ export default function Mcps() {
                         {mcp.transport ?? 'stdio'}
                       </span>
                     </td>
+                    <td className="px-4 py-2">
+                      <span className={`text-xs px-2 py-0.5 rounded ${statusColor[mcp.testStatus] ?? statusColor.untested}`}>
+                        {t(`mcp.statusLabels.${mcp.testStatus}` as any)}
+                      </span>
+                      {mcp.testStatus === 'failed' && mcp.testError && (
+                        <p className="text-xs text-red-500 mt-1 break-all max-w-xs truncate" title={mcp.testError}>{mcp.testError}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      {mcp.applied ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600">
+                            {mcp.applied.agents.join(', ')}
+                          </span>
+                          {mcp.applied.outOfSync && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                syncMcp(mcp.id);
+                              }}
+                              className="text-xs px-2 py-0.5 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                              title={t('mcp.syncTooltip')}
+                            >
+                              {t('mcp.sync')}
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2 font-mono text-sm text-gray-600">
                       {mcp.command ?? mcp.url ?? '-'}
                     </td>
@@ -723,6 +916,19 @@ export default function Mcps() {
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); testMcp(mcp.id); }}
+                          disabled={testingMcpIds.has(mcp.id)}
+                          className="text-sm text-green-600 hover:text-green-800 disabled:opacity-50"
+                        >
+                          {testingMcpIds.has(mcp.id) ? t('mcp.testing') : t('mcp.test')}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDebugMcp(mcp); }}
+                          className="text-sm text-purple-600 hover:text-purple-800"
+                        >
+                          {t('mcp.debug')}
+                        </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditingMcp(mcp); }}
                           className="text-sm text-blue-600 hover:text-blue-800"
@@ -751,7 +957,12 @@ export default function Mcps() {
         </div>
 
         {selectedMcp && (
-          <McpDetail mcp={selectedMcp} onClose={() => setSelectedMcp(null)} onApply={() => setShowApplyDialog(true)} />
+          <McpDetail
+            mcp={selectedMcp}
+            onClose={() => setSelectedMcp(null)}
+            onApply={() => setShowApplyDialog(true)}
+            onDebug={() => setDebugMcp(selectedMcp)}
+          />
         )}
       </div>
 
@@ -759,11 +970,43 @@ export default function Mcps() {
       {editingMcp && <McpEditDialog mcp={editingMcp} onClose={() => setEditingMcp(null)} />}
       {showReverseScan && <McpReverseScanWizard onClose={() => setShowReverseScan(false)} />}
       {showDoctor && <McpDoctorDialog onClose={() => setShowDoctor(false)} />}
+      {debugMcp && (
+        <McpDebugPanel
+          mcp={debugMcp}
+          onClose={() => setDebugMcp(null)}
+          onTestComplete={() => fetchMcps()}
+        />
+      )}
       {showApplyDialog && selectedMcp && (
         <ApplyToAgentDialog
           resourceType="mcp"
           resources={[{ id: selectedMcp.id, name: selectedMcp.name }]}
           onClose={() => setShowApplyDialog(false)}
+        />
+      )}
+
+      {bulkApplyResources && (
+        <ApplyToAgentDialog
+          resourceType="mcp"
+          resources={bulkApplyResources}
+          onClose={() => {
+            setBulkApplyResources(null);
+            setBulkAction(null);
+            setBulkSelected(new Set());
+            fetchMcps();
+          }}
+        />
+      )}
+
+      {bulkUnapplyResources && (
+        <UnapplyFromAgentDialog
+          resources={bulkUnapplyResources}
+          onClose={() => {
+            setBulkUnapplyResources(null);
+            setBulkAction(null);
+            setBulkSelected(new Set());
+            fetchMcps();
+          }}
         />
       )}
 

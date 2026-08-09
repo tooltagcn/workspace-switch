@@ -4,12 +4,13 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { AgentTemplate } from '../agent/template-types.js';
 import type { McpServer } from './types.js';
-import { renderMcpForAgent } from './renderer.js';
+import { parseConfigFile, serializeConfigFile, buildMcpEntry } from './renderer.js';
 import type { WsMcpSchema } from './schema.js';
 
 export type ApplyMode = 'merge' | 'strict';
 
 export interface ApplyMcpOptions {
+  agentId: string;
   agentConfigDir: string;
   template: AgentTemplate;
   mcps: McpServer[];
@@ -36,19 +37,12 @@ function mcpServerToSchema(server: McpServer): WsMcpSchema {
 }
 
 function buildMcpSection(
-  template: AgentTemplate,
+  _template: AgentTemplate,
   mcps: McpServer[],
 ): Record<string, unknown> {
   const section: Record<string, unknown> = {};
   for (const mcp of mcps) {
-    const schema = mcpServerToSchema(mcp);
-    const rendered = renderMcpForAgent(schema, template);
-    const parsed = JSON.parse(rendered);
-    const field = template.mcpField ?? 'mcpServers';
-    const entries = parsed[field] as Record<string, unknown>;
-    for (const [name, config] of Object.entries(entries)) {
-      section[name] = config;
-    }
+    section[mcp.name] = buildMcpEntry(mcpServerToSchema(mcp));
   }
   return section;
 }
@@ -74,7 +68,7 @@ export function applyMcpToAgent(
   db: Database.Database,
   options: ApplyMcpOptions,
 ): ApplyMcpResult {
-  const { agentConfigDir, template, mcps, mode } = options;
+  const { agentId, agentConfigDir, template, mcps, mode } = options;
 
   if (!template.mcpFile || !template.mcpField) {
     throw new Error(`Agent template "${template.id}" does not support MCP`);
@@ -85,11 +79,7 @@ export function applyMcpToAgent(
 
   let existing: Record<string, unknown> = {};
   if (before) {
-    try {
-      existing = JSON.parse(before);
-    } catch {
-      existing = {};
-    }
+    existing = parseConfigFile(before, template);
   }
 
   const newSection = buildMcpSection(template, mcps);
@@ -103,24 +93,24 @@ export function applyMcpToAgent(
     afterObj = { ...existing, [field]: { ...existingSection, ...newSection } };
   }
 
-  const after = JSON.stringify(afterObj, null, 2) + '\n';
+  const after = serializeConfigFile(afterObj, template);
 
   const beforeResourceRow = db
     .prepare(
       `SELECT * FROM resource_agent WHERE resource_type = 'mcp' AND agent_id = ? AND target_path = ?`,
     )
-    .get(template.id, filePath) as Record<string, unknown> | undefined;
+    .get(agentId, filePath) as Record<string, unknown> | undefined;
 
   try {
     const updateDb = db.transaction(() => {
       if (beforeResourceRow) {
         db.prepare(
           `UPDATE resource_agent SET applied_at = datetime('now') WHERE resource_type = 'mcp' AND agent_id = ? AND target_path = ?`,
-        ).run(template.id, filePath);
+        ).run(agentId, filePath);
       } else {
         db.prepare(
           `INSERT INTO resource_agent (resource_type, resource_id, agent_id, target_path) VALUES ('mcp', ?, ?, ?)`,
-        ).run(mcps[0]?.id ?? 'unknown', template.id, filePath);
+        ).run(mcps[0]?.id ?? 'unknown', agentId, filePath);
       }
     });
 
@@ -148,7 +138,7 @@ export interface PreviewMcpResult {
 }
 
 export function previewMcpApply(
-  options: Omit<ApplyMcpOptions, 'mode'> & { mode?: ApplyMode },
+  options: Omit<ApplyMcpOptions, 'mode' | 'agentId'> & { mode?: ApplyMode },
 ): PreviewMcpResult {
   const { agentConfigDir, template, mcps, mode = 'merge' } = options;
 
@@ -161,11 +151,7 @@ export function previewMcpApply(
 
   let existing: Record<string, unknown> = {};
   if (before) {
-    try {
-      existing = JSON.parse(before);
-    } catch {
-      existing = {};
-    }
+    existing = parseConfigFile(before, template);
   }
 
   const newSection = buildMcpSection(template, mcps);
@@ -179,7 +165,7 @@ export function previewMcpApply(
     afterObj = { ...existing, [field]: { ...existingSection, ...newSection } };
   }
 
-  const after = JSON.stringify(afterObj, null, 2) + '\n';
+  const after = serializeConfigFile(afterObj, template);
   const diff = unifiedDiff(filePath, before ?? '', after);
 
   return { filePath, before, after, diff };

@@ -37,11 +37,28 @@ const api = {
   // MCP scan / apply
   scanMcps: (mode) => ipcRenderer.invoke('mcp:scan', mode),
   applyMcp: (mcpId, agentId) => ipcRenderer.invoke('mcp:apply', mcpId, agentId),
+  unapplyMcp: (mcpId, agentId) => ipcRenderer.invoke('mcp:unapply', mcpId, agentId),
+  syncMcp: (mcpId) => ipcRenderer.invoke('mcp:sync', mcpId),
   previewMcpApply: (mcpId, agentId) => ipcRenderer.invoke('mcp:previewApply', mcpId, agentId),
   getAppliedAgentsForMcp: (mcpId) => ipcRenderer.invoke('mcp:appliedAgents', mcpId),
   importScannedMcps: (mcps) => ipcRenderer.invoke('mcp:importScanned', mcps),
   checkMcpConsistency: () => ipcRenderer.invoke('mcp:doctor'),
   fixMcpConsistency: () => ipcRenderer.invoke('mcp:fixDoctor'),
+  testMcp: (mcpId) => ipcRenderer.invoke('mcp:test', mcpId),
+  batchTestMcps: () => ipcRenderer.invoke('mcp:batchTest'),
+  callMcpTool: (mcpId, toolName, args) => ipcRenderer.invoke('mcp:callTool', mcpId, toolName, args),
+  getMcpTools: (mcpId) => ipcRenderer.invoke('mcp:getTools', mcpId),
+  getMcpPrompts: (mcpId) => ipcRenderer.invoke('mcp:getPrompts', mcpId),
+  getMcpTestResult: (mcpId) => ipcRenderer.invoke('mcp:getTestResult', mcpId),
+  isKeychainAvailable: () => ipcRenderer.invoke('mcp:isKeychainAvailable'),
+  storeSecret: (mcpName, varName, value) => ipcRenderer.invoke('mcp:storeSecret', mcpName, varName, value),
+  deleteSecret: (mcpName, varName) => ipcRenderer.invoke('mcp:deleteSecret', mcpName, varName),
+  onBatchTestProgress: (callback) => ipcRenderer.on('mcp:batch-test-progress', (_event, progress) => callback(progress)),
+  onBatchTestResult: (callback) => ipcRenderer.on('mcp:batch-test-result', (_event, result) => callback(result)),
+  removeBatchTestListeners: () => {
+    ipcRenderer.removeAllListeners('mcp:batch-test-progress');
+    ipcRenderer.removeAllListeners('mcp:batch-test-result');
+  },
 
   // Provider operations
   listProviders: () => ipcRenderer.invoke('provider:list'),
@@ -73,6 +90,10 @@ const api = {
   projectApplySkill: (projectId, skillId, agentId) => ipcRenderer.invoke('project:applySkill', projectId, skillId, agentId),
   projectUnapplySkill: (projectId, skillId, agentId) => ipcRenderer.invoke('project:unapplySkill', projectId, skillId, agentId),
   projectAvailableSkills: (projectId, agentId) => ipcRenderer.invoke('project:availableSkills', projectId, agentId),
+  projectMcpList: (projectId) => ipcRenderer.invoke('project:mcpList', projectId),
+  projectApplyMcp: (projectId, mcpName, agentId) => ipcRenderer.invoke('project:applyMcp', projectId, mcpName, agentId),
+  projectUnapplyMcp: (projectId, mcpName, agentId) => ipcRenderer.invoke('project:unapplyMcp', projectId, mcpName, agentId),
+  projectAvailableMcps: (projectId, agentId) => ipcRenderer.invoke('project:availableMcps', projectId, agentId),
 };
 
 contextBridge.exposeInMainWorld('wsApi', api);

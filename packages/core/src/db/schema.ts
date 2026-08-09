@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS mcp (
   args_json TEXT,
   env_json TEXT,
   description TEXT,
+  test_status TEXT NOT NULL DEFAULT 'untested',
+  test_error TEXT,
+  tested_at TEXT,
+  config_hash TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -55,6 +59,7 @@ CREATE TABLE IF NOT EXISTS resource_agent (
   agent_id TEXT NOT NULL,
   target_path TEXT,
   symlinked INTEGER NOT NULL DEFAULT 0,
+  applied_config_hash TEXT,
   applied_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (resource_type, resource_id, agent_id),
   FOREIGN KEY (agent_id) REFERENCES agent(id)
@@ -99,10 +104,55 @@ CREATE TABLE IF NOT EXISTS project_resource_agent (
   agent_id TEXT NOT NULL,
   target_path TEXT,
   symlinked INTEGER NOT NULL DEFAULT 1,
+  applied_config_hash TEXT,
   applied_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (resource_type, resource_id, project_id, agent_id),
   FOREIGN KEY (project_id) REFERENCES project(id),
   FOREIGN KEY (agent_id) REFERENCES agent(id)
+);
+
+CREATE TABLE IF NOT EXISTS mcp_test_result (
+  mcp_id TEXT PRIMARY KEY,
+  status TEXT NOT NULL,
+  error_message TEXT,
+  tools_count INTEGER NOT NULL DEFAULT 0,
+  prompts_count INTEGER NOT NULL DEFAULT 0,
+  tested_at TEXT NOT NULL,
+  FOREIGN KEY (mcp_id) REFERENCES mcp(id)
+);
+
+CREATE TABLE IF NOT EXISTS mcp_tool (
+  id TEXT PRIMARY KEY,
+  mcp_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  input_schema TEXT,
+  FOREIGN KEY (mcp_id) REFERENCES mcp(id),
+  UNIQUE (mcp_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS mcp_prompt (
+  id TEXT PRIMARY KEY,
+  mcp_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  FOREIGN KEY (mcp_id) REFERENCES mcp(id),
+  UNIQUE (mcp_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS secret (
+  id TEXT PRIMARY KEY,
+  key TEXT NOT NULL UNIQUE,
+  value TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS workspace_config (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 `;
 
@@ -117,6 +167,11 @@ export const EXPECTED_TABLES = [
   'project',
   'project_agent',
   'project_resource_agent',
+  'mcp_test_result',
+  'mcp_tool',
+  'mcp_prompt',
+  'secret',
+  'workspace_config',
 ] as const;
 
 export type TableName = (typeof EXPECTED_TABLES)[number];

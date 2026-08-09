@@ -26,11 +26,25 @@ export interface WsApi {
   deleteMcp: (id: string) => Promise<any>;
   scanMcps: (mode: string) => Promise<any>;
   applyMcp: (mcpId: string, agentId: string) => Promise<any>;
+  unapplyMcp: (mcpId: string, agentId: string) => Promise<any>;
+  syncMcp: (mcpId: string) => Promise<any>;
   previewMcpApply: (mcpId: string, agentId: string) => Promise<any>;
   getAppliedAgentsForMcp: (mcpId: string) => Promise<any>;
   importScannedMcps: (mcps: unknown[]) => Promise<any>;
   checkMcpConsistency: () => Promise<any>;
   fixMcpConsistency: () => Promise<any>;
+  testMcp: (mcpId: string) => Promise<any>;
+  batchTestMcps: () => Promise<any>;
+  callMcpTool: (mcpId: string, toolName: string, args: Record<string, unknown>) => Promise<any>;
+  getMcpTools: (mcpId: string) => Promise<any[]>;
+  getMcpPrompts: (mcpId: string) => Promise<any[]>;
+  getMcpTestResult: (mcpId: string) => Promise<any>;
+  isKeychainAvailable: () => Promise<boolean>;
+  storeSecret: (mcpName: string, varName: string, value: string) => Promise<any>;
+  deleteSecret: (mcpName: string, varName: string) => Promise<any>;
+  onBatchTestProgress: (callback: (progress: any) => void) => void;
+  onBatchTestResult: (callback: (result: any) => void) => void;
+  removeBatchTestListeners: () => void;
   listProviders: () => Promise<any>;
   getProvider: (id: string) => Promise<any>;
   createProvider: (data: unknown) => Promise<any>;
@@ -56,4 +70,8 @@ export interface WsApi {
   projectApplySkill: (projectId: string, skillId: string, agentId: string) => Promise<any>;
   projectUnapplySkill: (projectId: string, skillId: string, agentId: string) => Promise<any>;
   projectAvailableSkills: (projectId: string, agentId?: string) => Promise<any>;
+  projectMcpList: (projectId: string) => Promise<any>;
+  projectApplyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<any>;
+  projectUnapplyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<any>;
+  projectAvailableMcps: (projectId: string, agentId?: string) => Promise<any>;
 }

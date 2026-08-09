@@ -29,11 +29,20 @@ interface ProjectSkill {
   brokenAgents: string[];
 }
 
+interface ProjectMcp {
+  id: string;
+  name: string;
+  description: string | null;
+  agent_names: string | null;
+}
+
 interface ProjectStore {
   projects: Project[];
   selectedProject: ProjectWithAgents | null;
   projectSkills: ProjectSkill[];
+  projectMcps: ProjectMcp[];
   availableSkills: any[];
+  availableMcps: any[];
   loading: boolean;
   error: string | null;
 
@@ -48,13 +57,19 @@ interface ProjectStore {
   applySkill: (projectId: string, skillId: string, agentId: string) => Promise<void>;
   unapplySkill: (projectId: string, skillId: string, agentId: string) => Promise<void>;
   fetchAvailableSkills: (projectId: string, agentId?: string) => Promise<void>;
+  fetchProjectMcps: (projectId: string) => Promise<void>;
+  applyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<void>;
+  unapplyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<void>;
+  fetchAvailableMcps: (projectId: string, agentId?: string) => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
   projects: [],
   selectedProject: null,
   projectSkills: [],
+  projectMcps: [],
   availableSkills: [],
+  availableMcps: [],
   loading: false,
   error: null,
 
@@ -74,13 +89,14 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const project = await api.projectGet(id);
       set({ selectedProject: project, loading: false });
       get().fetchProjectSkills(id);
+      get().fetchProjectMcps(id);
     } catch (err) {
       set({ error: String(err), loading: false });
     }
   },
 
   clearSelection: () => {
-    set({ selectedProject: null, projectSkills: [], availableSkills: [] });
+    set({ selectedProject: null, projectSkills: [], projectMcps: [], availableSkills: [], availableMcps: [] });
   },
 
   createProject: async (data) => {
@@ -133,6 +149,34 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     try {
       const skills = await api.projectAvailableSkills(projectId, agentId);
       set({ availableSkills: skills });
+    } catch (err) {
+      set({ error: String(err) });
+    }
+  },
+
+  fetchProjectMcps: async (projectId: string) => {
+    try {
+      const mcps = await (api as any).projectMcpList(projectId);
+      set({ projectMcps: mcps });
+    } catch (err) {
+      set({ error: String(err) });
+    }
+  },
+
+  applyMcp: async (projectId: string, mcpName: string, agentId: string) => {
+    await (api as any).projectApplyMcp(projectId, mcpName, agentId);
+    await get().fetchProjectMcps(projectId);
+  },
+
+  unapplyMcp: async (projectId: string, mcpName: string, agentId: string) => {
+    await (api as any).projectUnapplyMcp(projectId, mcpName, agentId);
+    await get().fetchProjectMcps(projectId);
+  },
+
+  fetchAvailableMcps: async (projectId: string, agentId?: string) => {
+    try {
+      const mcps = await (api as any).projectAvailableMcps(projectId, agentId);
+      set({ availableMcps: mcps });
     } catch (err) {
       set({ error: String(err) });
     }

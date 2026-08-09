@@ -53,7 +53,7 @@ export { validateSkill } from './skill/validator.js';
 export { initWorkspace } from './workspace/init.js';
 export type { InitWorkspaceResult, WorkspaceSubDir } from './workspace/init.js';
 
-export type { McpServer, CreateMcpInput, UpdateMcpInput, McpListFilter, McpTransport } from './mcp/types.js';
+export type { McpServer, CreateMcpInput, UpdateMcpInput, McpListFilter, McpTransport, McpTestStatus, McpTestResult, McpTool, McpPrompt, TestMcpOptions, McpTestReport, BatchTestProgress } from './mcp/types.js';
 export {
   listMcps,
   getMcp,
@@ -63,6 +63,12 @@ export {
   addMcpTag,
   removeMcpTag,
   setMcpTags,
+  saveTestResult,
+  getTestResult,
+  saveTools,
+  getTools,
+  savePrompts,
+  getPrompts,
 } from './mcp/manager.js';
 
 export type { WsMcpSchema, WsSchemaValidationResult, WsSchemaValidationError } from './mcp/schema.js';
@@ -70,8 +76,15 @@ export { validateWsSchema } from './mcp/schema.js';
 
 export { saveMcpToWorkspace, loadMcpFromWorkspace, listMcpFromWorkspace } from './mcp/storage.js';
 
+export { computeConfigHash } from './mcp/config-hash.js';
+export { testMcpConnection, runTestAndPersist, batchTestMcps, callMcpTool } from './mcp/tester.js';
+
 export type { RenderedMcp } from './mcp/renderer.js';
 export { renderMcpForAgent } from './mcp/renderer.js';
+
+export type { McpRenderer, SecretStore } from './mcp/types.js';
+export { registerRenderer, getRenderer, listRenderers } from './mcp/renderer-registry.js';
+export { KeychainSecretStore, PlaintextSecretStore, isKeychainAvailable, createSecretStore, getWorkspaceConfig, setWorkspaceConfig } from './mcp/secret-store.js';
 
 export type { ApplyMode, ApplyMcpOptions, ApplyMcpResult, PreviewMcpResult } from './mcp/apply.js';
 export { applyMcpToAgent, previewMcpApply } from './mcp/apply.js';
@@ -100,7 +113,7 @@ export { linuxSymlink } from './sync/symlink-linux.js';
 export type { BrokenSymlink } from './sync/check-broken.js';
 export { checkBrokenSymlinks } from './sync/check-broken.js';
 export type { SyncResult, SyncAgentAllResult, AppliedAgent } from './sync/agent-sync.js';
-export { syncSkillToWorkspace, unsyncSkillFromWorkspace, syncMcpToWorkspace, syncAgentAll, getAppliedAgentsForResource, getAppliedAgentsForSkill, getAppliedAgentsForMcp } from './sync/agent-sync.js';
+export { syncSkillToWorkspace, unsyncSkillFromWorkspace, syncMcpToWorkspace, unsyncMcpFromWorkspace, unsyncAllMcpsFromAgent, syncAgentAll, getAppliedAgentsForResource, getAppliedAgentsForSkill, getAppliedAgentsForMcp } from './sync/agent-sync.js';
 
 export type { ConsistencyResult, ConsistencyItem, FixResult } from './sync/consistency.js';
 export { checkSkillConsistency, fixSkillConsistency, checkMcpConsistency, fixMcpConsistency } from './sync/consistency.js';
@@ -132,4 +145,4 @@ export { loadPlugins, validatePlugin } from './plugin/loader.js';
 export type { Project, CreateProjectInput, UpdateProjectInput, ProjectWithAgents, ProjectAgentEnablement, ProjectSkill } from './project/types.js';
 export { listProjects, getProject, getProjectWithAgents, createProject, updateProject, deleteProject } from './project/manager.js';
 export { getEnabledAgentsForProject, toggleAgentForProject, initializeProjectAgents } from './project/agent-enablement.js';
-export { syncProjectSkillToWorkspace, unsyncProjectSkillFromWorkspace, getProjectSkillList, cleanupProjectResources } from './sync/project-sync.js';
+export { syncProjectSkillToWorkspace, unsyncProjectSkillFromWorkspace, syncProjectMcpToWorkspace, unsyncProjectMcpFromWorkspace, getProjectSkillList, cleanupProjectResources } from './sync/project-sync.js';

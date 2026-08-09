@@ -212,6 +212,8 @@
     "masked": "****",
     "appliedTo": "Applied To",
     "notApplied": "Not applied to any agent",
+    "sync": "Sync",
+    "syncTooltip": "Re-apply to update configuration",
     "transportTypes": {
       "stdio": "Standard I/O",
       "sse": "Server-Sent Events",
@@ -245,6 +247,37 @@
       "synced": "Synced: {{count}}",
       "deleted": "Removed: {{count}}",
       "noIssues": "No issues found"
+    },
+    "testStatus": "Test Status",
+    "test": "Test",
+    "testing": "Testing...",
+    "debug": "Debug",
+    "tools": "Tools",
+    "prompts": "Prompts",
+    "noTools": "No tools available",
+    "noPrompts": "No prompts available",
+    "batchTest": "Batch Test",
+    "batchTesting": "Batch Testing",
+    "batchPassed": "Passed",
+    "batchFailed": "Failed",
+    "batchComplete": "Batch Test Complete",
+    "statusLabels": {
+      "untested": "Untested",
+      "passed": "Passed",
+      "failed": "Failed",
+      "config_changed": "Config Changed"
+    },
+    "debugPanel": {
+      "title": "Debug Panel",
+      "retest": "Retest Connection",
+      "cannotCall": "Connection must pass test before calling tools.",
+      "selectTool": "Select a tool to call",
+      "inputSchema": "Input Schema",
+      "parameters": "Parameters (JSON)",
+      "execute": "Execute",
+      "calling": "Calling...",
+      "result": "Result",
+      "error": "Error"
     }
   },
   "apply": {
@@ -353,6 +386,30 @@
     "searchSkills": "Search skills...",
     "brokenSymlink": "Symlink target not found",
     "showMore": "Show {{count}} more",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "mcps": "MCP Servers",
+    "mcpCount": "{{count}} MCP server",
+    "mcpCountPlural": "{{count}} MCP servers",
+    "applyMcp": "Apply MCP",
+    "noMcps": "No MCP servers applied to this project",
+    "availableMcps": "Available MCP Servers"
+  },
+  "mcp": {
+    "applySuccess": "MCP \"{{name}}\" applied to agent \"{{agent}}\"",
+    "applyFailed": "Failed to apply MCP: {{error}}",
+    "unapplySuccess": "MCP \"{{name}}\" removed from agent \"{{agent}}\"",
+    "unapplyFailed": "Failed to remove MCP: {{error}}",
+    "unapplyAllSuccess": "All MCPs removed from agent \"{{agent}}\"",
+    "notFound": "MCP not found: {{name}}",
+    "agentNotFound": "Agent not found: {{agent}}",
+    "noMcpSupport": "Agent does not support MCP configuration",
+    "outOfSync": "Out of sync",
+    "healthy": "Healthy",
+    "syncAll": "Sync All",
+    "applyAll": "Apply All",
+    "secretStored": "Secret stored securely",
+    "secretDeleted": "Secret deleted",
+    "keychainUnavailable": "Keychain is unavailable. Allow storing secrets in plaintext in the database?",
+    "secretEnvVar": "Secret environment variable"
   }
 }

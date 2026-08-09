@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
-import type { McpServer, CreateMcpInput, UpdateMcpInput, McpListFilter, McpTransport } from './types.js';
+import type { McpServer, CreateMcpInput, UpdateMcpInput, McpListFilter, McpTransport, McpTestStatus, McpTestResult, McpTool, McpPrompt } from './types.js';
+import { computeConfigHash } from './config-hash.js';
 
 interface McpRow {
   id: string;
@@ -11,6 +12,10 @@ interface McpRow {
   args_json: string | null;
   env_json: string | null;
   description: string | null;
+  test_status: string;
+  test_error: string | null;
+  tested_at: string | null;
+  config_hash: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +31,9 @@ function rowToMcp(row: McpRow, tags: string[]): McpServer {
     env: row.env_json ? JSON.parse(row.env_json) as Record<string, string> : {},
     description: row.description,
     tags,
+    testStatus: (row.test_status || 'untested') as McpTestStatus,
+    testError: row.test_error,
+    testedAt: row.tested_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -88,7 +96,47 @@ export function listMcps(db: Database.Database, filter?: McpListFilter): McpServ
     rows = db.prepare('SELECT * FROM mcp ORDER BY name').all() as McpRow[];
   }
 
-  return rows.map((row) => rowToMcp(row, getTagsForMcp(db, row.id)));
+  const appliedMcps = db
+    .prepare(
+      `SELECT pra.resource_id, pra.agent_id, pra.applied_config_hash,
+              m.config_hash, a.name as agent_name
+       FROM resource_agent pra
+       JOIN mcp m ON m.id = pra.resource_id
+       JOIN agent a ON a.id = pra.agent_id
+       WHERE pra.resource_type = 'mcp'`,
+    )
+    .all() as {
+    resource_id: string;
+    agent_id: string;
+    applied_config_hash: string | null;
+    config_hash: string | null;
+    agent_name: string;
+  }[];
+
+  const appliedMap = new Map<string, { agents: string[]; outOfSync: boolean }>();
+  for (const applied of appliedMcps) {
+    const existing = appliedMap.get(applied.resource_id);
+    const isOutOfSync = !!(applied.applied_config_hash && applied.config_hash && applied.applied_config_hash !== applied.config_hash);
+
+    if (existing) {
+      existing.agents.push(applied.agent_name);
+      if (isOutOfSync) existing.outOfSync = true;
+    } else {
+      appliedMap.set(applied.resource_id, {
+        agents: [applied.agent_name],
+        outOfSync: isOutOfSync,
+      });
+    }
+  }
+
+  return rows.map((row) => {
+    const mcp = rowToMcp(row, getTagsForMcp(db, row.id));
+    const applied = appliedMap.get(row.id);
+    return {
+      ...mcp,
+      applied: applied ? { agents: applied.agents, outOfSync: applied.outOfSync } : null,
+    };
+  });
 }
 
 export function getMcp(db: Database.Database, id: string): McpServer | null {
@@ -99,19 +147,29 @@ export function getMcp(db: Database.Database, id: string): McpServer | null {
 export function createMcp(db: Database.Database, input: CreateMcpInput): McpServer {
   const id = input.id ?? randomUUID();
   const now = new Date().toISOString();
+  const argsJson = input.args ? JSON.stringify(input.args) : null;
+  const envJson = input.env ? JSON.stringify(input.env) : null;
+  const configHash = computeConfigHash({
+    transport: input.transport ?? null,
+    command: input.command ?? null,
+    url: input.url ?? null,
+    argsJson,
+    envJson,
+  });
 
   db.prepare(
-    `INSERT INTO mcp (id, name, transport, command, url, args_json, env_json, description, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO mcp (id, name, transport, command, url, args_json, env_json, description, test_status, config_hash, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'untested', ?, ?, ?)`,
   ).run(
     id,
     input.name,
     input.transport ?? null,
     input.command ?? null,
     input.url ?? null,
-    input.args ? JSON.stringify(input.args) : null,
-    input.env ? JSON.stringify(input.env) : null,
+    argsJson,
+    envJson,
     input.description ?? null,
+    configHash,
     now,
     now,
   );
@@ -135,6 +193,12 @@ export function updateMcp(
   const fields: string[] = [];
   const values: unknown[] = [];
 
+  const newTransport = input.transport !== undefined ? input.transport : existing.transport;
+  const newCommand = input.command !== undefined ? input.command : existing.command;
+  const newUrl = input.url !== undefined ? input.url : existing.url;
+  const newArgsJson = input.args !== undefined ? JSON.stringify(input.args) : (existing.args.length > 0 ? JSON.stringify(existing.args) : null);
+  const newEnvJson = input.env !== undefined ? JSON.stringify(input.env) : (Object.keys(existing.env).length > 0 ? JSON.stringify(existing.env) : null);
+
   if (input.name !== undefined) {
     fields.push('name = ?');
     values.push(input.name);
@@ -153,11 +217,11 @@ export function updateMcp(
   }
   if (input.args !== undefined) {
     fields.push('args_json = ?');
-    values.push(JSON.stringify(input.args));
+    values.push(newArgsJson);
   }
   if (input.env !== undefined) {
     fields.push('env_json = ?');
-    values.push(JSON.stringify(input.env));
+    values.push(newEnvJson);
   }
   if (input.description !== undefined) {
     fields.push('description = ?');
@@ -165,6 +229,23 @@ export function updateMcp(
   }
 
   if (fields.length === 0) return existing;
+
+  const newHash = computeConfigHash({
+    transport: newTransport,
+    command: newCommand,
+    url: newUrl,
+    argsJson: newArgsJson,
+    envJson: newEnvJson,
+  });
+
+  // Read current config_hash from DB row directly
+  const row = db.prepare('SELECT config_hash, test_status FROM mcp WHERE id = ?').get(id) as { config_hash: string | null; test_status: string } | undefined;
+  if (row && row.config_hash && row.config_hash !== newHash && (row.test_status === 'passed' || row.test_status === 'failed')) {
+    fields.push('test_status = ?');
+    values.push('config_changed');
+  }
+  fields.push('config_hash = ?');
+  values.push(newHash);
 
   fields.push('updated_at = ?');
   values.push(now);
@@ -179,6 +260,9 @@ export function deleteMcp(db: Database.Database, id: string): boolean {
   if (!mcp) return false;
 
   db.prepare("DELETE FROM resource_tag WHERE resource_type = 'mcp' AND resource_id = ?").run(id);
+  db.prepare('DELETE FROM mcp_test_result WHERE mcp_id = ?').run(id);
+  db.prepare('DELETE FROM mcp_tool WHERE mcp_id = ?').run(id);
+  db.prepare('DELETE FROM mcp_prompt WHERE mcp_id = ?').run(id);
   db.prepare('DELETE FROM mcp WHERE id = ?').run(id);
   return true;
 }
@@ -221,4 +305,87 @@ export function setMcpTags(db: Database.Database, mcpId: string, tagNames: strin
 
   applyMcpTags(db, mcpId, tagNames);
   return getMcp(db, mcpId)!;
+}
+
+// Test result CRUD
+
+export function saveTestResult(db: Database.Database, result: McpTestResult): void {
+  db.prepare(
+    `INSERT OR REPLACE INTO mcp_test_result (mcp_id, status, error_message, tools_count, prompts_count, tested_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(result.mcpId, result.status, result.errorMessage, result.toolsCount, result.promptsCount, result.testedAt);
+
+  db.prepare(
+    'UPDATE mcp SET test_status = ?, test_error = ?, tested_at = ? WHERE id = ?',
+  ).run(result.status, result.errorMessage, result.testedAt, result.mcpId);
+}
+
+export function getTestResult(db: Database.Database, mcpId: string): McpTestResult | null {
+  const row = db.prepare('SELECT * FROM mcp_test_result WHERE mcp_id = ?').get(mcpId) as {
+    mcp_id: string;
+    status: string;
+    error_message: string | null;
+    tools_count: number;
+    prompts_count: number;
+    tested_at: string;
+  } | undefined;
+  if (!row) return null;
+  return {
+    mcpId: row.mcp_id,
+    status: row.status as 'passed' | 'failed',
+    errorMessage: row.error_message,
+    toolsCount: row.tools_count,
+    promptsCount: row.prompts_count,
+    testedAt: row.tested_at,
+  };
+}
+
+export function saveTools(db: Database.Database, mcpId: string, tools: McpTool[]): void {
+  db.prepare('DELETE FROM mcp_tool WHERE mcp_id = ?').run(mcpId);
+  for (const tool of tools) {
+    db.prepare(
+      'INSERT INTO mcp_tool (id, mcp_id, name, description, input_schema) VALUES (?, ?, ?, ?, ?)',
+    ).run(tool.id, tool.mcpId, tool.name, tool.description, tool.inputSchema);
+  }
+}
+
+export function getTools(db: Database.Database, mcpId: string): McpTool[] {
+  const rows = db.prepare('SELECT * FROM mcp_tool WHERE mcp_id = ? ORDER BY name').all(mcpId) as Array<{
+    id: string;
+    mcp_id: string;
+    name: string;
+    description: string | null;
+    input_schema: string | null;
+  }>;
+  return rows.map((r) => ({
+    id: r.id,
+    mcpId: r.mcp_id,
+    name: r.name,
+    description: r.description,
+    inputSchema: r.input_schema,
+  }));
+}
+
+export function savePrompts(db: Database.Database, mcpId: string, prompts: McpPrompt[]): void {
+  db.prepare('DELETE FROM mcp_prompt WHERE mcp_id = ?').run(mcpId);
+  for (const prompt of prompts) {
+    db.prepare(
+      'INSERT INTO mcp_prompt (id, mcp_id, name, description) VALUES (?, ?, ?, ?)',
+    ).run(prompt.id, prompt.mcpId, prompt.name, prompt.description);
+  }
+}
+
+export function getPrompts(db: Database.Database, mcpId: string): McpPrompt[] {
+  const rows = db.prepare('SELECT * FROM mcp_prompt WHERE mcp_id = ? ORDER BY name').all(mcpId) as Array<{
+    id: string;
+    mcp_id: string;
+    name: string;
+    description: string | null;
+  }>;
+  return rows.map((r) => ({
+    id: r.id,
+    mcpId: r.mcp_id,
+    name: r.name,
+    description: r.description,
+  }));
 }

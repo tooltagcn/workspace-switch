@@ -212,6 +212,8 @@
     "masked": "****",
     "appliedTo": "已应用于",
     "notApplied": "未应用到任何代理",
+    "sync": "同步",
+    "syncTooltip": "重新应用以更新配置",
     "transportTypes": {
       "stdio": "标准 I/O",
       "sse": "服务器推送事件",
@@ -245,6 +247,37 @@
       "synced": "已同步：{{count}}",
       "deleted": "已移除：{{count}}",
       "noIssues": "未发现问题"
+    },
+    "testStatus": "测试状态",
+    "test": "测试",
+    "testing": "测试中...",
+    "debug": "调试",
+    "tools": "工具",
+    "prompts": "提示词",
+    "noTools": "无可用工具",
+    "noPrompts": "无可用提示词",
+    "batchTest": "批量测试",
+    "batchTesting": "批量测试中",
+    "batchPassed": "通过",
+    "batchFailed": "失败",
+    "batchComplete": "批量测试完成",
+    "statusLabels": {
+      "untested": "未测试",
+      "passed": "通过",
+      "failed": "失败",
+      "config_changed": "配置已变更"
+    },
+    "debugPanel": {
+      "title": "调试面板",
+      "retest": "重新测试连接",
+      "cannotCall": "连接测试通过后才能调用工具。",
+      "selectTool": "选择一个工具进行调用",
+      "inputSchema": "输入模式",
+      "parameters": "参数 (JSON)",
+      "execute": "执行",
+      "calling": "调用中...",
+      "result": "结果",
+      "error": "错误"
     }
   },
   "apply": {
@@ -353,6 +386,30 @@
     "searchSkills": "搜索技能...",
     "brokenSymlink": "符号链接目标未找到",
     "showMore": "展开其余 {{count}} 个",
-    "showLess": "收起"
+    "showLess": "收起",
+    "mcps": "MCP 服务器",
+    "mcpCount": "{{count}} 个 MCP 服务器",
+    "mcpCountPlural": "{{count}} 个 MCP 服务器",
+    "applyMcp": "应用 MCP",
+    "noMcps": "该项目暂无已应用的 MCP 服务器",
+    "availableMcps": "可用 MCP 服务器"
+  },
+  "mcp": {
+    "applySuccess": "MCP \"{{name}}\" 已应用到代理 \"{{agent}}\"",
+    "applyFailed": "应用 MCP 失败：{{error}}",
+    "unapplySuccess": "MCP \"{{name}}\" 已从代理 \"{{agent}}\" 移除",
+    "unapplyFailed": "移除 MCP 失败：{{error}}",
+    "unapplyAllSuccess": "所有 MCP 已从代理 \"{{agent}}\" 移除",
+    "notFound": "MCP 未找到：{{name}}",
+    "agentNotFound": "代理未找到：{{agent}}",
+    "noMcpSupport": "代理不支持 MCP 配置",
+    "outOfSync": "不同步",
+    "healthy": "正常",
+    "syncAll": "全部同步",
+    "applyAll": "全部应用",
+    "secretStored": "密钥已安全存储",
+    "secretDeleted": "密钥已删除",
+    "keychainUnavailable": "钥匙串不可用。是否允许以明文形式在数据库中存储密钥？",
+    "secretEnvVar": "密钥环境变量"
   }
 }

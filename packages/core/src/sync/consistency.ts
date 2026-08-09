@@ -13,6 +13,12 @@ export interface ConsistencyItem {
   action: 'sync' | 'delete';
   id?: string;
   sourcePath?: string;
+  outOfSync?: boolean;
+  agentId?: string;
+  agentName?: string;
+  orphaned?: boolean;
+  missingFile?: boolean;
+  targetPath?: string;
 }
 
 export interface ConsistencyResult {
@@ -135,6 +141,74 @@ export function checkMcpConsistency(
         location: 'database',
         action: 'delete',
         id: mcp.id,
+      });
+    }
+  }
+
+  const appliedMcps = db
+    .prepare(
+      `SELECT pra.resource_id, pra.agent_id, pra.applied_config_hash, pra.target_path,
+              m.name as mcp_name, m.config_hash, a.name as agent_name
+       FROM resource_agent pra
+       LEFT JOIN mcp m ON m.id = pra.resource_id
+       LEFT JOIN agent a ON a.id = pra.agent_id
+       WHERE pra.resource_type = 'mcp'`,
+    )
+    .all() as {
+    resource_id: string;
+    agent_id: string;
+    applied_config_hash: string | null;
+    target_path: string | null;
+    mcp_name: string | null;
+    config_hash: string | null;
+    agent_name: string | null;
+  }[];
+
+  for (const applied of appliedMcps) {
+    if (!applied.mcp_name) {
+      items.push({
+        name: `orphaned-${applied.resource_id}`,
+        location: 'database',
+        action: 'delete',
+        orphaned: true,
+        agentId: applied.agent_id,
+        agentName: applied.agent_name || 'Unknown',
+      });
+      continue;
+    }
+
+    if (!applied.agent_name) {
+      items.push({
+        name: applied.mcp_name,
+        location: 'database',
+        action: 'delete',
+        orphaned: true,
+        agentId: applied.agent_id,
+        agentName: 'Deleted Agent',
+      });
+      continue;
+    }
+
+    if (applied.target_path && !fs.existsSync(applied.target_path)) {
+      items.push({
+        name: applied.mcp_name,
+        location: 'database',
+        action: 'sync',
+        missingFile: true,
+        agentId: applied.agent_id,
+        agentName: applied.agent_name,
+        targetPath: applied.target_path,
+      });
+    }
+
+    if (applied.applied_config_hash && applied.config_hash && applied.applied_config_hash !== applied.config_hash) {
+      items.push({
+        name: applied.mcp_name,
+        location: 'database',
+        action: 'sync',
+        outOfSync: true,
+        agentId: applied.agent_id,
+        agentName: applied.agent_name,
       });
     }
   }

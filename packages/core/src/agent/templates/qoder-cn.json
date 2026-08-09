@@ -2,9 +2,19 @@
   "id": "qoder-cn",
   "name": "Qoder CN",
   "configDirName": ".qoder-cn",
-  "mcpFile": null,
-  "mcpField": null,
+  "mcpFile": "settings.json",
+  "mcpField": "mcpServers",
   "skillDir": "skills",
   "icon": "terminal",
-  "targetFormat": null
+  "targetFormat": "json-map",
+  "entryFormat": {
+    "format": "json-map",
+    "envTransform": "${env:VAR}",
+    "fieldMapping": {
+      "command": "command",
+      "args": "args",
+      "url": "url",
+      "env": "env"
+    }
+  }
 }

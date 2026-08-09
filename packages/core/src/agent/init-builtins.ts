@@ -13,6 +13,12 @@ export function initBuiltinAgents(db: Database.Database, userHome: string): void
       if (template.skillDir && !existing.skillDir) {
         updates.skillDir = template.skillDir;
       }
+      if (template.mcpFile && !existing.mcpFile) {
+        updates.mcpFile = template.mcpFile;
+      }
+      if (template.mcpField && !existing.mcpField) {
+        updates.mcpField = template.mcpField;
+      }
       if (!existing.templateId) {
         updates.templateId = template.id;
       }

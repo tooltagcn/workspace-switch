@@ -708,6 +708,17 @@ export default function Mcps() {
   const [bulkAction, setBulkAction] = useState<'tag' | 'apply' | 'unapply' | 'delete' | null>(null);
   const [bulkApplyResources, setBulkApplyResources] = useState<ApplyResource[] | null>(null);
   const [bulkUnapplyResources, setBulkUnapplyResources] = useState<ApplyResource[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredMcps = mcps.filter((m) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return m.name.toLowerCase().includes(q)
+      || (m.description ?? '').toLowerCase().includes(q)
+      || m.tags.some((tag) => tag.toLowerCase().includes(q))
+      || (m.command ?? '').toLowerCase().includes(q)
+      || (m.applied?.agents ?? []).some((a) => a.toLowerCase().includes(q));
+  });
 
   const statusColor: Record<string, string> = {
     untested: 'bg-gray-100 text-gray-600',
@@ -726,10 +737,10 @@ export default function Mcps() {
   };
 
   const toggleBulkAll = () => {
-    if (bulkSelected.size === mcps.length) {
+    if (bulkSelected.size === filteredMcps.length) {
       setBulkSelected(new Set());
     } else {
-      setBulkSelected(new Set(mcps.map((m) => m.id)));
+      setBulkSelected(new Set(filteredMcps.map((m) => m.id)));
     }
   };
 
@@ -833,9 +844,21 @@ export default function Mcps() {
         </div>
       )}
 
+      <div className="flex gap-4 mb-4">
+        <div className="flex items-center gap-2 flex-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('common.search') + '...'}
+            className="w-full max-w-sm px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
       <div className="flex gap-6">
         <div className="flex-1">
-          {mcps.length === 0 ? (
+          {filteredMcps.length === 0 ? (
             <p className="text-gray-600">{t('common.noData')}</p>
           ) : (
             <table className="w-full bg-white rounded-lg shadow">
@@ -844,7 +867,7 @@ export default function Mcps() {
                   <th className="px-4 py-2 text-left w-8">
                     <input
                       type="checkbox"
-                      checked={bulkSelected.size === mcps.length && mcps.length > 0}
+                      checked={bulkSelected.size === filteredMcps.length && filteredMcps.length > 0}
                       onChange={toggleBulkAll}
                     />
                   </th>
@@ -858,7 +881,7 @@ export default function Mcps() {
                 </tr>
               </thead>
               <tbody>
-                {mcps.map((mcp) => (
+                {filteredMcps.map((mcp) => (
                   <tr
                     key={mcp.id}
                     className={`border-t cursor-pointer hover:bg-gray-50 ${selectedMcp?.id === mcp.id ? 'bg-blue-50' : ''}`}
@@ -886,11 +909,13 @@ export default function Mcps() {
                       )}
                     </td>
                     <td className="px-4 py-2">
-                      {mcp.applied ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600">
-                            {mcp.applied.agents.join(', ')}
-                          </span>
+                      {mcp.applied && mcp.applied.agents.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {mcp.applied.agents.map((agentName) => (
+                            <span key={agentName} className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                              {agentName}
+                            </span>
+                          ))}
                           {mcp.applied.outOfSync && (
                             <button
                               onClick={(e) => {
@@ -1000,6 +1025,7 @@ export default function Mcps() {
 
       {bulkUnapplyResources && (
         <UnapplyFromAgentDialog
+          resourceType="mcp"
           resources={bulkUnapplyResources}
           onClose={() => {
             setBulkUnapplyResources(null);

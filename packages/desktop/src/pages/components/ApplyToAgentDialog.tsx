@@ -25,17 +25,17 @@ type Step = 'selectAgents' | 'preview' | 'applying' | 'results';
 
 export default function ApplyToAgentDialog({ resourceType, resources, onClose }: ApplyToAgentDialogProps) {
   const { t } = useTranslation();
-  const { agents, loading, error, fetchAgents } = useAgentStore();
+  const { agents, templates, loading, error, fetchAgents, fetchTemplates } = useAgentStore();
   const [step, setStep] = useState<Step>('selectAgents');
   const [selectedAgentIds, setSelectedAgentIds] = useState<Set<string>>(new Set());
   const [appliedAgentIds, setAppliedAgentIds] = useState<Set<string>>(new Set());
-  const [diffPreview, setDiffPreview] = useState<string | null>(null);
+  const [diffPreviews, setDiffPreviews] = useState<Map<string, string>>(new Map());
   const [results, setResults] = useState<ApplyResult[]>([]);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const init = async () => {
-      await fetchAgents();
+      await Promise.all([fetchAgents(), fetchTemplates()]);
       if (resources.length === 0) return;
       try {
         const fetchApplied = (id: string) =>
@@ -56,13 +56,13 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
         }
 
         setAppliedAgentIds(intersection);
-        setSelectedAgentIds(new Set(intersection));
+        setSelectedAgentIds(new Set());
       } catch {
         // ignore
       }
     };
     init();
-  }, [fetchAgents, resources, resourceType]);
+  }, [fetchAgents, fetchTemplates, resources, resourceType]);
 
   const toggleAgent = (id: string) => {
     if (appliedAgentIds.has(id)) return;
@@ -74,24 +74,27 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
   };
 
   const selectAll = () => {
-    const nonApplied = agents.filter((a) => !appliedAgentIds.has(a.id));
+    const nonApplied = compatibleAgents.filter((a) => !appliedAgentIds.has(a.id));
     const allNonAppliedSelected = nonApplied.every((a) => selectedAgentIds.has(a.id));
     if (allNonAppliedSelected) {
       setSelectedAgentIds(new Set(appliedAgentIds));
     } else {
-      setSelectedAgentIds(new Set(agents.map((a) => a.id)));
+      setSelectedAgentIds(new Set(compatibleAgents.map((a) => a.id)));
     }
   };
 
   const loadDiffPreview = async () => {
     if (resourceType !== 'mcp' || selectedAgentIds.size === 0 || resources.length === 0) return;
-    const firstAgentId = Array.from(selectedAgentIds)[0];
-    try {
-      const preview = await api.previewMcpApply(resources[0].id, firstAgentId);
-      setDiffPreview(preview.diff);
-    } catch {
-      setDiffPreview(null);
+    const previews = new Map<string, string>();
+    for (const agentId of selectedAgentIds) {
+      try {
+        const preview = await api.previewMcpApply(resources[0].id, agentId);
+        previews.set(agentId, preview.diff);
+      } catch {
+        // skip agents that don't support preview
+      }
     }
+    setDiffPreviews(previews);
   };
 
   const goToPreview = () => {
@@ -104,7 +107,7 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
   const handleApply = async () => {
     setStep('applying');
     setProgress(0);
-    const agentList = agents.filter((a) => selectedAgentIds.has(a.id));
+    const agentList = compatibleAgents.filter((a) => selectedAgentIds.has(a.id));
     const applyResults: ApplyResult[] = [];
     const totalSteps = agentList.length;
 
@@ -140,6 +143,21 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
     ? resources[0].name
     : `${resources.length} ${t('skill.title')}`;
 
+  const compatibleAgents = agents.filter((a) => {
+    const template = templates.find((t) => t.id === a.templateId || t.configDirName === a.configDirName);
+    const mcpFile = a.mcpFile ?? template?.mcpFile ?? null;
+    const mcpField = a.mcpField ?? template?.mcpField ?? null;
+    const skillDir = a.skillDir ?? template?.skillDir ?? null;
+    if (resourceType === 'mcp') {
+      if (mcpFile && mcpField) return true;
+      if (!template && !a.builtin) return true;
+      return false;
+    }
+    if (skillDir) return true;
+    if (!template && !a.builtin) return true;
+    return false;
+  });
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
@@ -167,7 +185,7 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
                 <h4 className="font-medium">{t('apply.selectAgents')}</h4>
                 <button onClick={selectAll} className="text-sm text-blue-600 hover:text-blue-800">
                   {(() => {
-                    const nonApplied = agents.filter((a) => !appliedAgentIds.has(a.id));
+                    const nonApplied = compatibleAgents.filter((a) => !appliedAgentIds.has(a.id));
                     return nonApplied.every((a) => selectedAgentIds.has(a.id))
                       ? t('common.deselectAll')
                       : t('common.selectAll');
@@ -178,11 +196,15 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
                 <p className="text-gray-500 text-sm">{t('common.loading')}</p>
               ) : error ? (
                 <p className="text-red-500 text-sm">{error}</p>
-              ) : agents.length === 0 ? (
-                <p className="text-gray-500 text-sm">{t('common.noData')}</p>
+              ) : compatibleAgents.length === 0 ? (
+                <p className="text-gray-500 text-sm">
+                  {resourceType === 'mcp'
+                    ? 'No agents with MCP support found'
+                    : 'No agents with skill support found'}
+                </p>
               ) : (
                 <div className="space-y-2">
-                  {agents.map((agent) => {
+                  {compatibleAgents.map((agent) => {
                     const isApplied = appliedAgentIds.has(agent.id);
                     return (
                       <label
@@ -221,10 +243,21 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
           {step === 'preview' && (
             <div>
               <h4 className="font-medium mb-3">{t('apply.diffPreview')}</h4>
-              {resourceType === 'mcp' && diffPreview ? (
-                <pre className="bg-gray-50 p-4 rounded-lg text-xs font-mono overflow-auto max-h-[300px] whitespace-pre-wrap">
-                  {diffPreview}
-                </pre>
+              {resourceType === 'mcp' && diffPreviews.size > 0 ? (
+                <div className="space-y-4">
+                  {compatibleAgents.filter((a) => selectedAgentIds.has(a.id)).map((a) => {
+                    const diff = diffPreviews.get(a.id);
+                    if (!diff) return null;
+                    return (
+                      <div key={a.id}>
+                        <h5 className="text-sm font-medium mb-1">{a.name}</h5>
+                        <pre className="bg-gray-50 p-4 rounded-lg text-xs font-mono overflow-auto max-h-[300px] whitespace-pre-wrap">
+                          {diff}
+                        </pre>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600">
@@ -240,7 +273,7 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
                     </ul>
                   )}
                   <ul className="text-sm text-gray-500">
-                    {agents.filter((a) => selectedAgentIds.has(a.id)).map((a) => (
+                    {compatibleAgents.filter((a) => selectedAgentIds.has(a.id)).map((a) => (
                       <li key={a.id} className="py-1">- {a.name}</li>
                     ))}
                   </ul>

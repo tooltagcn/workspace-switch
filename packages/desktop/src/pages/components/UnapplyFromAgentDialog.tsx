@@ -5,6 +5,7 @@ import { api } from '../../lib/ipc.js';
 import type { ApplyResource } from './ApplyToAgentDialog.js';
 
 interface UnapplyFromAgentDialogProps {
+  resourceType: 'skill' | 'mcp';
   resources: ApplyResource[];
   onClose: () => void;
 }
@@ -18,7 +19,7 @@ interface UnapplyResult {
 
 type Step = 'selectAgents' | 'confirm' | 'applying' | 'results';
 
-export default function UnapplyFromAgentDialog({ resources, onClose }: UnapplyFromAgentDialogProps) {
+export default function UnapplyFromAgentDialog({ resourceType, resources, onClose }: UnapplyFromAgentDialogProps) {
   const { t } = useTranslation();
   const { agents, loading, error, fetchAgents } = useAgentStore();
   const [step, setStep] = useState<Step>('selectAgents');
@@ -33,8 +34,13 @@ export default function UnapplyFromAgentDialog({ resources, onClose }: UnapplyFr
       await fetchAgents();
       if (resources.length === 0) return;
       try {
+        const fetchApplied = (id: string) =>
+          resourceType === 'skill'
+            ? api.getAppliedAgentsForSkill(id)
+            : api.getAppliedAgentsForMcp(id);
+
         const allApplied = await Promise.all(
-          resources.map((r) => api.getAppliedAgentsForSkill(r.id)),
+          resources.map((r) => fetchApplied(r.id)),
         );
 
         const agentSkillMap = new Map<string, string[]>();
@@ -89,7 +95,11 @@ export default function UnapplyFromAgentDialog({ resources, onClose }: UnapplyFr
 
       for (const resource of resources) {
         try {
-          await api.unapplySkill(resource.id, agent.id);
+          if (resourceType === 'skill') {
+            await api.unapplySkill(resource.id, agent.id);
+          } else {
+            await api.unapplyMcp(resource.id, agent.id);
+          }
         } catch (err) {
           agentSuccess = false;
           agentError = `${resource.name}: ${String(err)}`;

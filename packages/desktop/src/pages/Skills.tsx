@@ -597,8 +597,7 @@ export default function Skills() {
   const [showReverseScan, setShowReverseScan] = useState(false);
   const [showDoctor, setShowDoctor] = useState(false);
   const [showApplyDialog, setShowApplyDialog] = useState(false);
-  const [filterTag, setFilterTag] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'updatedAt'>('name');
+  const [searchQuery, setSearchQuery] = useState('');
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [bulkAction, setBulkAction] = useState<'tag' | 'apply' | 'unapply' | 'delete' | null>(null);
@@ -680,11 +679,13 @@ export default function Skills() {
     loadAppliedAgents();
   }, [skills]);
 
-  const allTags = Array.from(new Set(skills.flatMap((s) => s.tags)));
-
   const filtered = skills
-    .filter((s) => !filterTag || s.tags.includes(filterTag))
-    .sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name) : b.updatedAt.localeCompare(a.updatedAt));
+    .filter((s) => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return s.name.toLowerCase().includes(q) || (s.description?.toLowerCase().includes(q) ?? false);
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   if (loading) return <div>{t('common.loading')}</div>;
 
@@ -720,31 +721,14 @@ export default function Skills() {
         </div>
       </div>
 
-      <div className="flex gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">{t('common.filter')}:</span>
-          <select
-            value={filterTag}
-            onChange={(e) => setFilterTag(e.target.value)}
-            className="px-3 py-1 text-sm border rounded-lg"
-          >
-            <option value="">{t('common.none')}</option>
-            {allTags.map((tag) => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">{t('common.sort')}:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'updatedAt')}
-            className="px-3 py-1 text-sm border rounded-lg"
-          >
-            <option value="name">{t('skill.name')}</option>
-            <option value="updatedAt">{t('common.status')}</option>
-          </select>
-        </div>
+      <div className="mb-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t('common.search')}
+          className="px-3 py-2 text-sm border rounded-lg w-72 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
       </div>
 
       <div className="flex gap-6">
@@ -859,6 +843,7 @@ export default function Skills() {
 
       {bulkUnapplyResources && (
         <UnapplyFromAgentDialog
+          resourceType="skill"
           resources={bulkUnapplyResources}
           onClose={() => {
             setBulkUnapplyResources(null);

@@ -1,0 +1,10 @@
+{
+  "id": "droid",
+  "name": "Droid",
+  "configDirName": ".droid",
+  "mcpFile": "config.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "droid",
+  "targetFormat": "json-map"
+}

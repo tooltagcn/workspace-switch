@@ -1,0 +1,10 @@
+{
+  "id": "opencode",
+  "name": "OpenCode",
+  "configDirName": ".opencode",
+  "mcpFile": "config.json",
+  "mcpField": "mcpServers",
+  "skillDir": "commands",
+  "icon": "opencode",
+  "targetFormat": "json-map"
+}

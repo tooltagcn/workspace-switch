@@ -1,0 +1,400 @@
+import { ipcMain } from 'electron';
+import {
+  listAgents,
+  listAllAgents,
+  getAgent,
+  createAgent,
+  updateAgent,
+  deleteAgent,
+  listSkills,
+  getSkill,
+  createSkill,
+  updateSkill,
+  deleteSkill,
+  addTag as addSkillTag,
+  removeTag as removeSkillTag,
+  listMcps,
+  getMcp,
+  createMcp,
+  updateMcp,
+  deleteMcp,
+  listProviders,
+  getProvider,
+  createProvider,
+  updateProvider,
+  deleteProvider,
+  setApiKey,
+  getApiKey,
+  isKeytarSupported,
+  listTags,
+  createTag,
+  renameTag,
+  deleteTag,
+  scanSkillsFromAgents,
+  scanMcpsFromAgents,
+  scanHomeHiddenFolders,
+  scanSkillsFromFolders,
+  scanMcpsFromFolders,
+  importScannedSkills,
+  importScannedMcps,
+  applyMcpToAgent,
+  previewMcpApply,
+  syncSkillToWorkspace,
+  unsyncSkillFromWorkspace,
+  getAppliedAgentsForSkill,
+  getAppliedAgentsForMcp,
+  loadTemplates,
+  buildIndex,
+  searchAll,
+  getDatabase,
+  closeDatabase,
+  initBuiltinAgents,
+  initWorkspace,
+  verifyWorkspaceIntegrity,
+  listProjects,
+  getProject,
+  getProjectWithAgents,
+  createProject,
+  updateProject,
+  deleteProject,
+  getEnabledAgentsForProject,
+  toggleAgentForProject,
+  getProjectSkillList,
+  syncProjectSkillToWorkspace,
+  unsyncProjectSkillFromWorkspace,
+  listSkills as listAllSkills,
+  checkSkillConsistency,
+  fixSkillConsistency,
+  checkMcpConsistency,
+  fixMcpConsistency,
+} from '@ws/core';
+import { darwinSymlink } from '@ws/core';
+import path from 'node:path';
+
+let db: ReturnType<typeof getDatabase> | null = null;
+let dataDir: string;
+
+function getDb() {
+  if (!db) {
+    try {
+      dataDir = path.join(process.env.HOME ?? '~', '.workspace_switch');
+      console.log('[WS] Initializing workspace at:', dataDir);
+      initWorkspace(dataDir);
+      db = getDatabase(dataDir);
+      console.log('[WS] Database opened');
+      initBuiltinAgents(db, process.env.HOME ?? '~');
+      console.log('[WS] Built-in agents initialized');
+      verifyWorkspaceIntegrity(dataDir);
+      console.log('[WS] Workspace integrity verified');
+    } catch (err) {
+      console.error('[WS] Database initialization failed:', err);
+      throw err;
+    }
+  }
+  return db;
+}
+
+function getDataDir() {
+  getDb();
+  return dataDir;
+}
+
+export function registerIpcHandlers(): void {
+  // Agent handlers
+  ipcMain.handle('agent:list', () => {
+    try { return listAgents(getDb()); } catch (e) { console.error('[WS] agent:list error:', e); throw e; }
+  });
+  ipcMain.handle('agent:listAll', () => {
+    try { return listAllAgents(getDb()); } catch (e) { console.error('[WS] agent:listAll error:', e); throw e; }
+  });
+  ipcMain.handle('agent:get', (_event, id: string) => {
+    try { return getAgent(getDb(), id); } catch (e) { console.error('[WS] agent:get error:', e); throw e; }
+  });
+  ipcMain.handle('agent:create', (_event, data) => {
+    try { return createAgent(getDb(), data); } catch (e) { console.error('[WS] agent:create error:', e); throw e; }
+  });
+  ipcMain.handle('agent:update', (_event, id: string, data) => {
+    try { return updateAgent(getDb(), id, data); } catch (e) { console.error('[WS] agent:update error:', e); throw e; }
+  });
+  ipcMain.handle('agent:delete', (_event, id: string) => {
+    try { return deleteAgent(getDb(), id); } catch (e) { console.error('[WS] agent:delete error:', e); throw e; }
+  });
+
+  // Skill handlers
+  ipcMain.handle('skill:list', () => {
+    try { return listSkills(getDb()); } catch (e) { console.error('[WS] skill:list error:', e); throw e; }
+  });
+  ipcMain.handle('skill:get', (_event, id: string) => getSkill(getDb(), id));
+  ipcMain.handle('skill:create', (_event, data) => createSkill(getDb(), data));
+  ipcMain.handle('skill:update', (_event, id: string, data) => updateSkill(getDb(), id, data));
+  ipcMain.handle('skill:delete', (_event, id: string) => deleteSkill(getDb(), id));
+  ipcMain.handle('skill:addTag', (_event, skillId: string, tag: string) => addSkillTag(getDb(), skillId, tag));
+  ipcMain.handle('skill:removeTag', (_event, skillId: string, tag: string) => removeSkillTag(getDb(), skillId, tag));
+
+  // Skill scan
+  ipcMain.handle('skill:scan', (_event, mode: string) => {
+    const d = getDb();
+    const templates = loadTemplates();
+    if (mode === 'home') {
+      const userHome = process.env.HOME ?? '~';
+      const folders = scanHomeHiddenFolders(userHome, templates);
+      return { skills: scanSkillsFromFolders(d, folders, templates), folders };
+    }
+    if (mode === 'full') {
+      const userHome = process.env.HOME ?? '~';
+      const folders = scanHomeHiddenFolders(userHome, templates);
+      const agentSkills = scanSkillsFromAgents(d, listAgents(d));
+      const folderSkills = scanSkillsFromFolders(d, folders, templates);
+      const seen = new Set<string>();
+      const merged = [...agentSkills];
+      for (const s of folderSkills) {
+        const key = `${s.name}:${s.agentId}`;
+        if (!seen.has(key)) { merged.push(s); seen.add(key); }
+      }
+      return { skills: merged, folders };
+    }
+    return { skills: scanSkillsFromAgents(d, listAgents(d)), folders: [] };
+  });
+
+  // Skill apply (sync to agent via symlink)
+  ipcMain.handle('skill:apply', (_event, skillId: string, agentId: string) => {
+    const d = getDb();
+    const agent = getAgent(d, agentId);
+    const skill = getSkill(d, skillId);
+    if (!agent || !skill) throw new Error('Agent or skill not found');
+    const platform = process.platform === 'darwin' ? darwinSymlink : darwinSymlink;
+    return syncSkillToWorkspace(d, agent, skill.name, getDataDir(), platform);
+  });
+
+  // Skill applied agents
+  ipcMain.handle('skill:appliedAgents', (_event, skillId: string) => {
+    return getAppliedAgentsForSkill(getDb(), skillId);
+  });
+
+  // Skill unapply (remove symlink from agent)
+  ipcMain.handle('skill:unapply', (_event, skillId: string, agentId: string) => {
+    const d = getDb();
+    const agent = getAgent(d, agentId);
+    const skill = getSkill(d, skillId);
+    if (!agent || !skill) throw new Error('Agent or skill not found');
+    const platform = process.platform === 'darwin' ? darwinSymlink : darwinSymlink;
+    return unsyncSkillFromWorkspace(d, agent, skill.name, platform);
+  });
+
+  // Skill import scanned
+  ipcMain.handle('skill:importScanned', (_event, skills: unknown[]) => {
+    return importScannedSkills(getDb(), skills as any, getDataDir());
+  });
+
+  // Skill consistency check (doctor)
+  ipcMain.handle('skill:doctor', () => {
+    return checkSkillConsistency(getDb(), getDataDir());
+  });
+  ipcMain.handle('skill:fixDoctor', () => {
+    return fixSkillConsistency(getDb(), getDataDir());
+  });
+
+  // MCP handlers
+  ipcMain.handle('mcp:list', () => listMcps(getDb()));
+  ipcMain.handle('mcp:get', (_event, id: string) => getMcp(getDb(), id));
+  ipcMain.handle('mcp:create', (_event, data) => createMcp(getDb(), data));
+  ipcMain.handle('mcp:update', (_event, id: string, data) => updateMcp(getDb(), id, data));
+  ipcMain.handle('mcp:delete', (_event, id: string) => deleteMcp(getDb(), id));
+
+  // MCP scan
+  ipcMain.handle('mcp:scan', (_event, mode: string) => {
+    const d = getDb();
+    const templates = loadTemplates();
+    if (mode === 'home') {
+      const userHome = process.env.HOME ?? '~';
+      const folders = scanHomeHiddenFolders(userHome, templates);
+      return { mcps: scanMcpsFromFolders(d, folders, templates), folders };
+    }
+    if (mode === 'full') {
+      const userHome = process.env.HOME ?? '~';
+      const folders = scanHomeHiddenFolders(userHome, templates);
+      const agentMcps = scanMcpsFromAgents(d, listAgents(d));
+      const folderMcps = scanMcpsFromFolders(d, folders, templates);
+      const seen = new Set<string>();
+      const merged = [...agentMcps];
+      for (const m of folderMcps) {
+        const key = `${m.name}:${m.agentId}`;
+        if (!seen.has(key)) { merged.push(m); seen.add(key); }
+      }
+      return { mcps: merged, folders };
+    }
+    return { mcps: scanMcpsFromAgents(d, listAgents(d)), folders: [] };
+  });
+
+  // MCP apply
+  ipcMain.handle('mcp:apply', (_event, mcpId: string, agentId: string) => {
+    const d = getDb();
+    const agent = getAgent(d, agentId);
+    const mcp = getMcp(d, mcpId);
+    if (!agent || !mcp) throw new Error('Agent or MCP not found');
+    const templates = loadTemplates();
+    const template = templates.find((t) => t.id === agent.id) ?? templates[0];
+    if (!template) throw new Error('No matching agent template found');
+    const agentConfigDir = agent.userRoot
+      ? path.join(agent.userRoot, agent.configDirName)
+      : agent.configDirName;
+    return applyMcpToAgent(d, {
+      agentConfigDir,
+      template,
+      mcps: [mcp],
+      mode: 'merge',
+    });
+  });
+
+  // MCP preview apply
+  ipcMain.handle('mcp:previewApply', (_event, mcpId: string, agentId: string) => {
+    const d = getDb();
+    const agent = getAgent(d, agentId);
+    const mcp = getMcp(d, mcpId);
+    if (!agent || !mcp) throw new Error('Agent or MCP not found');
+    const templates = loadTemplates();
+    const template = templates.find((t) => t.id === agent.id) ?? templates[0];
+    if (!template) throw new Error('No matching agent template found');
+    const agentConfigDir = agent.userRoot
+      ? path.join(agent.userRoot, agent.configDirName)
+      : agent.configDirName;
+    return previewMcpApply({
+      agentConfigDir,
+      template,
+      mcps: [mcp],
+    });
+  });
+
+  // MCP applied agents
+  ipcMain.handle('mcp:appliedAgents', (_event, mcpId: string) => {
+    return getAppliedAgentsForMcp(getDb(), mcpId);
+  });
+
+  // MCP import scanned
+  ipcMain.handle('mcp:importScanned', (_event, mcps: unknown[]) => {
+    return importScannedMcps(getDb(), mcps as any, getDataDir());
+  });
+
+  // MCP consistency check (doctor)
+  ipcMain.handle('mcp:doctor', () => {
+    return checkMcpConsistency(getDb(), getDataDir());
+  });
+  ipcMain.handle('mcp:fixDoctor', () => {
+    return fixMcpConsistency(getDb(), getDataDir());
+  });
+
+  // Provider handlers
+  ipcMain.handle('provider:list', () => listProviders(getDb()));
+  ipcMain.handle('provider:get', (_event, id: string) => getProvider(getDb(), id));
+  ipcMain.handle('provider:create', (_event, data) => createProvider(getDb(), data));
+  ipcMain.handle('provider:update', (_event, id: string, data) => updateProvider(getDb(), id, data));
+  ipcMain.handle('provider:delete', (_event, id: string) => deleteProvider(getDb(), id));
+  ipcMain.handle('provider:setApiKey', (_event, providerName: string, apiKey: string) =>
+    setApiKey(providerName, apiKey));
+  ipcMain.handle('provider:getApiKey', (_event, providerName: string) =>
+    getApiKey(providerName));
+  ipcMain.handle('provider:isKeytarSupported', () => isKeytarSupported());
+
+  // Tag handlers
+  ipcMain.handle('tag:list', () => listTags(getDb()));
+  ipcMain.handle('tag:create', (_event, data) => createTag(getDb(), data));
+  ipcMain.handle('tag:rename', (_event, id: string, name: string) => renameTag(getDb(), id, { newName: name }));
+  ipcMain.handle('tag:delete', (_event, id: string) => deleteTag(getDb(), id));
+
+  // Search
+  ipcMain.handle('search', (_event, query: string) => {
+    const d = getDb();
+    const skills = listSkills(d).map((s) => ({ id: s.id, type: 'skill' as const, name: s.name, description: s.description ?? '' }));
+    const mcps = listMcps(d).map((m) => ({ id: m.id, type: 'mcp' as const, name: m.name, description: m.description ?? '' }));
+    buildIndex([...skills, ...mcps]);
+    return searchAll(query);
+  });
+
+  // Project handlers
+  ipcMain.handle('project:list', (_event, search?: string) => {
+    try { return listProjects(getDb(), search); } catch (e) { console.error('[WS] project:list error:', e); throw e; }
+  });
+  ipcMain.handle('project:get', (_event, id: string) => {
+    try { return getProjectWithAgents(getDb(), id); } catch (e) { console.error('[WS] project:get error:', e); throw e; }
+  });
+  ipcMain.handle('project:create', (_event, data: { path: string; name?: string }) => {
+    try { return createProject(getDb(), data); } catch (e) { console.error('[WS] project:create error:', e); throw e; }
+  });
+  ipcMain.handle('project:update', (_event, id: string, data: { name?: string }) => {
+    try { return updateProject(getDb(), id, data); } catch (e) { console.error('[WS] project:update error:', e); throw e; }
+  });
+  ipcMain.handle('project:delete', (_event, id: string) => {
+    try { return deleteProject(getDb(), id, darwinSymlink); } catch (e) { console.error('[WS] project:delete error:', e); throw e; }
+  });
+  ipcMain.handle('project:toggleAgent', (_event, projectId: string, agentId: string, enabled: boolean) => {
+    try {
+      const d = getDb();
+      if (!enabled) {
+        const proj = getProject(d, projectId);
+        const agent = getAgent(d, agentId);
+        if (proj && agent) {
+          const appliedRows = d.prepare(
+            `SELECT s.name FROM project_resource_agent pra
+             JOIN skill s ON s.id = pra.resource_id
+             WHERE pra.project_id = ? AND pra.agent_id = ? AND pra.resource_type = 'skill'`,
+          ).all(projectId, agentId) as { name: string }[];
+          for (const row of appliedRows) {
+            unsyncProjectSkillFromWorkspace(d, proj, agent, row.name, darwinSymlink);
+          }
+        }
+      }
+      toggleAgentForProject(d, projectId, agentId, enabled);
+    } catch (e) { console.error('[WS] project:toggleAgent error:', e); throw e; }
+  });
+
+  // Project skill handlers
+  ipcMain.handle('project:skillList', (_event, projectId: string) => {
+    try { return getProjectSkillList(getDb(), projectId); } catch (e) { console.error('[WS] project:skillList error:', e); throw e; }
+  });
+  ipcMain.handle('project:applySkill', (_event, projectId: string, skillId: string, agentId: string) => {
+    try {
+      const d = getDb();
+      const proj = getProject(d, projectId);
+      const agent = getAgent(d, agentId);
+      const skill = getSkill(d, skillId);
+      if (!proj || !agent || !skill) throw new Error('Project, agent, or skill not found');
+      if (!agent.enabled) throw new Error('Agent is inactive');
+      const pa = d.prepare(
+        'SELECT enabled FROM project_agent WHERE project_id = ? AND agent_id = ?',
+      ).get(projectId, agentId) as { enabled: number } | undefined;
+      if (!pa || pa.enabled !== 1) throw new Error('Agent is disabled for this project');
+      return syncProjectSkillToWorkspace(d, proj, agent, skill.name, getDataDir(), darwinSymlink);
+    } catch (e) { console.error('[WS] project:applySkill error:', e); throw e; }
+  });
+  ipcMain.handle('project:unapplySkill', (_event, projectId: string, skillId: string, agentId: string) => {
+    try {
+      const d = getDb();
+      const proj = getProject(d, projectId);
+      const agent = getAgent(d, agentId);
+      const skill = getSkill(d, skillId);
+      if (!proj || !agent || !skill) throw new Error('Project, agent, or skill not found');
+      return unsyncProjectSkillFromWorkspace(d, proj, agent, skill.name, darwinSymlink);
+    } catch (e) { console.error('[WS] project:unapplySkill error:', e); throw e; }
+  });
+  ipcMain.handle('project:availableSkills', (_event, projectId: string, agentId?: string) => {
+    try {
+      const d = getDb();
+      const allSkills = listAllSkills(d);
+      if (agentId) {
+        const appliedSkillIds = d.prepare(
+          `SELECT DISTINCT resource_id FROM project_resource_agent WHERE project_id = ? AND agent_id = ? AND resource_type = 'skill'`,
+        ).all(projectId, agentId) as { resource_id: string }[];
+        const appliedSet = new Set(appliedSkillIds.map((r) => r.resource_id));
+        return allSkills.filter((s) => !appliedSet.has(s.id));
+      }
+      return allSkills;
+    } catch (e) { console.error('[WS] project:availableSkills error:', e); throw e; }
+  });
+}
+
+export function cleanupIpc(): void {
+  if (db) {
+    closeDatabase(db);
+    db = null;
+  }
+}

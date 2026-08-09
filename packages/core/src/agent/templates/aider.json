@@ -1,0 +1,10 @@
+{
+  "id": "aider",
+  "name": "Aider",
+  "configDirName": ".aider",
+  "mcpFile": "config.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "aider",
+  "targetFormat": "json-map"
+}

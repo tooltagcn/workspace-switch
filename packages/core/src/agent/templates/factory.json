@@ -1,0 +1,10 @@
+{
+  "id": "factory",
+  "name": "Factory",
+  "configDirName": ".factory",
+  "mcpFile": "config.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "factory",
+  "targetFormat": "json-map"
+}

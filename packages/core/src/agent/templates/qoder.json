@@ -1,0 +1,10 @@
+{
+  "id": "qoder",
+  "name": "Qoder",
+  "configDirName": ".qoder",
+  "mcpFile": "settings.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "qoder",
+  "targetFormat": "json-map"
+}

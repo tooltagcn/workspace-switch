@@ -1,0 +1,10 @@
+{
+  "id": "openclaude",
+  "name": "OpenClaude",
+  "configDirName": ".openclaude",
+  "mcpFile": "settings.json",
+  "mcpField": "mcpServers",
+  "skillDir": "commands",
+  "icon": "openclaude",
+  "targetFormat": "json-map"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "cursor",
+  "name": "Cursor",
+  "configDirName": ".cursor",
+  "mcpFile": "settings.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "cursor",
+  "targetFormat": "json-map"
+}

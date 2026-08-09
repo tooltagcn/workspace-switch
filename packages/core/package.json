@@ -1,0 +1,23 @@
+{
+  "name": "@ws/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "typecheck": "tsc -b",
+    "build": "tsc -b && rm -rf dist/agent/templates && cp -r src/agent/templates dist/agent/templates"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.2",
+    "flexsearch": "^0.8.212",
+    "i18next": "^26.3.6",
+    "keytar": "^7.9.0",
+    "proper-lockfile": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/proper-lockfile": "^4.1.4"
+  }
+}

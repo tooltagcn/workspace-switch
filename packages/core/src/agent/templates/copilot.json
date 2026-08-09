@@ -1,0 +1,9 @@
+{
+  "id": "copilot",
+  "name": "GitHub Copilot",
+  "configDirName": ".github-copilot",
+  "mcpFile": null,
+  "mcpField": null,
+  "skillDir": "skills",
+  "icon": "copilot"
+}

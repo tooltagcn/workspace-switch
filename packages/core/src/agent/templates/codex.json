@@ -1,0 +1,11 @@
+{
+  "id": "codex",
+  "name": "Codex",
+  "configDirName": ".agents",
+  "candidateDirNames": [".agents", ".codex"],
+  "mcpFile": "config.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "codex",
+  "targetFormat": "toml-table"
+}

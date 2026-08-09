@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="1200" height="820">
+  <defs>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#16a34a"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ea580c"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9333ea"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: "PingFang SC", "Heiti SC", "Microsoft YaHei", sans-serif; }
+    .title { font-size: 24px; font-weight: 700; fill: #1e293b; }
+    .subtitle { font-size: 13px; font-weight: 400; fill: #64748b; }
+    .layer-label { font-size: 14px; font-weight: 600; fill: #475569; }
+    .node-label { font-size: 14px; font-weight: 600; fill: #1e293b; }
+    .sub-label { font-size: 11px; font-weight: 400; fill: #64748b; }
+    .arrow-label { font-size: 11px; font-weight: 500; fill: #475569; }
+    .ext-label { font-size: 13px; font-weight: 600; fill: #1e293b; }
+  </style>
+  <rect width="1200" height="820" fill="#ffffff"/>
+  <text x="600" y="44" text-anchor="middle" class="title">Workspace Switch 系统架构图</text>
+  <text x="600" y="66" text-anchor="middle" class="subtitle">跨平台 · 多 Agent · Skill / MCP / Provider 统一管理（Master Workspace + symlink / 模板双轨）</text>
+  <!-- User -->
+  <circle cx="60" cy="130" r="22" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <path d="M 60 152 Q 40 175 40 200 L 80 200 Q 80 175 60 152 Z" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="60" y="220" text-anchor="middle" class="sub-label">用户</text>
+  <!-- Layer 1: Presentation -->
+  <rect x="120" y="105" width="700" height="115" rx="10" ry="10" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="140" y="128" class="layer-label" fill="#1e40af">Presentation Layer  表现层</text>
+  <rect x="160" y="148" width="220" height="60" rx="8" ry="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <rect x="170" y="158" width="14" height="14" rx="3" ry="3" fill="#2563eb"/>
+  <text x="195" y="170" class="node-label">Electron Desktop</text>
+  <text x="195" y="188" class="sub-label">React + TypeScript</text>
+  <text x="195" y="202" class="sub-label">shadcn/ui + Tailwind</text>
+  <rect x="430" y="148" width="200" height="60" rx="8" ry="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <rect x="440" y="158" width="14" height="14" rx="3" ry="3" fill="#16a34a"/>
+  <text x="465" y="170" class="node-label">CLI  (ws_cli)</text>
+  <text x="465" y="188" class="sub-label">Commander.js</text>
+  <text x="465" y="202" class="sub-label">--json / 脚本化</text>
+  <!-- Layer 2: Core -->
+  <rect x="20" y="260" width="800" height="220" rx="10" ry="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="40" y="283" class="layer-label" fill="#166534">Core Layer  (@ws/core)  核心包</text>
+  <rect x="50" y="305" width="170" height="70" rx="8" ry="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="60" y="315" width="12" height="12" rx="2" ry="2" fill="#2563eb"/>
+  <text x="80" y="327" class="node-label">Agent Registry</text>
+  <text x="80" y="345" class="sub-label">扫描 / 注册</text>
+  <text x="80" y="359" class="sub-label">内置 12+ 模板</text>
+  <rect x="240" y="305" width="170" height="70" rx="8" ry="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <rect x="250" y="315" width="12" height="12" rx="2" ry="2" fill="#16a34a"/>
+  <text x="270" y="327" class="node-label">Skill Manager</text>
+  <text x="270" y="345" class="sub-label">增删改查 / 标签</text>
+  <text x="270" y="359" class="sub-label">主目录管理</text>
+  <rect x="430" y="305" width="170" height="70" rx="8" ry="8" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+  <rect x="440" y="315" width="12" height="12" rx="2" ry="2" fill="#ea580c"/>
+  <text x="460" y="327" class="node-label">MCP Manager</text>
+  <text x="460" y="345" class="sub-label">WS Schema</text>
+  <text x="460" y="359" class="sub-label">模板渲染</text>
+  <rect x="620" y="305" width="170" height="70" rx="8" ry="8" fill="#ffffff" stroke="#9333ea" stroke-width="1.5"/>
+  <rect x="630" y="315" width="12" height="12" rx="2" ry="2" fill="#9333ea"/>
+  <text x="650" y="327" class="node-label">Provider Manager</text>
+  <text x="650" y="345" class="sub-label">baseURL / Key</text>
+  <text x="650" y="359" class="sub-label">Keychain</text>
+  <rect x="50" y="395" width="170" height="70" rx="8" ry="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="60" y="405" width="12" height="12" rx="2" ry="2" fill="#2563eb"/>
+  <text x="80" y="417" class="node-label">Template Renderer</text>
+  <text x="80" y="435" class="sub-label">Handlebars</text>
+  <text x="80" y="449" class="sub-label">Agent 适配</text>
+  <rect x="240" y="395" width="170" height="70" rx="8" ry="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <rect x="250" y="405" width="12" height="12" rx="2" ry="2" fill="#16a34a"/>
+  <text x="270" y="417" class="node-label">Sync Engine</text>
+  <text x="270" y="435" class="sub-label">从 Agent 收回</text>
+  <text x="270" y="449" class="sub-label">孤儿 Skill</text>
+  <rect x="430" y="395" width="170" height="70" rx="8" ry="8" fill="#ffffff" stroke="#d97706" stroke-width="1.5"/>
+  <rect x="440" y="405" width="12" height="12" rx="2" ry="2" fill="#d97706"/>
+  <text x="460" y="417" class="node-label">Search Index</text>
+  <text x="460" y="435" class="sub-label">FlexSearch</text>
+  <text x="460" y="449" class="sub-label">跨资源搜索</text>
+  <rect x="620" y="395" width="170" height="70" rx="8" ry="8" fill="#ffffff" stroke="#db2777" stroke-width="1.5"/>
+  <rect x="630" y="405" width="12" height="12" rx="2" ry="2" fill="#db2777"/>
+  <text x="650" y="417" class="node-label">Plugin System</text>
+  <text x="650" y="435" class="sub-label">第三方扩展</text>
+  <text x="650" y="449" class="sub-label">Agent 模板</text>
+  <!-- Layer 3: Platform -->
+  <rect x="120" y="520" width="700" height="100" rx="10" ry="10" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="140" y="543" class="layer-label" fill="#6b21a8">Platform Layer  平台适配层</text>
+  <rect x="160" y="560" width="180" height="50" rx="8" ry="8" fill="#ffffff" stroke="#9333ea" stroke-width="1.5"/>
+  <text x="250" y="582" text-anchor="middle" class="node-label">fs / symlink</text>
+  <text x="250" y="600" text-anchor="middle" class="sub-label">Node.js fs-extra</text>
+  <rect x="360" y="560" width="180" height="50" rx="8" ry="8" fill="#ffffff" stroke="#9333ea" stroke-width="1.5"/>
+  <text x="450" y="582" text-anchor="middle" class="node-label">keytar</text>
+  <text x="450" y="600" text-anchor="middle" class="sub-label">Keychain / DPAPI</text>
+  <rect x="560" y="560" width="180" height="50" rx="8" ry="8" fill="#ffffff" stroke="#9333ea" stroke-width="1.5"/>
+  <text x="650" y="582" text-anchor="middle" class="node-label">better-sqlite3</text>
+  <text x="650" y="600" text-anchor="middle" class="sub-label">WAL 模式</text>
+  <!-- External systems -->
+  <text x="850" y="128" class="layer-label" fill="#9a3412">External · 主目录 (Single Source of Truth)</text>
+  <rect x="870" y="145" width="290" height="60" rx="8" ry="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="1015" y="170" text-anchor="middle" class="node-label">~/.workspace_switch/</text>
+  <text x="1015" y="190" text-anchor="middle" class="sub-label">skills/  mcp/  providers/  ws.db</text>
+  <text x="850" y="240" class="layer-label" fill="#1e40af">External · AI Agents  目标</text>
+  <rect x="870" y="260" width="160" height="60" rx="8" ry="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="950" y="282" text-anchor="middle" class="node-label" font-size="13">Claude Code</text>
+  <text x="950" y="300" text-anchor="middle" class="sub-label">~/.claude/</text>
+  <text x="950" y="314" text-anchor="middle" class="sub-label">SKILL.md + mcp.json</text>
+  <rect x="1040" y="260" width="160" height="60" rx="8" ry="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="1120" y="282" text-anchor="middle" class="node-label" font-size="13">Codex</text>
+  <text x="1120" y="300" text-anchor="middle" class="sub-label">~/.codex/</text>
+  <text x="1120" y="314" text-anchor="middle" class="sub-label">AGENTS.md + config.toml</text>
+  <rect x="870" y="340" width="160" height="60" rx="8" ry="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="950" y="362" text-anchor="middle" class="node-label" font-size="13">Cursor</text>
+  <text x="950" y="380" text-anchor="middle" class="sub-label">~/.cursor/</text>
+  <text x="950" y="394" text-anchor="middle" class="sub-label">.mdc + mcp.json</text>
+  <rect x="1040" y="340" width="160" height="60" rx="8" ry="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="1120" y="362" text-anchor="middle" class="node-label" font-size="13">Copilot CLI</text>
+  <text x="1120" y="380" text-anchor="middle" class="sub-label">~/.copilot/</text>
+  <text x="1120" y="394" text-anchor="middle" class="sub-label">prompts/</text>
+  <rect x="870" y="420" width="160" height="60" rx="8" ry="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="950" y="442" text-anchor="middle" class="node-label" font-size="13">OpenCode / Hermes / Qwen ...</text>
+  <text x="950" y="460" text-anchor="middle" class="sub-label">≥ 12 个内置模板</text>
+  <text x="850" y="510" class="layer-label" fill="#6b21a8">External · 在线 Marketplace</text>
+  <rect x="870" y="525" width="290" height="50" rx="8" ry="8" fill="#faf5ff" stroke="#9333ea" stroke-width="1.5"/>
+  <text x="1015" y="547" text-anchor="middle" class="node-label">npx skills / skills.sh</text>
+  <text x="1015" y="565" text-anchor="middle" class="sub-label">Vercel 开源 · 在线搜索 + 安装</text>
+  <!-- User -> Desktop -->
+  <path d="M 82 165 L 158 178" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <!-- User -> CLI -->
+  <path d="M 82 130 L 82 95 L 530 95 L 530 148" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowBlue)"/>
+  <text x="295" y="88" class="arrow-label">terminal / click</text>
+  <!-- Desktop -> Core -->
+  <path d="M 270 208 L 270 305" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <text x="280" y="250" class="arrow-label">IPC</text>
+  <!-- CLI -> Core -->
+  <path d="M 530 208 L 530 305" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <text x="540" y="250" class="arrow-label">stdio / args</text>
+  <!-- Core -> Platform -->
+  <path d="M 250 465 L 250 560" fill="none" stroke="#9333ea" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <path d="M 450 465 L 450 560" fill="none" stroke="#9333ea" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <path d="M 650 465 L 650 560" fill="none" stroke="#9333ea" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <!-- Skill Manager -> Master WS -->
+  <path d="M 325 305 L 325 240 L 950 240 L 950 205" fill="none" stroke="#16a34a" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="560" y="232" class="arrow-label" fill="#15803d">symlink · 单向同步</text>
+  <!-- Template Renderer -> Agents -->
+  <path d="M 220 430 L 230 430 L 230 490 L 860 490 L 860 315 L 870 315" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arrowOrange)"/>
+  <text x="430" y="483" class="arrow-label" fill="#9a3412">render · 写盘</text>
+  <!-- Sync Engine -> Master WS -->
+  <path d="M 410 395 L 420 395 L 420 225 L 1080 225 L 1080 205" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrowGreen)"/>
+  <text x="700" y="218" class="arrow-label" fill="#15803d">scan · 收回</text>
+  <!-- Marketplace -> Skill Manager -->
+  <path d="M 870 550 L 20 550 L 20 240 L 240 240 L 240 305" fill="none" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowPurple)"/>
+  <text x="100" y="232" class="arrow-label" fill="#6b21a8">download / search</text>
+  <!-- Legend -->
+  <rect x="20" y="650" width="800" height="135" rx="8" ry="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="40" y="675" class="layer-label">图例 / Legend</text>
+  <line x1="40" y1="700" x2="70" y2="700" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <text x="78" y="704" class="arrow-label">用户交互 / IPC / CLI args</text>
+  <line x1="40" y1="725" x2="70" y2="725" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="78" y="729" class="arrow-label">主目录写入（symlink · 唯一可信源）</text>
+  <line x1="40" y1="750" x2="70" y2="750" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+  <text x="78" y="754" class="arrow-label">MCP 模板渲染写盘到 Agent</text>
+  <line x1="380" y1="700" x2="410" y2="700" stroke="#9333ea" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <text x="418" y="704" class="arrow-label">平台调用 / 在线 Marketplace</text>
+  <line x1="380" y1="725" x2="410" y2="725" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+  <text x="418" y="729" class="arrow-label">扫描 Agent 目录（虚线 = 收回到主目录）</text>
+  <line x1="380" y1="750" x2="410" y2="750" stroke="#9333ea" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <text x="418" y="754" class="arrow-label">虚线 = 远程 / 异步调用</text>
+  <text x="20" y="810" class="sub-label">注：v1.0 不包含日志 / 云同步 / 通知 / 风险等级 / 备份 / 回滚；symlink 断链在启动时检测；Windows symlink 失败时降级为"复制模式"。</text>
+</svg>

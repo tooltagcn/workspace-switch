@@ -1,0 +1,72 @@
+{
+  "name": "@ws/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/electron/main.js",
+  "author": "",
+  "description": "Workspace Switch",
+  "build": {
+    "appId": "com.workspaceswitch.desktop",
+    "productName": "Workspace Switch",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "dist/electron/**/*",
+      "dist/renderer/**/*",
+      "node_modules/**/*",
+      "node_modules/@ws/core/dist/**",
+      "!node_modules/@ws/core/src/**",
+      "!node_modules/@ws/core/tsconfig.json",
+      "!node_modules/@ws/core/tsconfig.tsbuildinfo"
+    ],
+    "mac": {
+      "target": "dmg"
+    },
+    "extraMetadata": {
+      "description": "Workspace Switch Desktop",
+      "author": ""
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -b && cp electron/preload.cjs dist/electron/preload.cjs && electron .\"",
+    "electron:build": "pnpm --filter @ws/core build && tsc -b && vite build && cp electron/preload.cjs dist/electron/preload.cjs && electron-builder",
+    "postinstall": "node -e \"try{require('electron-rebuild')}catch(e){process.exit(0)}\" && electron-rebuild -f -w better-sqlite3 -w keytar || true",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@ws/core": "workspace:*",
+    "better-sqlite3": "^13.0.2",
+    "flexsearch": "^0.8.212",
+    "graceful-fs": "^4.2.11",
+    "i18next": "^26.3.6",
+    "keytar": "^7.9.0",
+    "node-addon-api": "^8.9.1",
+    "proper-lockfile": "^4.1.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^15.0.0",
+    "react-router-dom": "^6.26.0",
+    "retry": "^0.12.0",
+    "signal-exit": "^3.0.7",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "electron": "^43.0.0",
+    "electron-builder": "^24.13.3",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "vite": "^5.3.5",
+    "wait-on": "^7.2.0"
+  }
+}

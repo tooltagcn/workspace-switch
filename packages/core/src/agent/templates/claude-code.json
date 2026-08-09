@@ -1,0 +1,10 @@
+{
+  "id": "claude-code",
+  "name": "Claude Code",
+  "configDirName": ".claude",
+  "mcpFile": "settings.json",
+  "mcpField": "mcpServers",
+  "skillDir": "commands",
+  "icon": "claude",
+  "targetFormat": "json-map"
+}

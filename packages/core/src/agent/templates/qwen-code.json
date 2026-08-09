@@ -1,0 +1,10 @@
+{
+  "id": "qwen-code",
+  "name": "Qwen Code",
+  "configDirName": ".qwen-code",
+  "mcpFile": "settings.json",
+  "mcpField": "mcpServers",
+  "skillDir": "commands",
+  "icon": "qwen-code",
+  "targetFormat": "json-map"
+}

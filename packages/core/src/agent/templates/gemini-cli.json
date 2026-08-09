@@ -1,0 +1,10 @@
+{
+  "id": "gemini-cli",
+  "name": "Gemini CLI",
+  "configDirName": ".gemini",
+  "mcpFile": "settings.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "gemini-cli",
+  "targetFormat": "json-map"
+}

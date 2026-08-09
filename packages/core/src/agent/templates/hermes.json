@@ -1,0 +1,10 @@
+{
+  "id": "hermes",
+  "name": "Hermes",
+  "configDirName": ".hermes",
+  "mcpFile": "config.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "hermes",
+  "targetFormat": "json-map"
+}

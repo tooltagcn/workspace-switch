@@ -1,0 +1,68 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderMcpForAgent > Claude Code (json-map) > renders SSE MCP server 1`] = `
+"{
+  "mcpServers": {
+    "remote-server": {
+      "url": "http://localhost:3000/sse",
+      "env": {
+        "API_KEY": "\${env:API_KEY}"
+      }
+    }
+  }
+}
+"
+`;
+
+exports[`renderMcpForAgent > Claude Code (json-map) > renders stdio MCP server 1`] = `
+"{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "\${env:GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+"
+`;
+
+exports[`renderMcpForAgent > Codex (toml-table) > renders SSE MCP server 1`] = `
+"[mcpServers.remote-server]
+url = "http://localhost:3000/sse"
+env = { API_KEY = "API_KEY" }
+"
+`;
+
+exports[`renderMcpForAgent > Codex (toml-table) > renders stdio MCP server 1`] = `
+"[mcpServers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+env = { GITHUB_TOKEN = "GITHUB_TOKEN" }
+"
+`;
+
+exports[`renderMcpForAgent > Cursor (json-map) > renders stdio MCP server 1`] = `
+"{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "\${env:GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+"
+`;

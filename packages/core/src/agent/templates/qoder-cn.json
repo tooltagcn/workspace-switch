@@ -1,0 +1,10 @@
+{
+  "id": "qoder-cn",
+  "name": "Qoder CN",
+  "configDirName": ".qoder-cn",
+  "mcpFile": null,
+  "mcpField": null,
+  "skillDir": "skills",
+  "icon": "terminal",
+  "targetFormat": null
+}

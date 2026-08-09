@@ -10,7 +10,7 @@ import {
   saveMcpToWorkspace,
   listAgents,
   getAgent,
-  getTemplate,
+  resolveTemplateForAgent,
   applyMcpToAgent,
   previewMcpApply,
   syncMcpToWorkspace,
@@ -286,7 +286,7 @@ export function registerMcp(program: Command): void {
         const agent = getAgent(ctx.db, options.agent);
         if (!agent) fail(`Agent not found: ${options.agent}`);
 
-        const template = getTemplate(agent!.id);
+        const template = resolveTemplateForAgent(agent);
         if (!template) fail(`No template found for agent: ${agent!.id}`);
         if (!template.mcpFile || !template.mcpField) fail('Agent template does not support MCP');
 
@@ -355,7 +355,7 @@ export function registerMcp(program: Command): void {
         const agent = getAgent(ctx.db, options.agent);
         if (!agent) fail(`Agent not found: ${options.agent}`);
 
-        const template = getTemplate(agent!.id);
+        const template = resolveTemplateForAgent(agent);
         if (!template) fail(`No template found for agent: ${agent!.id}`);
         if (!template.mcpFile || !template.mcpField) fail('Agent template does not support MCP');
 
@@ -440,7 +440,7 @@ export function registerMcp(program: Command): void {
           const agents = listAgents(ctx.db).filter((a) => a.enabled);
           const secretStore = await createSecretStore(ctx.db);
           for (const agent of agents) {
-            const tmpl = getTemplate(agent.id);
+            const tmpl = resolveTemplateForAgent(agent);
             if (!tmpl) continue;
             for (const r of results) {
               await syncMcpToWorkspace(ctx.db, agent, tmpl, r.name, ctx.dataDir, secretStore);

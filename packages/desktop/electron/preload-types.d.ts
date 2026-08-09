@@ -5,6 +5,9 @@ export interface WsApi {
   createAgent: (data: unknown) => Promise<any>;
   updateAgent: (id: string, data: unknown) => Promise<any>;
   deleteAgent: (id: string) => Promise<any>;
+  updateAgentTemplate: (id: string, templateId: string | null) => Promise<any>;
+  updateAgentMcpConfigPath: (id: string, mcpConfigPath: string | null) => Promise<any>;
+  listTemplates: () => Promise<any[]>;
   listSkills: () => Promise<any>;
   getSkill: (id: string) => Promise<any>;
   createSkill: (data: unknown) => Promise<any>;

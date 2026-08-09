@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS agent (
   skill_dir TEXT,
   enabled INTEGER NOT NULL DEFAULT 1,
   detected_at TEXT,
+  template_id TEXT,
+  mcp_config_path TEXT,
+  target_format TEXT,
+  env_transform TEXT,
+  field_mapping_json TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

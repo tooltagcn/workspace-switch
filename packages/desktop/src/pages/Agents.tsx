@@ -13,6 +13,10 @@ function AgentDetail({ agent, onClose }: { agent: Agent; onClose: () => void }) 
     { label: t('agent.mcpFile'), value: agent.mcpFile ?? '-' },
     { label: t('agent.mcpField'), value: agent.mcpField ?? '-' },
     { label: t('agent.skillDir'), value: agent.skillDir ?? '-' },
+    { label: 'Template', value: agent.templateId ?? 'Auto-detect' },
+    { label: 'MCP Config Path', value: agent.mcpConfigPath ?? 'Default' },
+    { label: t('agent.targetFormat', 'Target Format'), value: agent.targetFormat ?? 'Auto-detect' },
+    { label: t('agent.envTransform', 'Env Transform'), value: agent.envTransform ?? 'Default' },
     { label: t('agent.builtin'), value: agent.builtin ? t('common.yes') : t('common.no') },
     { label: t('agent.enabled'), value: agent.enabled ? t('common.yes') : t('common.no') },
   ];
@@ -149,26 +153,252 @@ function AgentAddDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function BuiltinMcpInfo({ agent }: { agent: Agent }) {
+  const { t } = useTranslation();
+  const items = [
+    { label: t('agent.mcpFile'), value: agent.mcpFile ?? '-' },
+    { label: t('agent.mcpField'), value: agent.mcpField ?? '-' },
+    { label: t('agent.targetFormat', 'Target Format'), value: agent.targetFormat ?? t('agent.autoDetect', 'Auto-detect') },
+    { label: t('agent.skillDir'), value: agent.skillDir ?? '-' },
+  ];
+  return (
+    <div className="border-t pt-4">
+      <p className="text-sm font-medium text-gray-700 mb-2">{t('agent.mcpConfig', 'MCP Configuration')}</p>
+      <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+        {items.map((item) => (
+          <div key={item.label} className="flex justify-between text-sm">
+            <span className="text-gray-500">{item.label}</span>
+            <span className="font-mono text-gray-700">{item.value}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-gray-400 mt-2">{t('agent.builtinMcpHint', 'MCP configuration is managed by the built-in template.')}</p>
+    </div>
+  );
+}
+
+type EditForm = {
+  name: string;
+  configDirName: string;
+  userRoot: string;
+  projectRoot: string;
+  enabled: boolean;
+  mcpFile: string;
+  mcpField: string;
+  targetFormat: string;
+  envTransform: string;
+  fieldMappingCommand: string;
+  fieldMappingArgs: string;
+  fieldMappingUrl: string;
+  fieldMappingEnv: string;
+};
+
+function CustomMcpFields({ form, setForm, templates, templateId, onQuickSetup }: {
+  form: EditForm;
+  setForm: (fn: (f: EditForm) => EditForm) => void;
+  templates: any[];
+  templateId: string;
+  onQuickSetup: (tid: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  return (
+    <>
+      <div className="border-t pt-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t('agent.quickSetup', 'Quick Setup / \u9884\u8BBE')}
+        </label>
+        <select
+          value={templateId}
+          onChange={(e) => onQuickSetup(e.target.value)}
+          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">{t('agent.noTemplate', 'None (manual config)')}</option>
+          {templates.map((tmpl: any) => (
+            <option key={tmpl.id} value={tmpl.id}>{tmpl.name} ({tmpl.id})</option>
+          ))}
+        </select>
+        <p className="text-xs text-gray-400 mt-1">{t('agent.quickSetupHint', 'Select a preset to auto-fill MCP fields below. You can edit them freely.')}</p>
+      </div>
+
+      <div className="border-t pt-4 space-y-3">
+        <p className="text-sm font-medium text-gray-700">{t('agent.mcpConfig', 'MCP Configuration')}</p>
+        <div>
+          <label className="block text-sm text-gray-500 mb-1">{t('agent.mcpFile')}</label>
+          <input
+            type="text"
+            value={form.mcpFile}
+            onChange={(e) => setForm((f) => ({ ...f, mcpFile: e.target.value }))}
+            placeholder="mcp.json, config.toml..."
+            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-500 mb-1">{t('agent.mcpField')}</label>
+          <input
+            type="text"
+            value={form.mcpField}
+            onChange={(e) => setForm((f) => ({ ...f, mcpField: e.target.value }))}
+            placeholder="mcpServers, mcp_servers..."
+            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-500 mb-1">{t('agent.targetFormat', 'Target Format')}</label>
+          <select
+            value={form.targetFormat}
+            onChange={(e) => setForm((f) => ({ ...f, targetFormat: e.target.value }))}
+            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">{t('agent.autoDetect', 'Auto-detect from file extension')}</option>
+            <option value="json-map">JSON Map</option>
+            <option value="toml-table">TOML Table</option>
+            <option value="yaml">YAML</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="text-sm text-blue-600 hover:text-blue-800"
+        >
+          {showAdvanced ? t('agent.hideAdvanced', 'Hide Advanced') : t('agent.showAdvanced', 'Show Advanced')}
+        </button>
+      </div>
+
+      {showAdvanced && (
+        <div className="border-t pt-4 space-y-3">
+          <div>
+            <label className="block text-sm text-gray-500 mb-1">{t('agent.envTransform', 'Env Transform')}</label>
+            <input
+              type="text"
+              value={form.envTransform}
+              onChange={(e) => setForm((f) => ({ ...f, envTransform: e.target.value }))}
+              placeholder="${env:VAR} or bare"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-500 mb-2">{t('agent.fieldMapping', 'Field Mapping')}</label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-400">command</label>
+                <input
+                  type="text"
+                  value={form.fieldMappingCommand}
+                  onChange={(e) => setForm((f) => ({ ...f, fieldMappingCommand: e.target.value }))}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">args</label>
+                <input
+                  type="text"
+                  value={form.fieldMappingArgs}
+                  onChange={(e) => setForm((f) => ({ ...f, fieldMappingArgs: e.target.value }))}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">url</label>
+                <input
+                  type="text"
+                  value={form.fieldMappingUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, fieldMappingUrl: e.target.value }))}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">env</label>
+                <input
+                  type="text"
+                  value={form.fieldMappingEnv}
+                  onChange={(e) => setForm((f) => ({ ...f, fieldMappingEnv: e.target.value }))}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function AgentEditDialog({ agent, onClose }: { agent: Agent; onClose: () => void }) {
   const { t } = useTranslation();
-  const { updateAgent } = useAgentStore();
-  const [form, setForm] = useState({
+  const { updateAgent, updateTemplate, updateMcpConfigPath, templates, fetchTemplates } = useAgentStore();
+  const [form, setForm] = useState<EditForm>({
     name: agent.name,
     configDirName: agent.configDirName,
     userRoot: agent.userRoot ?? '',
     projectRoot: agent.projectRoot ?? '',
     enabled: agent.enabled,
+    mcpFile: agent.mcpFile ?? '',
+    mcpField: agent.mcpField ?? '',
+    targetFormat: agent.targetFormat ?? '',
+    envTransform: agent.envTransform ?? '',
+    fieldMappingCommand: agent.fieldMapping?.command ?? 'command',
+    fieldMappingArgs: agent.fieldMapping?.args ?? 'args',
+    fieldMappingUrl: agent.fieldMapping?.url ?? 'url',
+    fieldMappingEnv: agent.fieldMapping?.env ?? 'env',
   });
+  const [templateId, setTemplateId] = useState(agent.templateId ?? '');
+  const [mcpConfigPath, setMcpConfigPath] = useState(agent.mcpConfigPath ?? '');
+
+  useEffect(() => {
+    if (templates.length === 0) fetchTemplates();
+  }, [templates.length, fetchTemplates]);
+
+  const handleQuickSetup = (tid: string) => {
+    setTemplateId(tid);
+    if (!tid) return;
+    const tmpl = templates.find((t: any) => t.id === tid);
+    if (!tmpl) return;
+    setForm((f) => ({
+      ...f,
+      mcpFile: tmpl.mcpFile ?? '',
+      mcpField: tmpl.mcpField ?? '',
+      targetFormat: tmpl.targetFormat ?? tmpl.entryFormat?.format ?? '',
+      envTransform: tmpl.entryFormat?.envTransform ?? '',
+      fieldMappingCommand: tmpl.entryFormat?.fieldMapping?.command ?? 'command',
+      fieldMappingArgs: tmpl.entryFormat?.fieldMapping?.args ?? 'args',
+      fieldMappingUrl: tmpl.entryFormat?.fieldMapping?.url ?? 'url',
+      fieldMappingEnv: tmpl.entryFormat?.fieldMapping?.env ?? 'env',
+    }));
+  };
 
   const handleSubmit = async () => {
     try {
-      await updateAgent(agent.id, {
+      const updates: Record<string, unknown> = {
         name: form.name,
         configDirName: form.configDirName,
         userRoot: form.userRoot || null,
         projectRoot: form.projectRoot || null,
         enabled: form.enabled,
-      });
+      };
+
+      if (!agent.builtin) {
+        updates.mcpFile = form.mcpFile || null;
+        updates.mcpField = form.mcpField || null;
+        updates.targetFormat = form.targetFormat || null;
+        updates.envTransform = form.envTransform || null;
+        updates.fieldMapping = {
+          command: form.fieldMappingCommand || 'command',
+          args: form.fieldMappingArgs || 'args',
+          url: form.fieldMappingUrl || 'url',
+          env: form.fieldMappingEnv || 'env',
+        };
+      }
+
+      await updateAgent(agent.id, updates);
+      if (!agent.builtin) {
+        await updateTemplate(agent.id, templateId || null);
+      }
+      await updateMcpConfigPath(agent.id, mcpConfigPath || null);
       onClose();
     } catch {
       // error handled by store
@@ -177,7 +407,7 @@ function AgentEditDialog({ agent, onClose }: { agent: Agent; onClose: () => void
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[480px]">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-[520px] max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold mb-4">{t('agent.editAgent')}</h3>
         <div className="space-y-4">
           <div>
@@ -198,33 +428,59 @@ function AgentEditDialog({ agent, onClose }: { agent: Agent; onClose: () => void
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.userRoot')}</label>
-            <input
-              type="text"
-              value={form.userRoot}
-              onChange={(e) => setForm((f) => ({ ...f, userRoot: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.projectRoot')}</label>
-            <input
-              type="text"
-              value={form.projectRoot}
-              onChange={(e) => setForm((f) => ({ ...f, projectRoot: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="edit-agent-enabled"
-              checked={form.enabled}
-              onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
-              className="rounded"
-            />
-            <label htmlFor="edit-agent-enabled" className="text-sm text-gray-700">{t('agent.enabled')}</label>
+
+          {agent.builtin
+            ? <BuiltinMcpInfo agent={agent} />
+            : (
+                <CustomMcpFields
+                  form={form}
+                  setForm={setForm}
+                  templates={templates}
+                  templateId={templateId}
+                  onQuickSetup={handleQuickSetup}
+                />
+              )
+          }
+
+          <div className="border-t pt-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">MCP Config Path</label>
+              <input
+                type="text"
+                value={mcpConfigPath}
+                onChange={(e) => setMcpConfigPath(e.target.value)}
+                placeholder="~/.config/agent/settings.json"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.userRoot')}</label>
+              <input
+                type="text"
+                value={form.userRoot}
+                onChange={(e) => setForm((f) => ({ ...f, userRoot: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.projectRoot')}</label>
+              <input
+                type="text"
+                value={form.projectRoot}
+                onChange={(e) => setForm((f) => ({ ...f, projectRoot: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="edit-agent-enabled"
+                checked={form.enabled}
+                onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
+                className="rounded"
+              />
+              <label htmlFor="edit-agent-enabled" className="text-sm text-gray-700">{t('agent.enabled')}</label>
+            </div>
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">

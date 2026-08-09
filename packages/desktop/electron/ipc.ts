@@ -47,6 +47,8 @@ import {
   getAppliedAgentsForSkill,
   getAppliedAgentsForMcp,
   loadTemplates,
+  resolveTemplateForAgent,
+  effectiveAsTemplate,
   buildIndex,
   searchAll,
   getDatabase,
@@ -80,6 +82,8 @@ import {
   getTestResult,
   createSecretStore,
   isKeychainAvailable,
+  saveMcpToWorkspace,
+  loadMcpFromWorkspace,
 } from '@ws/core';
 import { darwinSymlink } from '@ws/core';
 import path from 'node:path';
@@ -112,6 +116,21 @@ function getDataDir() {
   return dataDir;
 }
 
+function ensureMcpInWorkspace(mcp: { name: string; transport: string | null; command: string | null; url: string | null; args: string[]; env: Record<string, string>; description: string | null }): void {
+  const workspaceDir = getDataDir();
+  if (!loadMcpFromWorkspace(workspaceDir, mcp.name)) {
+    saveMcpToWorkspace(workspaceDir, {
+      name: mcp.name,
+      transport: (mcp.transport ?? 'stdio') as 'stdio' | 'sse' | 'http',
+      command: mcp.command ?? undefined,
+      url: mcp.url ?? undefined,
+      args: mcp.args.length > 0 ? mcp.args : undefined,
+      env: Object.keys(mcp.env).length > 0 ? mcp.env : undefined,
+      description: mcp.description ?? undefined,
+    });
+  }
+}
+
 export function registerIpcHandlers(): void {
   // Agent handlers
   ipcMain.handle('agent:list', () => {
@@ -131,6 +150,11 @@ export function registerIpcHandlers(): void {
   });
   ipcMain.handle('agent:delete', (_event, id: string) => {
     try { return deleteAgent(getDb(), id); } catch (e) { console.error('[WS] agent:delete error:', e); throw e; }
+  });
+
+  // Template handlers
+  ipcMain.handle('template:list', () => {
+    try { return loadTemplates(); } catch (e) { console.error('[WS] template:list error:', e); throw e; }
   });
 
   // Skill handlers
@@ -210,8 +234,34 @@ export function registerIpcHandlers(): void {
   // MCP handlers
   ipcMain.handle('mcp:list', () => listMcps(getDb()));
   ipcMain.handle('mcp:get', (_event, id: string) => getMcp(getDb(), id));
-  ipcMain.handle('mcp:create', (_event, data) => createMcp(getDb(), data));
-  ipcMain.handle('mcp:update', (_event, id: string, data) => updateMcp(getDb(), id, data));
+  ipcMain.handle('mcp:create', (_event, data) => {
+    const result = createMcp(getDb(), data);
+    saveMcpToWorkspace(dataDir, {
+      name: result.name,
+      transport: result.transport ?? 'stdio',
+      command: result.command ?? undefined,
+      url: result.url ?? undefined,
+      args: result.args.length > 0 ? result.args : undefined,
+      env: Object.keys(result.env).length > 0 ? result.env : undefined,
+      description: result.description ?? undefined,
+    });
+    return result;
+  });
+  ipcMain.handle('mcp:update', (_event, id: string, data) => {
+    const result = updateMcp(getDb(), id, data);
+    if (result) {
+      saveMcpToWorkspace(dataDir, {
+        name: result.name,
+        transport: result.transport ?? 'stdio',
+        command: result.command ?? undefined,
+        url: result.url ?? undefined,
+        args: result.args.length > 0 ? result.args : undefined,
+        env: Object.keys(result.env).length > 0 ? result.env : undefined,
+        description: result.description ?? undefined,
+      });
+    }
+    return result;
+  });
   ipcMain.handle('mcp:delete', (_event, id: string) => deleteMcp(getDb(), id));
 
   // MCP scan
@@ -245,12 +295,11 @@ export function registerIpcHandlers(): void {
     const agent = getAgent(d, agentId);
     const mcp = getMcp(d, mcpId);
     if (!agent || !mcp) throw new Error('Agent or MCP not found');
-    const templates = loadTemplates();
-    const template = templates.find((t) => t.id === agent.id) ?? templates[0];
+    const template = effectiveAsTemplate(agent, resolveTemplateForAgent(agent));
     if (!template) throw new Error('No matching agent template found');
-    const workspaceDir = getDataDir();
+    ensureMcpInWorkspace(mcp);
     const secretStore = await createSecretStore(d);
-    return await syncMcpToWorkspace(d, agent, template, mcp.name, workspaceDir, secretStore);
+    return await syncMcpToWorkspace(d, agent, template, mcp.name, getDataDir(), secretStore);
   });
 
   // MCP preview apply
@@ -259,8 +308,7 @@ export function registerIpcHandlers(): void {
     const agent = getAgent(d, agentId);
     const mcp = getMcp(d, mcpId);
     if (!agent || !mcp) throw new Error('Agent or MCP not found');
-    const templates = loadTemplates();
-    const template = templates.find((t) => t.id === agent.id) ?? templates[0];
+    const template = effectiveAsTemplate(agent, resolveTemplateForAgent(agent));
     if (!template) throw new Error('No matching agent template found');
     const agentConfigDir = agent.userRoot ?? agent.configDirName;
     return previewMcpApply({
@@ -281,8 +329,7 @@ export function registerIpcHandlers(): void {
     const agent = getAgent(d, agentId);
     const mcp = getMcp(d, mcpId);
     if (!agent || !mcp) throw new Error('Agent or MCP not found');
-    const templates = loadTemplates();
-    const template = templates.find((t) => t.id === agent.id) ?? templates[0];
+    const template = effectiveAsTemplate(agent, resolveTemplateForAgent(agent));
     if (!template) throw new Error('No matching agent template found');
     return unsyncMcpFromWorkspace(d, agent, template, mcp.name);
   });
@@ -305,15 +352,18 @@ export function registerIpcHandlers(): void {
       )
       .all(mcpId) as { resource_id: string; agent_id: string; mcp_name: string }[];
 
-    const templates = loadTemplates();
     const secretStore = await createSecretStore(d);
     const results = [];
     for (const applied of outOfSyncMcps) {
       const agent = getAgent(d, applied.agent_id);
       if (!agent) continue;
 
-      const template = templates.find((t) => t.id === agent.id) ?? templates[0];
+      const template = effectiveAsTemplate(agent, resolveTemplateForAgent(agent));
       if (!template) continue;
+
+      const mcp = getMcp(d, applied.resource_id);
+      if (!mcp) continue;
+      ensureMcpInWorkspace(mcp);
 
       const result = await syncMcpToWorkspace(d, agent, template, applied.mcp_name, getDataDir(), secretStore);
       results.push({ agentId: applied.agent_id, ...result });
@@ -544,9 +594,10 @@ export function registerIpcHandlers(): void {
       const proj = getProject(d, projectId);
       const agent = getAgent(d, agentId);
       if (!proj || !agent) throw new Error('Project or agent not found');
-      const templates = loadTemplates();
-      const template = templates.find((t) => t.id === agent.id) ?? templates[0];
+      const template = effectiveAsTemplate(agent, resolveTemplateForAgent(agent));
       if (!template) throw new Error('No matching agent template found');
+      const mcp = listMcps(d).find(m => m.name === mcpName);
+      if (mcp) ensureMcpInWorkspace(mcp);
       const secretStore = await createSecretStore(d);
       return await syncProjectMcpToWorkspace(d, proj, agent, template, mcpName, getDataDir(), secretStore);
     } catch (e) { console.error('[WS] project:applyMcp error:', e); throw e; }
@@ -558,8 +609,7 @@ export function registerIpcHandlers(): void {
       const proj = getProject(d, projectId);
       const agent = getAgent(d, agentId);
       if (!proj || !agent) throw new Error('Project or agent not found');
-      const templates = loadTemplates();
-      const template = templates.find((t) => t.id === agent.id) ?? templates[0];
+      const template = effectiveAsTemplate(agent, resolveTemplateForAgent(agent));
       if (!template) throw new Error('No matching agent template found');
       return unsyncProjectMcpFromWorkspace(d, proj, agent, template, mcpName);
     } catch (e) { console.error('[WS] project:unapplyMcp error:', e); throw e; }

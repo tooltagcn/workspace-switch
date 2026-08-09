@@ -10,6 +10,8 @@ import type { Project, ProjectSkill } from '../project/types.js';
 import type { SecretStore } from '../mcp/types.js';
 import { loadMcpFromWorkspace } from '../mcp/storage.js';
 import { parseConfigFile, serializeConfigFile, buildMcpEntry } from '../mcp/renderer.js';
+import { mutateConfig } from '../mcp/mutation.js';
+import { expandCustomPath } from '../agent/expand-paths.js';
 
 function resolveProjectAgentPath(project: Project, agent: Agent): string | null {
   if (!agent.skillDir) return null;
@@ -191,7 +193,9 @@ export async function syncProjectMcpToWorkspace(
     return { name: mcpName, type: 'mcp', success: false, error: `Trusted MCP source not found: ${mcpName}` };
   }
 
-  const agentConfigPath = path.join(project.path, agent.configDirName, template.mcpFile);
+  const agentConfigPath = agent.mcpConfigPath
+    ? expandCustomPath(agent.mcpConfigPath)
+    : path.join(project.path, agent.configDirName, template.mcpFile);
 
   try {
     let existing: Record<string, unknown> = {};
@@ -217,9 +221,12 @@ export async function syncProjectMcpToWorkspace(
     }
 
     const field = template.mcpField;
-    const existingSection = (existing[field] as Record<string, unknown>) ?? {};
-    const merged = { ...existingSection, [mcpName]: buildMcpEntry(schemaWithSecrets) };
-    const afterObj = { ...existing, [field]: merged };
+    const fieldMapping = template.entryFormat?.fieldMapping;
+    const afterObj = mutateConfig(existing, field, {
+      type: 'add',
+      name: mcpName,
+      entry: buildMcpEntry(schemaWithSecrets, fieldMapping),
+    });
     const after = serializeConfigFile(afterObj, template);
 
     const dir = path.dirname(agentConfigPath);
@@ -286,7 +293,9 @@ export function unsyncProjectMcpFromWorkspace(
     return { name: mcpName, type: 'mcp', success: false, error: 'Agent does not support MCP' };
   }
 
-  const agentConfigPath = path.join(project.path, agent.configDirName, template.mcpFile);
+  const agentConfigPath = agent.mcpConfigPath
+    ? expandCustomPath(agent.mcpConfigPath)
+    : path.join(project.path, agent.configDirName, template.mcpFile);
 
   try {
     const mcpRow = db.prepare('SELECT id FROM mcp WHERE name = ?').get(mcpName) as { id: string } | undefined;
@@ -322,9 +331,7 @@ export function unsyncProjectMcpFromWorkspace(
     }
 
     const field = template.mcpField;
-    const existingSection = (existing[field] as Record<string, unknown>) ?? {};
-    delete existingSection[mcpName];
-    const afterObj = { ...existing, [field]: existingSection };
+    const afterObj = mutateConfig(existing, field, { type: 'remove', name: mcpName });
     const after = serializeConfigFile(afterObj, template);
 
     const dir = path.dirname(agentConfigPath);

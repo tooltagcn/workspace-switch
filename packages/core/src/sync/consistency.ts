@@ -6,6 +6,10 @@ import { validateSkill } from '../skill/validator.js';
 import { createMcp, listMcps, deleteMcp } from '../mcp/manager.js';
 import { saveMcpToWorkspace, loadMcpFromWorkspace } from '../mcp/storage.js';
 import type { WsMcpSchema } from '../mcp/schema.js';
+import { loadTemplates, resolveTemplateForAgent } from '../agent/template-loader.js';
+import { effectiveAsTemplate } from '../agent/effective-config.js';
+import { resolveMcpConfigPath } from '../agent/expand-paths.js';
+import { listAgents } from '../agent/registry.js';
 
 export interface ConsistencyItem {
   name: string;
@@ -210,6 +214,48 @@ export function checkMcpConsistency(
         agentId: applied.agent_id,
         agentName: applied.agent_name,
       });
+    }
+  }
+
+  const templates = loadTemplates();
+  const templateIds = new Set(templates.map((t) => t.id));
+  const agents = listAgents(db);
+  for (const agent of agents) {
+    if (agent.templateId && !templateIds.has(agent.templateId)) {
+      items.push({
+        name: `missing-template-${agent.id}`,
+        location: 'database',
+        action: 'sync',
+        agentId: agent.id,
+        agentName: agent.name,
+      });
+    }
+  }
+
+  const pathToAgents = new Map<string, { id: string; name: string }[]>();
+  for (const agent of agents) {
+    const template = effectiveAsTemplate(agent, resolveTemplateForAgent(agent));
+    if (!template?.mcpFile) continue;
+    const resolvedPath = resolveMcpConfigPath(
+      { mcpConfigPath: agent.mcpConfigPath, userRoot: agent.userRoot },
+      template,
+    );
+    const existing = pathToAgents.get(resolvedPath) ?? [];
+    existing.push({ id: agent.id, name: agent.name });
+    pathToAgents.set(resolvedPath, existing);
+  }
+  for (const [configPath, agentsSharing] of pathToAgents) {
+    if (agentsSharing.length > 1) {
+      for (const agent of agentsSharing) {
+        items.push({
+          name: `path-overlap-${agent.id}`,
+          location: 'database',
+          action: 'sync',
+          agentId: agent.id,
+          agentName: agent.name,
+          targetPath: configPath,
+        });
+      }
     }
   }
 

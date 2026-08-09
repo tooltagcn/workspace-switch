@@ -24,3 +24,25 @@ export function resolveCandidateDirNames(template: AgentTemplate): string[] {
   }
   return [template.configDirName];
 }
+
+export function expandCustomPath(raw: string): string {
+  let expanded = raw;
+  if (expanded.startsWith('~/') || expanded === '~') {
+    const home = process.env.HOME ?? process.env.USERPROFILE ?? '~';
+    expanded = path.join(home, expanded.slice(2));
+  }
+  expanded = expanded.replace(/\$\{(\w+)\}/g, (_match, varName) => process.env[varName] ?? '');
+  expanded = expanded.replace(/\$(\w+)/g, (_match, varName) => process.env[varName] ?? '');
+  return path.resolve(expanded);
+}
+
+export function resolveMcpConfigPath(
+  agent: { mcpConfigPath: string | null; userRoot: string | null },
+  template: AgentTemplate,
+): string {
+  if (agent.mcpConfigPath) {
+    return expandCustomPath(agent.mcpConfigPath);
+  }
+  const root = agent.userRoot ?? '';
+  return path.join(root, template.mcpFile ?? '');
+}

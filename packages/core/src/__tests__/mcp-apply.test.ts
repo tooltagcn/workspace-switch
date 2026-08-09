@@ -171,9 +171,12 @@ describe('applyMcpToAgent', () => {
   });
 
   it('rollback: throws when write fails', () => {
+    const blockerPath = path.join(agentDir, 'blocker');
+    fs.writeFileSync(blockerPath, 'blocking file');
+
     const failTemplate: AgentTemplate = {
       ...claudeTemplate,
-      mcpFile: 'nonexistent-dir/settings.json',
+      mcpFile: 'blocker/settings.json',
     };
 
     const mcp = makeMcpServer();

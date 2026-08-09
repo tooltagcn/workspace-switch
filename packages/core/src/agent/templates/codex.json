@@ -3,9 +3,19 @@
   "name": "Codex",
   "configDirName": ".agents",
   "candidateDirNames": [".agents", ".codex"],
-  "mcpFile": "config.json",
-  "mcpField": "mcpServers",
+  "mcpFile": "config.toml",
+  "mcpField": "mcp_servers",
   "skillDir": "skills",
   "icon": "codex",
-  "targetFormat": "toml-table"
+  "targetFormat": "toml-table",
+  "entryFormat": {
+    "format": "toml-table",
+    "envTransform": "bare",
+    "fieldMapping": {
+      "command": "command",
+      "args": "args",
+      "url": "url",
+      "env": "env"
+    }
+  }
 }

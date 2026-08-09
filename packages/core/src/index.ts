@@ -14,10 +14,11 @@ export {
 } from './agent/registry.js';
 
 export type { AgentTemplate } from './agent/template-types.js';
-export { loadTemplates, getTemplate } from './agent/template-loader.js';
+export { loadTemplates, getTemplate, resolveTemplateForAgent } from './agent/template-loader.js';
+export { effectiveAsTemplate } from './agent/effective-config.js';
 export { validateAgentTemplate, validateTemplateJsonSchema } from './agent/template-validator.js';
 export type { TemplateValidationResult } from './agent/template-validator.js';
-export { expandAgentPaths, resolveCandidateDirNames } from './agent/expand-paths.js';
+export { expandAgentPaths, resolveCandidateDirNames, expandCustomPath, resolveMcpConfigPath } from './agent/expand-paths.js';
 export type { ExpandedPaths } from './agent/expand-paths.js';
 export { initBuiltinAgents } from './agent/init-builtins.js';
 export { detectAgents } from './agent/detect.js';

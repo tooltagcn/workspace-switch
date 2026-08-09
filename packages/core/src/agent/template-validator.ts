@@ -1,6 +1,6 @@
 import type { TargetFormat } from './template-types.js';
 
-const VALID_TARGET_FORMATS: TargetFormat[] = ['json-map', 'toml-table'];
+const VALID_TARGET_FORMATS: TargetFormat[] = ['json-map', 'toml-table', 'yaml'];
 
 const TEMPLATE_SCHEMA = {
   type: 'object',
@@ -79,10 +79,34 @@ export function validateAgentTemplate(data: unknown): TemplateValidationResult {
     }
   }
 
+  if ('entryFormat' in obj) {
+    const ef = obj.entryFormat;
+    if (typeof ef !== 'object' || ef === null || Array.isArray(ef)) {
+      errors.push('Field "entryFormat" must be an object');
+    } else {
+      const efObj = ef as Record<string, unknown>;
+      if (!('format' in efObj) || typeof efObj.format !== 'string') {
+        errors.push('Field "entryFormat.format" must be a string');
+      } else if (!VALID_TARGET_FORMATS.includes(efObj.format as TargetFormat)) {
+        errors.push(`Field "entryFormat.format" must be one of: ${VALID_TARGET_FORMATS.join(', ')}`);
+      }
+      if (!('envTransform' in efObj) || typeof efObj.envTransform !== 'string' || (efObj.envTransform as string).length === 0) {
+        errors.push('Field "entryFormat.envTransform" must be a non-empty string');
+      }
+      if ('fieldMapping' in efObj) {
+        const fm = efObj.fieldMapping;
+        if (typeof fm !== 'object' || fm === null || Array.isArray(fm)) {
+          errors.push('Field "entryFormat.fieldMapping" must be an object');
+        }
+      }
+    }
+  }
+
   const knownFields = new Set([
     ...TEMPLATE_SCHEMA.required,
     'candidateDirNames',
     'targetFormat',
+    'entryFormat',
   ]);
   for (const key of Object.keys(obj)) {
     if (!knownFields.has(key)) {

@@ -103,3 +103,13 @@ export interface SecretStore {
   deleteSecret(mcpName: string, varName: string): Promise<void>;
   deleteAllSecretsForMcp(mcpName: string): Promise<void>;
 }
+
+export type McpOperation =
+  | { type: 'add'; name: string; entry: Record<string, unknown> }
+  | { type: 'remove'; name: string };
+
+export interface ResolvedMcpConfig {
+  filePath: string;
+  mcpField: string;
+  entryFormat: import('../agent/template-types.js').EntryFormat;
+}

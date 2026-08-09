@@ -5,6 +5,8 @@ import { randomUUID } from 'node:crypto';
 import type { AgentTemplate } from '../agent/template-types.js';
 import type { McpServer } from './types.js';
 import { parseConfigFile, serializeConfigFile, buildMcpEntry } from './renderer.js';
+import { mutateConfig } from './mutation.js';
+import { resolveMcpConfigPath } from '../agent/expand-paths.js';
 import type { WsMcpSchema } from './schema.js';
 
 export type ApplyMode = 'merge' | 'strict';
@@ -15,6 +17,7 @@ export interface ApplyMcpOptions {
   template: AgentTemplate;
   mcps: McpServer[];
   mode: ApplyMode;
+  mcpConfigPath?: string | null;
 }
 
 export interface ApplyMcpResult {
@@ -36,15 +39,21 @@ function mcpServerToSchema(server: McpServer): WsMcpSchema {
   return schema;
 }
 
-function buildMcpSection(
-  _template: AgentTemplate,
+function applyMcpsToConfig(
+  existing: Record<string, unknown>,
+  template: AgentTemplate,
   mcps: McpServer[],
+  mode: ApplyMode,
 ): Record<string, unknown> {
-  const section: Record<string, unknown> = {};
+  const field = template.mcpField!;
+  const fieldMapping = template.entryFormat?.fieldMapping;
+  let result = mode === 'strict' ? { ...existing, [field]: {} } : { ...existing };
+
   for (const mcp of mcps) {
-    section[mcp.name] = buildMcpEntry(mcpServerToSchema(mcp));
+    const entry = buildMcpEntry(mcpServerToSchema(mcp), fieldMapping);
+    result = mutateConfig(result, field, { type: 'add', name: mcp.name, entry });
   }
-  return section;
+  return result;
 }
 
 function atomicWrite(filePath: string, content: string): void {
@@ -68,13 +77,17 @@ export function applyMcpToAgent(
   db: Database.Database,
   options: ApplyMcpOptions,
 ): ApplyMcpResult {
-  const { agentId, agentConfigDir, template, mcps, mode } = options;
+  const { agentId, agentConfigDir, template, mcps, mode, mcpConfigPath } = options;
 
   if (!template.mcpFile || !template.mcpField) {
     throw new Error(`Agent template "${template.id}" does not support MCP`);
   }
 
-  const filePath = path.join(agentConfigDir, template.mcpFile);
+  const filePath = resolveMcpConfigPath({ mcpConfigPath: mcpConfigPath ?? null, userRoot: agentConfigDir }, template);
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
   const before = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : null;
 
   let existing: Record<string, unknown> = {};
@@ -82,17 +95,7 @@ export function applyMcpToAgent(
     existing = parseConfigFile(before, template);
   }
 
-  const newSection = buildMcpSection(template, mcps);
-  const field = template.mcpField;
-
-  let afterObj: Record<string, unknown>;
-  if (mode === 'strict') {
-    afterObj = { ...existing, [field]: newSection };
-  } else {
-    const existingSection = (existing[field] as Record<string, unknown>) ?? {};
-    afterObj = { ...existing, [field]: { ...existingSection, ...newSection } };
-  }
-
+  const afterObj = applyMcpsToConfig(existing, template, mcps, mode);
   const after = serializeConfigFile(afterObj, template);
 
   const beforeResourceRow = db
@@ -140,13 +143,13 @@ export interface PreviewMcpResult {
 export function previewMcpApply(
   options: Omit<ApplyMcpOptions, 'mode' | 'agentId'> & { mode?: ApplyMode },
 ): PreviewMcpResult {
-  const { agentConfigDir, template, mcps, mode = 'merge' } = options;
+  const { agentConfigDir, template, mcps, mode = 'merge', mcpConfigPath } = options;
 
   if (!template.mcpFile || !template.mcpField) {
     throw new Error(`Agent template "${template.id}" does not support MCP`);
   }
 
-  const filePath = path.join(agentConfigDir, template.mcpFile);
+  const filePath = resolveMcpConfigPath({ mcpConfigPath: mcpConfigPath ?? null, userRoot: agentConfigDir }, template);
   const before = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : null;
 
   let existing: Record<string, unknown> = {};
@@ -154,17 +157,7 @@ export function previewMcpApply(
     existing = parseConfigFile(before, template);
   }
 
-  const newSection = buildMcpSection(template, mcps);
-  const field = template.mcpField;
-
-  let afterObj: Record<string, unknown>;
-  if (mode === 'strict') {
-    afterObj = { ...existing, [field]: newSection };
-  } else {
-    const existingSection = (existing[field] as Record<string, unknown>) ?? {};
-    afterObj = { ...existing, [field]: { ...existingSection, ...newSection } };
-  }
-
+  const afterObj = applyMcpsToConfig(existing, template, mcps, mode);
   const after = serializeConfigFile(afterObj, template);
   const diff = unifiedDiff(filePath, before ?? '', after);
 

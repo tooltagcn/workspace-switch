@@ -73,6 +73,11 @@ function foldersToSyntheticAgents(
       skillDir: template.skillDir,
       enabled: true,
       detectedAt: null,
+      templateId: null,
+      mcpConfigPath: null,
+      targetFormat: template.targetFormat ?? template.entryFormat?.format ?? null,
+      envTransform: template.entryFormat?.envTransform ?? null,
+      fieldMapping: template.entryFormat?.fieldMapping ?? null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -95,6 +100,11 @@ function rowToAgent(row: Record<string, unknown>): Agent {
     skillDir: row.skill_dir as string | null,
     enabled: (row.enabled as number) === 1,
     detectedAt: row.detected_at as string | null,
+    templateId: row.template_id as string | null,
+    mcpConfigPath: row.mcp_config_path as string | null,
+    targetFormat: row.target_format as string | null,
+    envTransform: row.env_transform as string | null,
+    fieldMapping: row.field_mapping_json ? JSON.parse(row.field_mapping_json as string) : null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

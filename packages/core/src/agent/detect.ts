@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { listAgents, updateAgent } from './registry.js';
-import { loadTemplates } from './template-loader.js';
+import { resolveTemplateForAgent } from './template-loader.js';
 import { resolveCandidateDirNames } from './expand-paths.js';
 
 export interface DetectionResult {
@@ -13,11 +13,10 @@ export interface DetectionResult {
 
 export function detectAgents(db: Database.Database): DetectionResult[] {
   const agents = listAgents(db).filter((a) => a.builtin);
-  const templates = loadTemplates();
   const results: DetectionResult[] = [];
 
   for (const agent of agents) {
-    const template = templates.find((t) => t.id === agent.id);
+    const template = resolveTemplateForAgent(agent);
     if (!template) {
       results.push({ agentId: agent.id, detected: false, detectedDir: null });
       continue;

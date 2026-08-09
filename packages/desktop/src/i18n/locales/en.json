@@ -100,6 +100,16 @@
     "autoDetect": "Auto-detect fields",
     "detecting": "Detecting...",
     "detectedFields": "Detected {{count}} fields",
+    "builtinMcpHint": "MCP configuration is managed by the built-in template.",
+    "quickSetup": "Quick Setup",
+    "quickSetupHint": "Select a preset to auto-fill MCP fields below. You can edit them freely.",
+    "noTemplate": "None (manual config)",
+    "mcpConfig": "MCP Configuration",
+    "targetFormat": "Target Format",
+    "envTransform": "Env Transform",
+    "fieldMapping": "Field Mapping",
+    "showAdvanced": "Show Advanced",
+    "hideAdvanced": "Hide Advanced",
     "status": {
       "active": "Active",
       "inactive": "Inactive",
@@ -278,7 +288,23 @@
       "calling": "Calling...",
       "result": "Result",
       "error": "Error"
-    }
+    },
+    "applySuccess": "MCP \"{{name}}\" applied to agent \"{{agent}}\"",
+    "applyFailed": "Failed to apply MCP: {{error}}",
+    "unapplySuccess": "MCP \"{{name}}\" removed from agent \"{{agent}}\"",
+    "unapplyFailed": "Failed to remove MCP: {{error}}",
+    "unapplyAllSuccess": "All MCPs removed from agent \"{{agent}}\"",
+    "notFound": "MCP not found: {{name}}",
+    "agentNotFound": "Agent not found: {{agent}}",
+    "noMcpSupport": "Agent does not support MCP configuration",
+    "outOfSync": "Out of sync",
+    "healthy": "Healthy",
+    "syncAll": "Sync All",
+    "applyAll": "Apply All",
+    "secretStored": "Secret stored securely",
+    "secretDeleted": "Secret deleted",
+    "keychainUnavailable": "Keychain is unavailable. Allow storing secrets in plaintext in the database?",
+    "secretEnvVar": "Secret environment variable"
   },
   "apply": {
     "title": "Apply to Agent",
@@ -393,23 +419,5 @@
     "applyMcp": "Apply MCP",
     "noMcps": "No MCP servers applied to this project",
     "availableMcps": "Available MCP Servers"
-  },
-  "mcp": {
-    "applySuccess": "MCP \"{{name}}\" applied to agent \"{{agent}}\"",
-    "applyFailed": "Failed to apply MCP: {{error}}",
-    "unapplySuccess": "MCP \"{{name}}\" removed from agent \"{{agent}}\"",
-    "unapplyFailed": "Failed to remove MCP: {{error}}",
-    "unapplyAllSuccess": "All MCPs removed from agent \"{{agent}}\"",
-    "notFound": "MCP not found: {{name}}",
-    "agentNotFound": "Agent not found: {{agent}}",
-    "noMcpSupport": "Agent does not support MCP configuration",
-    "outOfSync": "Out of sync",
-    "healthy": "Healthy",
-    "syncAll": "Sync All",
-    "applyAll": "Apply All",
-    "secretStored": "Secret stored securely",
-    "secretDeleted": "Secret deleted",
-    "keychainUnavailable": "Keychain is unavailable. Allow storing secrets in plaintext in the database?",
-    "secretEnvVar": "Secret environment variable"
   }
 }

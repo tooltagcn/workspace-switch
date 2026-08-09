@@ -11,6 +11,11 @@ export interface Agent {
   skillDir: string | null;
   enabled: boolean;
   detectedAt: string | null;
+  templateId: string | null;
+  mcpConfigPath: string | null;
+  targetFormat: string | null;
+  envTransform: string | null;
+  fieldMapping: Record<string, string> | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +33,11 @@ export interface CreateAgentInput {
   skillDir?: string | null;
   enabled?: boolean;
   detectedAt?: string | null;
+  templateId?: string | null;
+  mcpConfigPath?: string | null;
+  targetFormat?: string | null;
+  envTransform?: string | null;
+  fieldMapping?: Record<string, string> | null;
 }
 
 export interface UpdateAgentInput {
@@ -41,4 +51,9 @@ export interface UpdateAgentInput {
   skillDir?: string | null;
   enabled?: boolean;
   detectedAt?: string | null;
+  templateId?: string | null;
+  mcpConfigPath?: string | null;
+  targetFormat?: string | null;
+  envTransform?: string | null;
+  fieldMapping?: Record<string, string> | null;
 }

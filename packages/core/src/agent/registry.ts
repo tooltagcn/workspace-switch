@@ -15,6 +15,11 @@ interface AgentRow {
   skill_dir: string | null;
   enabled: number;
   detected_at: string | null;
+  template_id: string | null;
+  mcp_config_path: string | null;
+  target_format: string | null;
+  env_transform: string | null;
+  field_mapping_json: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +38,11 @@ function rowToAgent(row: AgentRow): Agent {
     skillDir: row.skill_dir,
     enabled: row.enabled === 1,
     detectedAt: row.detected_at,
+    templateId: row.template_id,
+    mcpConfigPath: row.mcp_config_path,
+    targetFormat: row.target_format,
+    envTransform: row.env_transform,
+    fieldMapping: row.field_mapping_json ? JSON.parse(row.field_mapping_json) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -61,8 +71,8 @@ export function createAgent(db: Database.Database, input: CreateAgentInput): Age
   const projectEnabled = input.projectEnabled ? 1 : 0;
 
   db.prepare(
-    `INSERT INTO agent (id, name, builtin, config_dir_name, user_root, project_root, project_enabled, mcp_file, mcp_field, skill_dir, enabled, detected_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO agent (id, name, builtin, config_dir_name, user_root, project_root, project_enabled, mcp_file, mcp_field, skill_dir, enabled, detected_at, template_id, mcp_config_path, target_format, env_transform, field_mapping_json, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     input.name,
@@ -76,6 +86,11 @@ export function createAgent(db: Database.Database, input: CreateAgentInput): Age
     input.skillDir ?? null,
     enabled,
     input.detectedAt ?? null,
+    input.templateId ?? null,
+    input.mcpConfigPath ?? null,
+    input.targetFormat ?? null,
+    input.envTransform ?? null,
+    input.fieldMapping ? JSON.stringify(input.fieldMapping) : null,
     now,
     now,
   );
@@ -134,6 +149,26 @@ export function updateAgent(
   if (input.detectedAt !== undefined) {
     fields.push('detected_at = ?');
     values.push(input.detectedAt);
+  }
+  if (input.templateId !== undefined) {
+    fields.push('template_id = ?');
+    values.push(input.templateId);
+  }
+  if (input.mcpConfigPath !== undefined) {
+    fields.push('mcp_config_path = ?');
+    values.push(input.mcpConfigPath);
+  }
+  if (input.targetFormat !== undefined) {
+    fields.push('target_format = ?');
+    values.push(input.targetFormat);
+  }
+  if (input.envTransform !== undefined) {
+    fields.push('env_transform = ?');
+    values.push(input.envTransform);
+  }
+  if (input.fieldMapping !== undefined) {
+    fields.push('field_mapping_json = ?');
+    values.push(input.fieldMapping ? JSON.stringify(input.fieldMapping) : null);
   }
 
   if (fields.length === 0) return existing;

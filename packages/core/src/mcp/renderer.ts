@@ -4,11 +4,16 @@ import { getRenderer } from './renderer-registry.js';
 
 export type RenderedMcp = string;
 
+function resolveFormat(template: AgentTemplate): TargetFormat | null {
+  if (template.entryFormat) return template.entryFormat.format;
+  return template.targetFormat ?? detectFormat(template);
+}
+
 export function renderMcpForAgent(
   mcp: WsMcpSchema,
   template: AgentTemplate,
 ): RenderedMcp {
-  const format = template.targetFormat ?? detectFormat(template);
+  const format = resolveFormat(template);
   if (!format) {
     throw new Error(`Agent template "${template.id}" has no targetFormat and cannot be auto-detected`);
   }
@@ -22,7 +27,7 @@ export function renderMcpForAgent(
 }
 
 export function getRendererForTemplate(template: AgentTemplate) {
-  const format = template.targetFormat ?? detectFormat(template);
+  const format = resolveFormat(template);
   if (!format) {
     throw new Error(`Agent template "${template.id}" has no targetFormat and cannot be auto-detected`);
   }
@@ -34,12 +39,12 @@ export function getRendererForTemplate(template: AgentTemplate) {
 }
 
 export function parseConfigFile(content: string, template: AgentTemplate): Record<string, unknown> {
-  const format = template.targetFormat ?? detectFormat(template);
+  const format = resolveFormat(template);
   if (format === 'json-map') {
     try {
       return JSON.parse(content);
     } catch {
-      return {};
+      throw new Error(`Failed to parse config file as JSON for template "${template.id}". The file may be corrupted or contain invalid JSON.`);
     }
   }
   const renderer = getRendererForTemplate(template);
@@ -53,16 +58,20 @@ export function serializeConfigFile(config: Record<string, unknown>, template: A
   return renderer.serialize(config);
 }
 
-export function buildMcpEntry(schema: WsMcpSchema): Record<string, unknown> {
+export function buildMcpEntry(
+  schema: WsMcpSchema,
+  fieldMapping?: Record<string, string>,
+): Record<string, unknown> {
+  const map = fieldMapping ?? { command: 'command', args: 'args', url: 'url', env: 'env' };
   const entry: Record<string, unknown> = {};
   if (schema.transport === 'stdio') {
-    if (schema.command) entry.command = schema.command;
-    if (schema.args && schema.args.length > 0) entry.args = schema.args;
+    if (schema.command) entry[map.command ?? 'command'] = schema.command;
+    if (schema.args && schema.args.length > 0) entry[map.args ?? 'args'] = schema.args;
   } else {
-    if (schema.url) entry.url = schema.url;
+    if (schema.url) entry[map.url ?? 'url'] = schema.url;
   }
   if (schema.env && Object.keys(schema.env).length > 0) {
-    entry.env = { ...schema.env };
+    entry[map.env ?? 'env'] = { ...schema.env };
   }
   return entry;
 }

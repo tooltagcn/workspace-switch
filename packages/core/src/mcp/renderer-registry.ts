@@ -1,6 +1,6 @@
 import type { McpRenderer } from './types.js';
 import type { WsMcpSchema } from './schema.js';
-import type { AgentTemplate, TargetFormat } from '../agent/template-types.js';
+import type { AgentTemplate } from '../agent/template-types.js';
 
 const renderers = new Map<string, McpRenderer>();
 
@@ -16,26 +16,25 @@ export function listRenderers(): string[] {
   return Array.from(renderers.keys());
 }
 
-function transformEnvValue(value: string, format: TargetFormat, _agentId: string): string {
+function transformEnvValue(value: string, envTransform: string): string {
   const envMatch = value.match(/^env:(.+)$/);
   if (!envMatch) return value;
 
   const varName = envMatch[1];
-  if (format === 'toml-table') {
+  if (envTransform === 'bare') {
     return `"${varName}"`;
   }
-  return `\${env:${varName}}`;
+  return envTransform.replace('VAR', varName);
 }
 
 function transformEnv(
   env: Record<string, string> | undefined,
-  format: TargetFormat,
-  agentId: string,
+  envTransform: string,
 ): Record<string, string> {
   if (!env) return {};
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(env)) {
-    result[key] = transformEnvValue(value, format, agentId);
+    result[key] = transformEnvValue(value, envTransform);
   }
   return result;
 }
@@ -72,20 +71,24 @@ function transformConfigEnv(
   return result;
 }
 
+function fieldName(template: AgentTemplate, internal: string): string {
+  return template.entryFormat?.fieldMapping?.[internal] ?? internal;
+}
+
 const jsonMapRenderer: McpRenderer = {
   render(mcp: WsMcpSchema, template: AgentTemplate): string {
     const entry: Record<string, unknown> = {};
 
     if (mcp.transport === 'stdio') {
-      if (mcp.command) entry.command = mcp.command;
-      if (mcp.args && mcp.args.length > 0) entry.args = mcp.args;
+      if (mcp.command) entry[fieldName(template, 'command')] = mcp.command;
+      if (mcp.args && mcp.args.length > 0) entry[fieldName(template, 'args')] = mcp.args;
     } else {
-      if (mcp.url) entry.url = mcp.url;
+      if (mcp.url) entry[fieldName(template, 'url')] = mcp.url;
     }
 
-    const transformedEnv = transformEnv(mcp.env, 'json-map', template.id);
+    const transformedEnv = transformEnv(mcp.env, template.entryFormat?.envTransform ?? '${env:VAR}');
     if (Object.keys(transformedEnv).length > 0) {
-      entry.env = transformedEnv;
+      entry[fieldName(template, 'env')] = transformedEnv;
     }
 
     const field = template.mcpField ?? 'mcpServers';
@@ -116,20 +119,20 @@ const tomlTableRenderer: McpRenderer = {
     lines.push(`[${field}.${mcp.name}]`);
 
     if (mcp.transport === 'stdio') {
-      if (mcp.command) lines.push(`command = "${mcp.command}"`);
+      if (mcp.command) lines.push(`${fieldName(template, 'command')} = "${mcp.command}"`);
       if (mcp.args && mcp.args.length > 0) {
-        lines.push(`args = [${mcp.args.map((a) => `"${a}"`).join(', ')}]`);
+        lines.push(`${fieldName(template, 'args')} = [${mcp.args.map((a) => `"${a}"`).join(', ')}]`);
       }
     } else {
-      if (mcp.url) lines.push(`url = "${mcp.url}"`);
+      if (mcp.url) lines.push(`${fieldName(template, 'url')} = "${mcp.url}"`);
     }
 
-    const transformedEnv = transformEnv(mcp.env, 'toml-table', template.id);
+    const transformedEnv = transformEnv(mcp.env, template.entryFormat?.envTransform ?? 'bare');
     if (Object.keys(transformedEnv).length > 0) {
       const envPairs = Object.entries(transformedEnv)
         .map(([k, v]) => `${k} = ${v}`)
         .join(', ');
-      lines.push(`env = { ${envPairs} }`);
+      lines.push(`${fieldName(template, 'env')} = { ${envPairs} }`);
     }
 
     return lines.join('\n') + '\n';

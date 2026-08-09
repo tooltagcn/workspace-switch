@@ -294,7 +294,7 @@ export function registerProject(program: Command): void {
     .action(async (projectId: string, options, cmd) => {
       const ctx = createContext(cmd);
       try {
-        const { syncProjectMcpToWorkspace, getProject, getAgent: getAgentFn, getTemplate, createSecretStore } = await import('@ws/core');
+        const { syncProjectMcpToWorkspace, getProject, getAgent: getAgentFn, resolveTemplateForAgent, createSecretStore } = await import('@ws/core');
         const proj = getProject(ctx.db, projectId);
         if (!proj) {
           fail(`Project not found: ${projectId}`);
@@ -305,7 +305,7 @@ export function registerProject(program: Command): void {
           fail(`Agent not found: ${options.agent}`);
           return;
         }
-        const template = getTemplate(agent.id);
+        const template = resolveTemplateForAgent(agent);
         if (!template) {
           fail(`No template found for agent: ${options.agent}`);
           return;
@@ -331,7 +331,7 @@ export function registerProject(program: Command): void {
     .action(async (projectId: string, options, cmd) => {
       const ctx = createContext(cmd);
       try {
-        const { unsyncProjectMcpFromWorkspace, getProject, getAgent: getAgentFn, getTemplate } = await import('@ws/core');
+        const { unsyncProjectMcpFromWorkspace, getProject, getAgent: getAgentFn, resolveTemplateForAgent } = await import('@ws/core');
         const proj = getProject(ctx.db, projectId);
         if (!proj) {
           fail(`Project not found: ${projectId}`);
@@ -342,7 +342,7 @@ export function registerProject(program: Command): void {
           fail(`Agent not found: ${options.agent}`);
           return;
         }
-        const template = getTemplate(agent.id);
+        const template = resolveTemplateForAgent(agent);
         if (!template) {
           fail(`No template found for agent: ${options.agent}`);
           return;

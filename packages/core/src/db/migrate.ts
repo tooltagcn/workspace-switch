@@ -21,6 +21,11 @@ export function migrate(db: Database.Database): void {
   addColumnIfMissing(db, 'mcp', 'config_hash', 'TEXT');
   addColumnIfMissing(db, 'resource_agent', 'applied_config_hash', 'TEXT');
   addColumnIfMissing(db, 'project_resource_agent', 'applied_config_hash', 'TEXT');
+  addColumnIfMissing(db, 'agent', 'template_id', 'TEXT');
+  addColumnIfMissing(db, 'agent', 'mcp_config_path', 'TEXT');
+  addColumnIfMissing(db, 'agent', 'target_format', 'TEXT');
+  addColumnIfMissing(db, 'agent', 'env_transform', 'TEXT');
+  addColumnIfMissing(db, 'agent', 'field_mapping_json', 'TEXT');
 }
 
 export function verifyMigration(db: Database.Database): boolean {

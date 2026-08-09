@@ -6,5 +6,15 @@
   "mcpField": "mcpServers",
   "skillDir": "commands",
   "icon": "claude",
-  "targetFormat": "json-map"
+  "targetFormat": "json-map",
+  "entryFormat": {
+    "format": "json-map",
+    "envTransform": "${env:VAR}",
+    "fieldMapping": {
+      "command": "command",
+      "args": "args",
+      "url": "url",
+      "env": "env"
+    }
+  }
 }

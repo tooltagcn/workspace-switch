@@ -8,6 +8,9 @@ const api = {
   createAgent: (data) => ipcRenderer.invoke('agent:create', data),
   updateAgent: (id, data) => ipcRenderer.invoke('agent:update', id, data),
   deleteAgent: (id) => ipcRenderer.invoke('agent:delete', id),
+  updateAgentTemplate: (id, templateId) => ipcRenderer.invoke('agent:update', id, { templateId }),
+  updateAgentMcpConfigPath: (id, mcpConfigPath) => ipcRenderer.invoke('agent:update', id, { mcpConfigPath }),
+  listTemplates: () => ipcRenderer.invoke('template:list'),
 
   // Skill operations
   listSkills: () => ipcRenderer.invoke('skill:list'),

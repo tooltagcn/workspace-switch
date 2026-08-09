@@ -16,3 +16,4 @@ Thumbs.db
 specs
 coverage/
 *.tsbuildinfo
+.node-gyp-home/

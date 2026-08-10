@@ -376,7 +376,10 @@
     "langZh": "中文 (Coming Soon)",
     "apiKeys": "API Keys",
     "apiKeysDesc": "Manage API keys stored in system Keychain",
-    "general": "General"
+    "general": "General",
+    "debug": "Debug Mode",
+    "debugDesc": "Enable verbose debug logging",
+    "logFilePath": "Log File Path"
   },
   "search": {
     "title": "Global Search",

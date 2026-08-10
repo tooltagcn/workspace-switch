@@ -104,6 +104,11 @@ const api = {
   projectApplyMcp: (projectId, mcpName, agentId) => ipcRenderer.invoke('project:applyMcp', projectId, mcpName, agentId),
   projectUnapplyMcp: (projectId, mcpName, agentId) => ipcRenderer.invoke('project:unapplyMcp', projectId, mcpName, agentId),
   projectAvailableMcps: (projectId, agentId) => ipcRenderer.invoke('project:availableMcps', projectId, agentId),
+
+  // Logger
+  getLogPath: () => ipcRenderer.invoke('logger:getPath'),
+  setDebugMode: (enabled) => ipcRenderer.invoke('logger:setDebug', enabled),
+  isDebugMode: () => ipcRenderer.invoke('logger:isDebug'),
 };
 
 contextBridge.exposeInMainWorld('wsApi', api);

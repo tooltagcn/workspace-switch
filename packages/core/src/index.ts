@@ -152,3 +152,5 @@ export type { Project, CreateProjectInput, UpdateProjectInput, ProjectWithAgents
 export { listProjects, getProject, getProjectWithAgents, createProject, updateProject, deleteProject } from './project/manager.js';
 export { getEnabledAgentsForProject, toggleAgentForProject, initializeProjectAgents } from './project/agent-enablement.js';
 export { syncProjectSkillToWorkspace, unsyncProjectSkillFromWorkspace, syncProjectMcpToWorkspace, unsyncProjectMcpFromWorkspace, getProjectSkillList, cleanupProjectResources } from './sync/project-sync.js';
+
+export { initLogger, setDebugMode, isDebugMode, getLogFilePath, logger } from './logger/index.js';

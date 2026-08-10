@@ -86,11 +86,16 @@ import {
   loadMcpFromWorkspace,
   importSkillFromLocal,
   importSkillFromArchive,
+  validateSkill,
   registerSkillProvider,
   getSkillProvider,
   listSkillProviders,
   SkillsShProvider,
   GitHubUrlProvider,
+  logger,
+  setDebugMode,
+  isDebugMode,
+  getLogFilePath,
 } from '@ws/core';
 import { darwinSymlink } from '@ws/core';
 import path from 'node:path';
@@ -102,16 +107,16 @@ function getDb() {
   if (!db) {
     try {
       dataDir = path.join(process.env.HOME ?? '~', '.workspace_switch');
-      console.log('[WS] Initializing workspace at:', dataDir);
+      logger.info('Initializing workspace at:', dataDir);
       initWorkspace(dataDir);
       db = getDatabase(dataDir);
-      console.log('[WS] Database opened');
+      logger.info('Database opened');
       initBuiltinAgents(db, process.env.HOME ?? '~');
-      console.log('[WS] Built-in agents initialized');
+      logger.info('Built-in agents initialized');
       verifyWorkspaceIntegrity(dataDir);
-      console.log('[WS] Workspace integrity verified');
+      logger.info('Workspace integrity verified');
     } catch (err) {
-      console.error('[WS] Database initialization failed:', err);
+      logger.error('Database initialization failed:', err);
       throw err;
     }
   }
@@ -145,32 +150,32 @@ export function registerIpcHandlers(): void {
 
   // Agent handlers
   ipcMain.handle('agent:list', () => {
-    try { return listAgents(getDb()); } catch (e) { console.error('[WS] agent:list error:', e); throw e; }
+    try { return listAgents(getDb()); } catch (e) { logger.error('agent:list error:', e); throw e; }
   });
   ipcMain.handle('agent:listAll', () => {
-    try { return listAllAgents(getDb()); } catch (e) { console.error('[WS] agent:listAll error:', e); throw e; }
+    try { return listAllAgents(getDb()); } catch (e) { logger.error('agent:listAll error:', e); throw e; }
   });
   ipcMain.handle('agent:get', (_event, id: string) => {
-    try { return getAgent(getDb(), id); } catch (e) { console.error('[WS] agent:get error:', e); throw e; }
+    try { return getAgent(getDb(), id); } catch (e) { logger.error('agent:get error:', e); throw e; }
   });
   ipcMain.handle('agent:create', (_event, data) => {
-    try { return createAgent(getDb(), data); } catch (e) { console.error('[WS] agent:create error:', e); throw e; }
+    try { return createAgent(getDb(), data); } catch (e) { logger.error('agent:create error:', e); throw e; }
   });
   ipcMain.handle('agent:update', (_event, id: string, data) => {
-    try { return updateAgent(getDb(), id, data); } catch (e) { console.error('[WS] agent:update error:', e); throw e; }
+    try { return updateAgent(getDb(), id, data); } catch (e) { logger.error('agent:update error:', e); throw e; }
   });
   ipcMain.handle('agent:delete', (_event, id: string) => {
-    try { return deleteAgent(getDb(), id); } catch (e) { console.error('[WS] agent:delete error:', e); throw e; }
+    try { return deleteAgent(getDb(), id); } catch (e) { logger.error('agent:delete error:', e); throw e; }
   });
 
   // Template handlers
   ipcMain.handle('template:list', () => {
-    try { return loadTemplates(); } catch (e) { console.error('[WS] template:list error:', e); throw e; }
+    try { return loadTemplates(); } catch (e) { logger.error('template:list error:', e); throw e; }
   });
 
   // Skill handlers
   ipcMain.handle('skill:list', () => {
-    try { return listSkills(getDb()); } catch (e) { console.error('[WS] skill:list error:', e); throw e; }
+    try { return listSkills(getDb()); } catch (e) { logger.error('skill:list error:', e); throw e; }
   });
   ipcMain.handle('skill:get', (_event, id: string) => getSkill(getDb(), id));
   ipcMain.handle('skill:create', (_event, data) => createSkill(getDb(), data));
@@ -248,7 +253,7 @@ export function registerIpcHandlers(): void {
       const skillsDir = path.join(getDataDir(), 'skills');
       const result = importSkillFromLocal(sourcePath, name, { skillsDir, onDuplicate: 'rename' });
       return createSkill(getDb(), { name: result.name, sourcePath: result.dir });
-    } catch (e) { console.error('[WS] skill:importLocal error:', e); throw e; }
+    } catch (e) { logger.error('skill:importLocal error:', e); throw e; }
   });
 
   // Skill import from archive
@@ -257,7 +262,7 @@ export function registerIpcHandlers(): void {
       const skillsDir = path.join(getDataDir(), 'skills');
       const result = await importSkillFromArchive(archivePath, name, { skillsDir, onDuplicate: 'rename' });
       return createSkill(getDb(), { name: result.name, sourcePath: result.dir });
-    } catch (e) { console.error('[WS] skill:importArchive error:', e); throw e; }
+    } catch (e) { logger.error('skill:importArchive error:', e); throw e; }
   });
 
   // Skill discovery (pluggable providers)
@@ -281,7 +286,12 @@ export function registerIpcHandlers(): void {
     if (!provider) throw new Error(`Unknown skill provider: ${providerId}`);
     const skillsDir = path.join(getDataDir(), 'skills');
     const result = await provider.install(name, source, skillsDir);
-    return createSkill(getDb(), { name: result.name, sourcePath: result.dir });
+    const validation = validateSkill(result.dir);
+    return createSkill(getDb(), {
+      name: result.name,
+      sourcePath: result.dir,
+      description: validation.description ?? null,
+    });
   });
 
   // Native dialogs
@@ -458,7 +468,7 @@ export function registerIpcHandlers(): void {
       const report = await runTestAndPersist(getDb(), mcpId);
       return report;
     } catch (e) {
-      console.error('[WS] mcp:test error:', e);
+      logger.error('mcp:test error:', e);
       throw e;
     }
   });
@@ -475,7 +485,7 @@ export function registerIpcHandlers(): void {
       });
       return result;
     } catch (e) {
-      console.error('[WS] mcp:batchTest error:', e);
+      logger.error('mcp:batchTest error:', e);
       throw e;
     }
   });
@@ -486,7 +496,7 @@ export function registerIpcHandlers(): void {
       if (!mcp) throw new Error(`MCP server not found: ${mcpId}`);
       return await callMcpTool(mcp, toolName, args);
     } catch (e) {
-      console.error('[WS] mcp:callTool error:', e);
+      logger.error('mcp:callTool error:', e);
       throw e;
     }
   });
@@ -514,7 +524,7 @@ export function registerIpcHandlers(): void {
       await secretStore.storeSecret(mcpName, varName, value);
       return { success: true };
     } catch (e) {
-      console.error('[WS] mcp:storeSecret error:', e);
+      logger.error('mcp:storeSecret error:', e);
       throw e;
     }
   });
@@ -525,7 +535,7 @@ export function registerIpcHandlers(): void {
       await secretStore.deleteSecret(mcpName, varName);
       return { success: true };
     } catch (e) {
-      console.error('[WS] mcp:deleteSecret error:', e);
+      logger.error('mcp:deleteSecret error:', e);
       throw e;
     }
   });
@@ -559,19 +569,19 @@ export function registerIpcHandlers(): void {
 
   // Project handlers
   ipcMain.handle('project:list', (_event, search?: string) => {
-    try { return listProjects(getDb(), search); } catch (e) { console.error('[WS] project:list error:', e); throw e; }
+    try { return listProjects(getDb(), search); } catch (e) { logger.error('project:list error:', e); throw e; }
   });
   ipcMain.handle('project:get', (_event, id: string) => {
-    try { return getProjectWithAgents(getDb(), id); } catch (e) { console.error('[WS] project:get error:', e); throw e; }
+    try { return getProjectWithAgents(getDb(), id); } catch (e) { logger.error('project:get error:', e); throw e; }
   });
   ipcMain.handle('project:create', (_event, data: { path: string; name?: string }) => {
-    try { return createProject(getDb(), data); } catch (e) { console.error('[WS] project:create error:', e); throw e; }
+    try { return createProject(getDb(), data); } catch (e) { logger.error('project:create error:', e); throw e; }
   });
   ipcMain.handle('project:update', (_event, id: string, data: { name?: string }) => {
-    try { return updateProject(getDb(), id, data); } catch (e) { console.error('[WS] project:update error:', e); throw e; }
+    try { return updateProject(getDb(), id, data); } catch (e) { logger.error('project:update error:', e); throw e; }
   });
   ipcMain.handle('project:delete', (_event, id: string) => {
-    try { return deleteProject(getDb(), id, darwinSymlink); } catch (e) { console.error('[WS] project:delete error:', e); throw e; }
+    try { return deleteProject(getDb(), id, darwinSymlink); } catch (e) { logger.error('project:delete error:', e); throw e; }
   });
   ipcMain.handle('project:toggleAgent', (_event, projectId: string, agentId: string, enabled: boolean) => {
     try {
@@ -591,12 +601,12 @@ export function registerIpcHandlers(): void {
         }
       }
       toggleAgentForProject(d, projectId, agentId, enabled);
-    } catch (e) { console.error('[WS] project:toggleAgent error:', e); throw e; }
+    } catch (e) { logger.error('project:toggleAgent error:', e); throw e; }
   });
 
   // Project skill handlers
   ipcMain.handle('project:skillList', (_event, projectId: string) => {
-    try { return getProjectSkillList(getDb(), projectId); } catch (e) { console.error('[WS] project:skillList error:', e); throw e; }
+    try { return getProjectSkillList(getDb(), projectId); } catch (e) { logger.error('project:skillList error:', e); throw e; }
   });
   ipcMain.handle('project:applySkill', (_event, projectId: string, skillId: string, agentId: string) => {
     try {
@@ -611,7 +621,7 @@ export function registerIpcHandlers(): void {
       ).get(projectId, agentId) as { enabled: number } | undefined;
       if (!pa || pa.enabled !== 1) throw new Error('Agent is disabled for this project');
       return syncProjectSkillToWorkspace(d, proj, agent, skill.name, getDataDir(), darwinSymlink);
-    } catch (e) { console.error('[WS] project:applySkill error:', e); throw e; }
+    } catch (e) { logger.error('project:applySkill error:', e); throw e; }
   });
   ipcMain.handle('project:unapplySkill', (_event, projectId: string, skillId: string, agentId: string) => {
     try {
@@ -621,7 +631,7 @@ export function registerIpcHandlers(): void {
       const skill = getSkill(d, skillId);
       if (!proj || !agent || !skill) throw new Error('Project, agent, or skill not found');
       return unsyncProjectSkillFromWorkspace(d, proj, agent, skill.name, darwinSymlink);
-    } catch (e) { console.error('[WS] project:unapplySkill error:', e); throw e; }
+    } catch (e) { logger.error('project:unapplySkill error:', e); throw e; }
   });
   ipcMain.handle('project:availableSkills', (_event, projectId: string, agentId?: string) => {
     try {
@@ -635,7 +645,7 @@ export function registerIpcHandlers(): void {
         return allSkills.filter((s) => !appliedSet.has(s.id));
       }
       return allSkills;
-    } catch (e) { console.error('[WS] project:availableSkills error:', e); throw e; }
+    } catch (e) { logger.error('project:availableSkills error:', e); throw e; }
   });
 
   // Project MCP handlers
@@ -652,7 +662,7 @@ export function registerIpcHandlers(): void {
          GROUP BY pra.resource_id
          ORDER BY m.name ASC`,
       ).all(projectId);
-    } catch (e) { console.error('[WS] project:mcpList error:', e); throw e; }
+    } catch (e) { logger.error('project:mcpList error:', e); throw e; }
   });
 
   ipcMain.handle('project:applyMcp', async (_event, projectId: string, mcpName: string, agentId: string) => {
@@ -667,7 +677,7 @@ export function registerIpcHandlers(): void {
       if (mcp) ensureMcpInWorkspace(mcp);
       const secretStore = await createSecretStore(d);
       return await syncProjectMcpToWorkspace(d, proj, agent, template, mcpName, getDataDir(), secretStore);
-    } catch (e) { console.error('[WS] project:applyMcp error:', e); throw e; }
+    } catch (e) { logger.error('project:applyMcp error:', e); throw e; }
   });
 
   ipcMain.handle('project:unapplyMcp', (_event, projectId: string, mcpName: string, agentId: string) => {
@@ -679,7 +689,7 @@ export function registerIpcHandlers(): void {
       const template = effectiveAsTemplate(agent, resolveTemplateForAgent(agent));
       if (!template) throw new Error('No matching agent template found');
       return unsyncProjectMcpFromWorkspace(d, proj, agent, template, mcpName);
-    } catch (e) { console.error('[WS] project:unapplyMcp error:', e); throw e; }
+    } catch (e) { logger.error('project:unapplyMcp error:', e); throw e; }
   });
 
   ipcMain.handle('project:availableMcps', (_event, projectId: string, agentId?: string) => {
@@ -694,8 +704,13 @@ export function registerIpcHandlers(): void {
         return allMcps.filter((m) => !appliedSet.has(m.id));
       }
       return allMcps;
-    } catch (e) { console.error('[WS] project:availableMcps error:', e); throw e; }
+    } catch (e) { logger.error('project:availableMcps error:', e); throw e; }
   });
+
+  // Logger handlers
+  ipcMain.handle('logger:getPath', () => getLogFilePath());
+  ipcMain.handle('logger:setDebug', (_event, enabled: boolean) => setDebugMode(enabled));
+  ipcMain.handle('logger:isDebug', () => isDebugMode());
 }
 
 export function cleanupIpc(): void {

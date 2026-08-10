@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerIpcHandlers, cleanupIpc } from './ipc.js';
+import { initLogger, logger } from '@ws/core';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
@@ -26,11 +27,13 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  console.log('[WS] Electron app ready, registering IPC handlers...');
+  const dataDir = path.join(process.env.HOME ?? '~', '.workspace_switch');
+  initLogger(dataDir);
+  logger.info('Electron app ready, registering IPC handlers...');
   registerIpcHandlers();
-  console.log('[WS] IPC handlers registered, creating window...');
+  logger.info('IPC handlers registered, creating window...');
   createWindow();
-  console.log('[WS] Window created');
+  logger.info('Window created');
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

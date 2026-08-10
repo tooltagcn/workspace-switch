@@ -84,4 +84,9 @@ export interface WsApi {
   projectApplyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<any>;
   projectUnapplyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<any>;
   projectAvailableMcps: (projectId: string, agentId?: string) => Promise<any>;
+
+  // Logger
+  getLogPath: () => Promise<string | null>;
+  setDebugMode: (enabled: boolean) => Promise<void>;
+  isDebugMode: () => Promise<boolean>;
 }

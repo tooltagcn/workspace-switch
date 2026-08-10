@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { logger } from '@ws/core';
 
 export function getJsonMode(cmd: Command): boolean {
   const opts = cmd.optsWithGlobals();
@@ -36,20 +37,24 @@ export function outputKeyValue(pairs: [string, string | null | undefined][]): vo
 }
 
 export function success(message: string): void {
+  logger.info(message);
   console.log(message);
 }
 
 export function warn(message: string): void {
+  logger.warn(message);
   console.warn(`Warning: ${message}`);
 }
 
 export function verbose(ctx: { verbose: boolean }, message: string): void {
+  logger.debug(message);
   if (ctx.verbose) {
     console.log(`[verbose] ${message}`);
   }
 }
 
 export function fail(message: string): never {
+  logger.error(message);
   console.error(`Error: ${message}`);
   process.exit(1);
 }

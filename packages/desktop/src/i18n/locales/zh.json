@@ -376,7 +376,10 @@
     "langZh": "中文（即将推出）",
     "apiKeys": "API 密钥",
     "apiKeysDesc": "管理系统钥匙串中存储的 API 密钥",
-    "general": "通用"
+    "general": "通用",
+    "debug": "调试模式",
+    "debugDesc": "启用详细调试日志",
+    "logFilePath": "日志文件路径"
   },
   "search": {
     "title": "全局搜索",

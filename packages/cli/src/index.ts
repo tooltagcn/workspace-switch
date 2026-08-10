@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import path from 'node:path';
+import { initLogger, setDebugMode, logger } from '@ws/core';
 import { registerInit } from './commands/init.js';
 import { registerAgent } from './commands/agent.js';
 import { registerSkill } from './commands/skill.js';
@@ -21,6 +22,15 @@ program
   .option('--verbose', 'Enable verbose output', false)
   .option('--data-dir <path>', 'Data directory', path.join(process.env.HOME ?? '~', '.workspace_switch'));
 
+program.hook('preAction', () => {
+  const opts = program.optsWithGlobals();
+  initLogger(opts.dataDir);
+  if (opts.verbose) {
+    setDebugMode(true);
+  }
+  logger.debug('CLI started');
+});
+
 registerInit(program);
 registerAgent(program);
 registerSkill(program);
@@ -31,6 +41,7 @@ registerSearch(program);
 registerDoctor(program);
 
 program.parseAsync(process.argv).catch((err: unknown) => {
+  logger.error(err instanceof Error ? err.message : String(err));
   console.error(err instanceof Error ? err.message : String(err));
   process.exit(1);
 });

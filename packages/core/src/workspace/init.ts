@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const WORKSPACE_DIRS = ['skills', 'mcp', 'providers'] as const;
+const WORKSPACE_DIRS = ['skills', 'mcp', 'providers', 'logs'] as const;
 
 export type WorkspaceSubDir = (typeof WORKSPACE_DIRS)[number];
 

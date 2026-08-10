@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUiStore } from '../stores/uiStore.js';
 import { useProviderStore } from '../stores/providerStore.js';
+import { api } from '../lib/ipc.js';
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
@@ -9,13 +10,26 @@ export default function Settings() {
   const { providers, isKeytarSupported } = useProviderStore();
   const [pathInput, setPathInput] = useState(workspacePath);
   const [keytarOk, setKeytarOkState] = useState<boolean | null>(null);
+  const [debugMode, setDebugMode] = useState(false);
+  const [logPath, setLogPath] = useState<string | null>(null);
 
   if (keytarOk === null) {
     isKeytarSupported().then(setKeytarOkState);
   }
 
+  useEffect(() => {
+    api.isDebugMode().then(setDebugMode);
+    api.getLogPath().then(setLogPath);
+  }, []);
+
   const handleSavePath = () => {
     setWorkspacePath(pathInput);
+  };
+
+  const handleToggleDebug = async () => {
+    const next = !debugMode;
+    await api.setDebugMode(next);
+    setDebugMode(next);
   };
 
   const themes: { value: 'light' | 'dark' | 'system'; label: string }[] = [
@@ -97,6 +111,39 @@ export default function Settings() {
                 {t('settings.langZh')}
               </button>
             </div>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  {t('settings.debug')}
+                </label>
+                <p className="text-xs text-gray-500">{t('settings.debugDesc')}</p>
+              </div>
+              <button
+                onClick={handleToggleDebug}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  debugMode ? 'bg-blue-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    debugMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            {logPath && (
+              <div className="mt-2">
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  {t('settings.logFilePath')}
+                </label>
+                <code className="block text-xs bg-gray-50 border rounded px-2 py-1 text-gray-600 select-all">
+                  {logPath}
+                </code>
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { dialog, ipcMain } from 'electron';
 import {
   listAgents,
   listAllAgents,
@@ -84,6 +84,13 @@ import {
   isKeychainAvailable,
   saveMcpToWorkspace,
   loadMcpFromWorkspace,
+  importSkillFromLocal,
+  importSkillFromArchive,
+  registerSkillProvider,
+  getSkillProvider,
+  listSkillProviders,
+  SkillsShProvider,
+  GitHubUrlProvider,
 } from '@ws/core';
 import { darwinSymlink } from '@ws/core';
 import path from 'node:path';
@@ -132,6 +139,10 @@ function ensureMcpInWorkspace(mcp: { name: string; transport: string | null; com
 }
 
 export function registerIpcHandlers(): void {
+  // Register built-in skill discovery providers
+  registerSkillProvider(new SkillsShProvider());
+  registerSkillProvider(new GitHubUrlProvider());
+
   // Agent handlers
   ipcMain.handle('agent:list', () => {
     try { return listAgents(getDb()); } catch (e) { console.error('[WS] agent:list error:', e); throw e; }
@@ -182,7 +193,7 @@ export function registerIpcHandlers(): void {
       const folders = scanHomeHiddenFolders(userHome, templates);
       const agentSkills = scanSkillsFromAgents(d, listAgents(d));
       const folderSkills = scanSkillsFromFolders(d, folders, templates);
-      const seen = new Set<string>();
+      const seen = new Set<string>(agentSkills.map((s) => `${s.name}:${s.agentId}`));
       const merged = [...agentSkills];
       for (const s of folderSkills) {
         const key = `${s.name}:${s.agentId}`;
@@ -229,6 +240,62 @@ export function registerIpcHandlers(): void {
   });
   ipcMain.handle('skill:fixDoctor', () => {
     return fixSkillConsistency(getDb(), getDataDir());
+  });
+
+  // Skill import from local directory
+  ipcMain.handle('skill:importLocal', (_event, sourcePath: string, name: string) => {
+    try {
+      const skillsDir = path.join(getDataDir(), 'skills');
+      const result = importSkillFromLocal(sourcePath, name, { skillsDir, onDuplicate: 'rename' });
+      return createSkill(getDb(), { name: result.name, sourcePath: result.dir });
+    } catch (e) { console.error('[WS] skill:importLocal error:', e); throw e; }
+  });
+
+  // Skill import from archive
+  ipcMain.handle('skill:importArchive', async (_event, archivePath: string, name: string) => {
+    try {
+      const skillsDir = path.join(getDataDir(), 'skills');
+      const result = await importSkillFromArchive(archivePath, name, { skillsDir, onDuplicate: 'rename' });
+      return createSkill(getDb(), { name: result.name, sourcePath: result.dir });
+    } catch (e) { console.error('[WS] skill:importArchive error:', e); throw e; }
+  });
+
+  // Skill discovery (pluggable providers)
+  ipcMain.handle('skill:discovery:providers', () => {
+    return listSkillProviders().map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      inputPlaceholder: p.inputPlaceholder,
+    }));
+  });
+
+  ipcMain.handle('skill:discovery:search', async (_event, providerId: string, query: string) => {
+    const provider = getSkillProvider(providerId);
+    if (!provider) throw new Error(`Unknown skill provider: ${providerId}`);
+    return provider.search(query);
+  });
+
+  ipcMain.handle('skill:discovery:install', async (_event, providerId: string, name: string, source: string) => {
+    const provider = getSkillProvider(providerId);
+    if (!provider) throw new Error(`Unknown skill provider: ${providerId}`);
+    const skillsDir = path.join(getDataDir(), 'skills');
+    const result = await provider.install(name, source, skillsDir);
+    return createSkill(getDb(), { name: result.name, sourcePath: result.dir });
+  });
+
+  // Native dialogs
+  ipcMain.handle('dialog:openDirectory', async () => {
+    const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+    return { canceled: result.canceled, path: result.canceled ? null : result.filePaths[0] };
+  });
+
+  ipcMain.handle('dialog:openFile', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Archives', extensions: ['zip', 'tar.gz', 'tgz', 'tar'] }],
+    });
+    return { canceled: result.canceled, path: result.canceled ? null : result.filePaths[0] };
   });
 
   // MCP handlers
@@ -278,7 +345,7 @@ export function registerIpcHandlers(): void {
       const folders = scanHomeHiddenFolders(userHome, templates);
       const agentMcps = scanMcpsFromAgents(d, listAgents(d));
       const folderMcps = scanMcpsFromFolders(d, folders, templates);
-      const seen = new Set<string>();
+      const seen = new Set<string>(agentMcps.map((m) => `${m.name}:${m.agentId}`));
       const merged = [...agentMcps];
       for (const m of folderMcps) {
         const key = `${m.name}:${m.agentId}`;

@@ -22,6 +22,13 @@ export interface WsApi {
   importScannedSkills: (skills: unknown[]) => Promise<any>;
   checkSkillConsistency: () => Promise<any>;
   fixSkillConsistency: () => Promise<any>;
+  importSkillFromLocal: (sourcePath: string, name: string) => Promise<any>;
+  importSkillFromArchive: (archivePath: string, name: string) => Promise<any>;
+  searchSkillDiscovery: (providerId: string, query: string) => Promise<any>;
+  installSkillDiscovery: (providerId: string, name: string, source: string) => Promise<any>;
+  listSkillProviders: () => Promise<{ id: string; name: string; description: string; inputPlaceholder: string }[]>;
+  openDirectoryDialog: () => Promise<{ canceled: boolean; path: string | null }>;
+  openFileDialog: () => Promise<{ canceled: boolean; path: string | null }>;
   listMcps: () => Promise<any>;
   getMcp: (id: string) => Promise<any>;
   createMcp: (data: unknown) => Promise<any>;

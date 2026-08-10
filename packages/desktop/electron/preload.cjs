@@ -29,6 +29,13 @@ const api = {
   importScannedSkills: (skills) => ipcRenderer.invoke('skill:importScanned', skills),
   checkSkillConsistency: () => ipcRenderer.invoke('skill:doctor'),
   fixSkillConsistency: () => ipcRenderer.invoke('skill:fixDoctor'),
+  importSkillFromLocal: (sourcePath, name) => ipcRenderer.invoke('skill:importLocal', sourcePath, name),
+  importSkillFromArchive: (archivePath, name) => ipcRenderer.invoke('skill:importArchive', archivePath, name),
+  searchSkillDiscovery: (providerId, query) => ipcRenderer.invoke('skill:discovery:search', providerId, query),
+  installSkillDiscovery: (providerId, name, source) => ipcRenderer.invoke('skill:discovery:install', providerId, name, source),
+  listSkillProviders: () => ipcRenderer.invoke('skill:discovery:providers'),
+  openDirectoryDialog: () => ipcRenderer.invoke('dialog:openDirectory'),
+  openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
 
   // MCP operations
   listMcps: () => ipcRenderer.invoke('mcp:list'),

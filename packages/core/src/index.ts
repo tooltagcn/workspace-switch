@@ -45,8 +45,13 @@ export { importSkillFromLocal, importSkillFromGit, normalizeGitUrl } from './ski
 
 export { importSkillFromArchive } from './skill/archive.js';
 
-export type { SkillSearchResult, InstallFromRegistryOptions, InstallResult } from './skill/registry.js';
+export type { SkillSearchResult as RegistrySearchResult, InstallFromRegistryOptions, InstallResult } from './skill/registry.js';
 export { searchSkillsOnline, installSkillFromRegistry } from './skill/registry.js';
+
+export type { SkillSearchResult, SkillProvider } from './skill/discovery/types.js';
+export { registerSkillProvider, getSkillProvider, listSkillProviders } from './skill/discovery/registry.js';
+export { SkillsShProvider } from './skill/discovery/skills-sh.js';
+export { GitHubUrlProvider } from './skill/discovery/github-url.js';
 
 export type { ValidationResult } from './skill/validator.js';
 export { validateSkill } from './skill/validator.js';

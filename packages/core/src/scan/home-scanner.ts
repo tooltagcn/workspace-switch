@@ -46,41 +46,67 @@ function foldersToSyntheticAgents(
   const agents: Agent[] = [];
 
   for (const folder of folders) {
-    if (!folder.matchedAgentId) continue;
+    if (folder.matchedAgentId) {
+      const template = templates.find((t) => t.id === folder.matchedAgentId);
+      if (!template) continue;
 
-    const template = templates.find((t) => t.id === folder.matchedAgentId);
-    if (!template) continue;
+      const existingRow = db
+        .prepare('SELECT * FROM agent WHERE id = ?')
+        .get(folder.matchedAgentId) as Record<string, unknown> | undefined;
 
-    const existingRow = db
-      .prepare('SELECT * FROM agent WHERE id = ?')
-      .get(folder.matchedAgentId) as Record<string, unknown> | undefined;
+      if (existingRow) {
+        agents.push(rowToAgent(existingRow));
+        continue;
+      }
 
-    if (existingRow) {
-      agents.push(rowToAgent(existingRow));
-      continue;
+      agents.push({
+        id: folder.matchedAgentId,
+        name: folder.matchedAgentName ?? template.name,
+        builtin: true,
+        configDirName: template.configDirName,
+        userRoot: folder.path,
+        projectRoot: null,
+        projectEnabled: false,
+        mcpFile: template.mcpFile,
+        mcpField: template.mcpField,
+        skillDir: template.skillDir,
+        enabled: true,
+        detectedAt: null,
+        templateId: null,
+        mcpConfigPath: null,
+        targetFormat: template.targetFormat ?? template.entryFormat?.format ?? null,
+        envTransform: template.entryFormat?.envTransform ?? null,
+        fieldMapping: template.entryFormat?.fieldMapping ?? null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      // Handle unmatched folders - check if they have a skills/ subdirectory
+      const skillsDir = path.join(folder.path, 'skills');
+      if (fs.existsSync(skillsDir) && fs.lstatSync(skillsDir).isDirectory()) {
+        agents.push({
+          id: `unmatched:${folder.dirName}`,
+          name: folder.dirName,
+          builtin: false,
+          configDirName: folder.dirName,
+          userRoot: folder.path,
+          projectRoot: null,
+          projectEnabled: false,
+          mcpFile: null,
+          mcpField: null,
+          skillDir: 'skills',
+          enabled: true,
+          detectedAt: null,
+          templateId: null,
+          mcpConfigPath: null,
+          targetFormat: null,
+          envTransform: null,
+          fieldMapping: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
     }
-
-    agents.push({
-      id: folder.matchedAgentId,
-      name: folder.matchedAgentName ?? template.name,
-      builtin: true,
-      configDirName: template.configDirName,
-      userRoot: folder.path,
-      projectRoot: null,
-      projectEnabled: false,
-      mcpFile: template.mcpFile,
-      mcpField: template.mcpField,
-      skillDir: template.skillDir,
-      enabled: true,
-      detectedAt: null,
-      templateId: null,
-      mcpConfigPath: null,
-      targetFormat: template.targetFormat ?? template.entryFormat?.format ?? null,
-      envTransform: template.entryFormat?.envTransform ?? null,
-      fieldMapping: template.entryFormat?.fieldMapping ?? null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
   }
 
   return agents;

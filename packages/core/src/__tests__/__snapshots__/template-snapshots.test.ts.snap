@@ -345,6 +345,39 @@ exports[`Agent template rendering snapshots > Qoder (qoder) > renders stdio MCP 
 "
 `;
 
+exports[`Agent template rendering snapshots > Qoder CN (qoder-cn) > renders SSE MCP snapshot 1`] = `
+"{
+  "mcpServers": {
+    "remote-server": {
+      "url": "http://localhost:3000/sse",
+      "env": {
+        "API_KEY": "\${env:API_KEY}"
+      }
+    }
+  }
+}
+"
+`;
+
+exports[`Agent template rendering snapshots > Qoder CN (qoder-cn) > renders stdio MCP snapshot 1`] = `
+"{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "\${env:GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+"
+`;
+
 exports[`Agent template rendering snapshots > Qwen Code (qwen-code) > renders SSE MCP snapshot 1`] = `
 "{
   "mcpServers": {

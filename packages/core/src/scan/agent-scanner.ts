@@ -10,16 +10,50 @@ function parseFrontmatter(content: string): Record<string, string> {
   if (!match) return {};
 
   const fields: Record<string, string> = {};
-  for (const line of match[1].split('\n')) {
+  const lines = match[1].split('\n');
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
     const colonIdx = line.indexOf(':');
-    if (colonIdx === -1) continue;
+    if (colonIdx === -1) { i++; continue; }
+
     const key = line.slice(0, colonIdx).trim();
-    let value = line.slice(colonIdx + 1).trim();
+    const rawValue = line.slice(colonIdx + 1).trim();
+
+    if (rawValue === '>-' || rawValue === '>') {
+      // Folded block scalar: join lines with spaces
+      const blockLines: string[] = [];
+      i++;
+      while (i < lines.length && (lines[i].startsWith('  ') || lines[i].startsWith('\t'))) {
+        const trimmed = lines[i].trim();
+        if (trimmed) blockLines.push(trimmed);
+        i++;
+      }
+      if (key) fields[key] = blockLines.join(' ');
+      continue;
+    }
+
+    if (rawValue === '|' || rawValue === '|-' || rawValue === '|+') {
+      // Literal block scalar: preserve newlines
+      const blockLines: string[] = [];
+      i++;
+      while (i < lines.length && (lines[i].startsWith('  ') || lines[i].startsWith('\t'))) {
+        blockLines.push(lines[i].replace(/^ {2}/, ''));
+        i++;
+      }
+      if (key) fields[key] = blockLines.join('\n').replace(/\n+$/, '');
+      continue;
+    }
+
+    let value = rawValue;
     if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
     if (key) fields[key] = value;
+    i++;
   }
+
   return fields;
 }
 

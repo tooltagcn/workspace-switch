@@ -6,6 +6,7 @@ import ApplyToAgentDialog from './components/ApplyToAgentDialog.js';
 import type { ApplyResource } from './components/ApplyToAgentDialog.js';
 import UnapplyFromAgentDialog from './components/UnapplyFromAgentDialog.js';
 import BulkActionBar from '../components/BulkActionBar.js';
+import SkillDiscoveryPanel from './components/SkillDiscoveryPanel.js';
 
 function SkillDetail({ skill, onClose, onApply }: { skill: Skill; onClose: () => void; onApply: () => void }) {
   const { t } = useTranslation();
@@ -50,37 +51,93 @@ function SkillDetail({ skill, onClose, onApply }: { skill: Skill; onClose: () =>
 
 function SkillAddWizard({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const { createSkill } = useSkillStore();
   const [activeTab, setActiveTab] = useState(0);
-  const [localPath, setLocalPath] = useState('');
+
+  // Archive upload state
   const [archivePath, setArchivePath] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [manualName, setManualName] = useState('');
-  const [manualDesc, setManualDesc] = useState('');
+  const [archiveName, setArchiveName] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const [archiveImporting, setArchiveImporting] = useState(false);
+  const [archiveError, setArchiveError] = useState('');
+  const [archiveSuccess, setArchiveSuccess] = useState(false);
+
+  // Local import state
+  const [localPath, setLocalPath] = useState('');
+  const [localName, setLocalName] = useState('');
+  const [localImporting, setLocalImporting] = useState(false);
+  const [localError, setLocalError] = useState('');
+  const [localSuccess, setLocalSuccess] = useState(false);
 
   const tabs = [
-    { label: t('skill.addWizard.localImport'), desc: t('skill.addWizard.localImportDesc') },
-    { label: t('skill.addWizard.archiveUpload'), desc: t('skill.addWizard.archiveUploadDesc') },
     { label: t('skill.addWizard.onlineSearch'), desc: t('skill.addWizard.onlineSearchDesc') },
-    { label: t('skill.addWizard.manualCreate'), desc: t('skill.addWizard.manualCreateDesc') },
+    { label: t('skill.addWizard.archiveUpload'), desc: t('skill.addWizard.archiveUploadDesc') },
+    { label: t('skill.addWizard.localImport'), desc: t('skill.addWizard.localImportDesc') },
   ];
 
-  const handleSubmit = async () => {
+  const handleArchiveBrowse = async () => {
+    const result = await api.openFileDialog();
+    if (!result.canceled && result.path) {
+      setArchivePath(result.path);
+      const fileName = result.path.split('/').pop() ?? '';
+      setArchiveName(fileName.replace(/\.(zip|tar\.gz|tgz|tar)$/i, ''));
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0] as (File & { path?: string }) | undefined;
+    if (file?.path) {
+      setArchivePath(file.path);
+      const fileName = file.path.split('/').pop() ?? '';
+      setArchiveName(fileName.replace(/\.(zip|tar\.gz|tgz|tar)$/i, ''));
+    }
+  };
+
+  const handleArchiveImport = async () => {
+    if (!archivePath || !archiveName) return;
+    setArchiveImporting(true);
+    setArchiveError('');
+    setArchiveSuccess(false);
     try {
-      if (activeTab === 0 && localPath) {
-        await createSkill({ name: localPath.split('/').pop() ?? 'imported-skill', sourcePath: localPath });
-      } else if (activeTab === 3 && manualName) {
-        await createSkill({ name: manualName, description: manualDesc });
-      }
-      onClose();
-    } catch {
-      // error handled by store
+      await api.importSkillFromArchive(archivePath, archiveName);
+      await useSkillStore.getState().fetchSkills();
+      setArchiveSuccess(true);
+    } catch (err) {
+      setArchiveError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setArchiveImporting(false);
+    }
+  };
+
+  const handleLocalBrowse = async () => {
+    const result = await api.openDirectoryDialog();
+    if (!result.canceled && result.path) {
+      setLocalPath(result.path);
+      const folderName = result.path.split('/').pop() ?? '';
+      setLocalName(folderName);
+    }
+  };
+
+  const handleLocalImport = async () => {
+    if (!localPath || !localName) return;
+    setLocalImporting(true);
+    setLocalError('');
+    setLocalSuccess(false);
+    try {
+      await api.importSkillFromLocal(localPath, localName);
+      await useSkillStore.getState().fetchSkills();
+      setLocalSuccess(true);
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLocalImporting(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[560px]">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-[600px]">
         <h3 className="text-lg font-semibold mb-4">{t('skill.addWizard.title')}</h3>
         <div className="flex border-b mb-4">
           {tabs.map((tab, i) => (
@@ -94,73 +151,102 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
           ))}
         </div>
         <p className="text-sm text-gray-500 mb-4">{tabs[activeTab].desc}</p>
-        <div className="min-h-[120px]">
-          {activeTab === 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.selectPath')}</label>
-              <input
-                type="text"
-                value={localPath}
-                onChange={(e) => setLocalPath(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          )}
+        <div className="min-h-[180px]">
+          {activeTab === 0 && <SkillDiscoveryPanel />}
+
           {activeTab === 1 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.uploadFile')}</label>
-              <input
-                type="text"
-                value={archivePath}
-                onChange={(e) => setArchivePath(e.target.value)}
-                placeholder=".zip or .tar.gz"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="space-y-3">
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+              >
+                <p className="text-sm text-gray-500 mb-2">{t('skill.addWizard.dragDropHint')}</p>
+                <button
+                  onClick={handleArchiveBrowse}
+                  className="px-4 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  {t('skill.addWizard.browse')}
+                </button>
+              </div>
+              {archivePath && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.selectedFile')}</label>
+                    <p className="text-xs font-mono text-gray-500 truncate">{archivePath}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.skillName')}</label>
+                    <input
+                      type="text"
+                      value={archiveName}
+                      onChange={(e) => setArchiveName(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </>
+              )}
+              {archiveError && <p className="text-sm text-red-600">{archiveError}</p>}
+              {archiveSuccess && <p className="text-sm text-green-600">{t('skill.addWizard.importSuccess')}</p>}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleArchiveImport}
+                  disabled={!archivePath || !archiveName || archiveImporting}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {archiveImporting ? t('skill.addWizard.importing') : t('common.import')}
+                </button>
+              </div>
             </div>
           )}
+
           {activeTab === 2 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.searchQuery')}</label>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          )}
-          {activeTab === 3 && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.skillName')}</label>
-                <input
-                  type="text"
-                  value={manualName}
-                  onChange={(e) => setManualName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.selectPath')}</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={localPath}
+                    onChange={(e) => setLocalPath(e.target.value)}
+                    className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={handleLocalBrowse}
+                    className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 shrink-0"
+                  >
+                    {t('skill.addWizard.browse')}
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.skillDescription')}</label>
-                <textarea
-                  value={manualDesc}
-                  onChange={(e) => setManualDesc(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+              {localPath && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.skillName')}</label>
+                  <input
+                    type="text"
+                    value={localName}
+                    onChange={(e) => setLocalName(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+              {localError && <p className="text-sm text-red-600">{localError}</p>}
+              {localSuccess && <p className="text-sm text-green-600">{t('skill.addWizard.importSuccess')}</p>}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleLocalImport}
+                  disabled={!localPath || !localName || localImporting}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {localImporting ? t('skill.addWizard.importing') : t('common.import')}
+                </button>
               </div>
             </div>
           )}
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">{t('common.cancel')}</button>
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-            disabled={(activeTab === 0 && !localPath) || (activeTab === 3 && !manualName)}
-          >
-            {t('common.import')}
-          </button>
         </div>
       </div>
     </div>

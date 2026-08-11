@@ -70,12 +70,6 @@ describe('Scan Importer', () => {
       const row = db.prepare('SELECT * FROM skill WHERE name = ?').get('my-skill') as Record<string, unknown>;
       expect(row).toBeDefined();
       expect(row.source_path).toBe(destPath);
-
-      const ra = db.prepare(
-        "SELECT * FROM resource_agent WHERE resource_type = 'skill' AND agent_id = ?",
-      ).get('agent-1') as Record<string, unknown>;
-      expect(ra).toBeDefined();
-      expect(ra.symlinked).toBe(0);
     });
 
     it('skips synced skills', () => {
@@ -166,12 +160,6 @@ describe('Scan Importer', () => {
       expect(row).toBeDefined();
       expect(row.transport).toBe('stdio');
       expect(row.command).toBe('npx');
-
-      const ra = db.prepare(
-        "SELECT * FROM resource_agent WHERE resource_type = 'mcp' AND agent_id = ?",
-      ).get('agent-1') as Record<string, unknown>;
-      expect(ra).toBeDefined();
-      expect(ra.symlinked).toBe(0);
     });
 
     it('skips synced MCPs', () => {

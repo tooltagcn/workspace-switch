@@ -67,11 +67,6 @@ export function importScannedSkills(
         `INSERT INTO skill (id, name, description, source_path, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?)`,
       ).run(id, skill.name, skill.description ?? null, destPath, now, now);
-
-      db.prepare(
-        `INSERT INTO resource_agent (resource_type, resource_id, agent_id, target_path, symlinked, applied_at)
-         VALUES ('skill', ?, ?, ?, 0, ?)`,
-      ).run(id, skill.agentId, destPath, now);
     }
 
     results.push({
@@ -124,11 +119,6 @@ export function importScannedMcps(
         now,
         now,
       );
-
-      db.prepare(
-        `INSERT INTO resource_agent (resource_type, resource_id, agent_id, target_path, symlinked, applied_at)
-         VALUES ('mcp', ?, ?, ?, 0, ?)`,
-      ).run(id, mcp.agentId, destPath, now);
     }
 
     results.push({

@@ -18,7 +18,7 @@ describe('initWorkspace', () => {
     const result = initWorkspace(tmpDir);
 
     expect(result.dataDir).toBe(tmpDir);
-    expect(result.created).toHaveLength(3);
+    expect(result.created).toHaveLength(4);
     expect(result.existing).toHaveLength(0);
 
     expect(fs.existsSync(path.join(tmpDir, 'skills'))).toBe(true);
@@ -32,7 +32,7 @@ describe('initWorkspace', () => {
 
     const result2 = initWorkspace(tmpDir);
     expect(result2.created).toHaveLength(0);
-    expect(result2.existing).toHaveLength(3);
+    expect(result2.existing).toHaveLength(4);
   });
 
   it('handles partially existing directories', () => {
@@ -40,7 +40,7 @@ describe('initWorkspace', () => {
     fs.mkdirSync(path.join(tmpDir, 'skills'), { recursive: true });
 
     const result = initWorkspace(tmpDir);
-    expect(result.created).toHaveLength(2);
+    expect(result.created).toHaveLength(3);
     expect(result.existing).toHaveLength(1);
     expect(result.existing[0]).toContain('skills');
   });

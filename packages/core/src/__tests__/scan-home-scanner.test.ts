@@ -19,7 +19,7 @@ describe('Home Scanner', () => {
       candidateDirNames: ['.claude'],
       mcpFile: 'settings.json',
       mcpField: 'mcpServers',
-      skillDir: 'commands',
+      skillDir: 'skills',
       icon: null,
       targetFormat: 'json-map',
     },
@@ -101,7 +101,7 @@ describe('Home Scanner', () => {
   describe('scanSkillsFromFolders', () => {
     it('scans skills from matched folders', () => {
       const claudeDir = path.join(tmpDir, '.claude');
-      const skillDir = path.join(claudeDir, 'commands', 'my-command');
+      const skillDir = path.join(claudeDir, 'skills', 'my-command');
       fs.mkdirSync(skillDir, { recursive: true });
       fs.writeFileSync(
         path.join(skillDir, 'SKILL.md'),

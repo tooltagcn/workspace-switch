@@ -58,7 +58,7 @@ function AgentAddDialog({ onClose }: { onClose: () => void }) {
     if (!form.configDirName) return;
     setDetecting(true);
     const knownDirs: Record<string, { mcpFile: string | null; mcpField: string | null; skillDir: string | null }> = {
-      '.claude': { mcpFile: 'settings.json', mcpField: 'mcpServers', skillDir: 'commands' },
+      '.claude': { mcpFile: 'settings.json', mcpField: 'mcpServers', skillDir: 'skills' },
       '.agents': { mcpFile: 'config.json', mcpField: 'mcpServers', skillDir: 'skills' },
       '.cursor': { mcpFile: 'settings.json', mcpField: 'mcpServers', skillDir: null },
       '.qoder-cn': { mcpFile: null, mcpField: null, skillDir: 'skills' },

@@ -4,7 +4,7 @@
   "configDirName": ".claude",
   "mcpFile": "settings.json",
   "mcpField": "mcpServers",
-  "skillDir": "commands",
+  "skillDir": "skills",
   "icon": "claude",
   "targetFormat": "json-map",
   "entryFormat": {

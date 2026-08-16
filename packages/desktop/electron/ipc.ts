@@ -32,9 +32,6 @@ import {
   deleteTag,
   scanSkillsFromAgents,
   scanMcpsFromAgents,
-  scanHomeHiddenFolders,
-  scanSkillsFromFolders,
-  scanMcpsFromFolders,
   importScannedSkills,
   importScannedMcps,
   applyMcpToAgent,
@@ -185,28 +182,9 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('skill:removeTag', (_event, skillId: string, tag: string) => removeSkillTag(getDb(), skillId, tag));
 
   // Skill scan
-  ipcMain.handle('skill:scan', (_event, mode: string) => {
+  ipcMain.handle('skill:scan', () => {
     const d = getDb();
-    const templates = loadTemplates();
-    if (mode === 'home') {
-      const userHome = process.env.HOME ?? '~';
-      const folders = scanHomeHiddenFolders(userHome, templates);
-      return { skills: scanSkillsFromFolders(d, folders, templates), folders };
-    }
-    if (mode === 'full') {
-      const userHome = process.env.HOME ?? '~';
-      const folders = scanHomeHiddenFolders(userHome, templates);
-      const agentSkills = scanSkillsFromAgents(d, listAgents(d));
-      const folderSkills = scanSkillsFromFolders(d, folders, templates);
-      const seen = new Set<string>(agentSkills.map((s) => `${s.name}:${s.agentId}`));
-      const merged = [...agentSkills];
-      for (const s of folderSkills) {
-        const key = `${s.name}:${s.agentId}`;
-        if (!seen.has(key)) { merged.push(s); seen.add(key); }
-      }
-      return { skills: merged, folders };
-    }
-    return { skills: scanSkillsFromAgents(d, listAgents(d)), folders: [] };
+    return { skills: scanSkillsFromAgents(d, listAgents(d)) };
   });
 
   // Skill apply (sync to agent via symlink)
@@ -342,28 +320,9 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('mcp:delete', (_event, id: string) => deleteMcp(getDb(), id));
 
   // MCP scan
-  ipcMain.handle('mcp:scan', (_event, mode: string) => {
+  ipcMain.handle('mcp:scan', () => {
     const d = getDb();
-    const templates = loadTemplates();
-    if (mode === 'home') {
-      const userHome = process.env.HOME ?? '~';
-      const folders = scanHomeHiddenFolders(userHome, templates);
-      return { mcps: scanMcpsFromFolders(d, folders, templates), folders };
-    }
-    if (mode === 'full') {
-      const userHome = process.env.HOME ?? '~';
-      const folders = scanHomeHiddenFolders(userHome, templates);
-      const agentMcps = scanMcpsFromAgents(d, listAgents(d));
-      const folderMcps = scanMcpsFromFolders(d, folders, templates);
-      const seen = new Set<string>(agentMcps.map((m) => `${m.name}:${m.agentId}`));
-      const merged = [...agentMcps];
-      for (const m of folderMcps) {
-        const key = `${m.name}:${m.agentId}`;
-        if (!seen.has(key)) { merged.push(m); seen.add(key); }
-      }
-      return { mcps: merged, folders };
-    }
-    return { mcps: scanMcpsFromAgents(d, listAgents(d)), folders: [] };
+    return { mcps: scanMcpsFromAgents(d, listAgents(d)) };
   });
 
   // MCP apply

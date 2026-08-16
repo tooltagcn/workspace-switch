@@ -22,8 +22,8 @@ const sseMcp: WsMcpSchema = {
 describe('Agent template rendering snapshots', () => {
   const templates = loadTemplates();
 
-  it('loads all 14 templates', () => {
-    expect(templates.length).toBe(14);
+  it('loads all 15 templates', () => {
+    expect(templates.length).toBe(15);
   });
 
   it('all templates pass JSON Schema validation', () => {

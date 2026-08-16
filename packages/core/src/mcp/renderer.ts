@@ -55,7 +55,7 @@ export function parseConfigFile(content: string, template: AgentTemplate): Recor
 
 export function serializeConfigFile(config: Record<string, unknown>, template: AgentTemplate): string {
   const renderer = getRendererForTemplate(template);
-  return renderer.serialize(config);
+  return renderer.serialize(config, template);
 }
 
 export function buildMcpEntry(

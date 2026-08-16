@@ -361,10 +361,8 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const { fetchSkills } = useSkillStore();
   const [step, setStep] = useState(1);
-  const [mode, setMode] = useState<'agents' | 'home' | 'full'>('agents');
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState<any[]>([]);
-  const [folders, setFolders] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
   const [importDone, setImportDone] = useState(false);
@@ -376,12 +374,11 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
     setScanError(false);
     setResults([]);
     try {
-      const result = await api.scanSkills(mode);
+      const result = await api.scanSkills();
       const skills = result.skills ?? [];
       setResults(skills);
-      setFolders(result.folders ?? []);
       if (skills.length > 0) {
-        setStep(3);
+        setStep(2);
       }
     } catch {
       setScanError(true);
@@ -422,45 +419,16 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex gap-2 mb-6">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3].map((s) => (
             <div key={s} className={`flex-1 h-1 rounded ${step >= s ? 'bg-blue-500' : 'bg-gray-200'}`} />
           ))}
         </div>
 
         <div className="flex-1 overflow-auto">
           {step === 1 && (
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
-              {(['agents', 'home', 'full'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${mode === m ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
-                >
-                  <div className="font-medium">{t(`skill.reverseScan.mode${m.charAt(0).toUpperCase() + m.slice(1)}` as any)}</div>
-                  <div className="text-sm text-gray-500">{t(`skill.reverseScan.mode${m.charAt(0).toUpperCase() + m.slice(1)}Desc` as any)}</div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === 2 && (
             <div>
               <p className="text-sm text-gray-600 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
-              {mode === 'home' || mode === 'full' ? (
-                <div className="text-sm text-gray-600">
-                  <p>Scan will discover agent config folders in your home directory.</p>
-                  {folders.length > 0 && (
-                    <ul className="mt-3 space-y-1">
-                      {folders.map((f: any, i: number) => (
-                        <li key={i} className="font-mono text-xs">{f.path}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-600">Ready to scan agent configurations.</p>
-              )}
+              <p className="text-sm text-gray-600">Ready to scan enabled agent configurations.</p>
               <button
                 onClick={runScan}
                 disabled={scanning}
@@ -477,7 +445,7 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <div>
               <p className="text-sm text-gray-600 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
               {results.length === 0 ? (
@@ -511,7 +479,7 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 3 && (
             <div>
               <p className="text-sm text-gray-600 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
               {importDone ? (
@@ -545,9 +513,9 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
           >
             {t('common.previous')}
           </button>
-          {(step === 1 || step === 3) && (
+          {step === 2 && (
             <button
-              onClick={() => setStep((s) => Math.min(4, s + 1))}
+              onClick={() => setStep((s) => Math.min(3, s + 1))}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               {t('common.next')}

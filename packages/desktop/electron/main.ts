@@ -20,7 +20,10 @@ function createWindow(): void {
 
   if (isDev) {
     win.loadURL('http://localhost:5173');
-    win.webContents.openDevTools();
+    // 默认不打开 DevTools，需要调试时用 WS_OPEN_DEVTOOLS=1 make dev（或 Cmd+Option+I）
+    if (process.env.WS_OPEN_DEVTOOLS === '1') {
+      win.webContents.openDevTools();
+    }
   } else {
     win.loadFile(path.join(__dirname, '../renderer/index.html'));
   }

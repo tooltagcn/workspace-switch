@@ -18,14 +18,11 @@ import {
   getAgent,
   getSymlinkImpl,
   scanSkillsFromAgents,
-  scanHomeHiddenFolders,
-  scanSkillsFromFolders,
   importScannedSkills,
-  loadTemplates,
   checkSkillConsistency,
   fixSkillConsistency,
 } from '@ws/core';
-import type { ScannedSkill, ScanMode } from '@ws/core';
+import type { ScannedSkill } from '@ws/core';
 import { createContext, cleanupContext } from '../lib/context.js';
 import { outputJson, outputTable, success, fail, verbose } from '../lib/output.js';
 
@@ -209,35 +206,16 @@ export function registerSkill(program: Command): void {
 
   skill
     .command('sync')
-    .description('Reverse scan: import skills from agents or home directories to trusted source')
-    .option('--mode <mode>', 'Scan mode: agents|home|full', 'full')
-    .action(async (options, cmd) => {
+    .description('Reverse scan: import skills from enabled agents to trusted source')
+    .action(async (_options, cmd) => {
       const ctx = createContext(cmd);
       try {
-        const mode = options.mode as ScanMode;
-        let scanned: ScannedSkill[];
-
-        verbose(ctx, `Starting skill sync with mode: ${mode}`);
-        verbose(ctx, `Data directory: ${ctx.dataDir}`);
-
-        if (mode === 'home' || mode === 'full') {
-          const userHome = process.env.HOME ?? '~';
-          const templates = loadTemplates();
-          verbose(ctx, `Scanning home directory: ${userHome}`);
-          const folders = scanHomeHiddenFolders(userHome, templates);
-          verbose(ctx, `Found ${folders.length} hidden folders in home directory`);
-          for (const folder of folders) {
-            verbose(ctx, `  - ${folder.path} (matched: ${folder.matchedAgentName ?? 'none'})`);
-          }
-          scanned = scanSkillsFromFolders(ctx.db, folders, templates);
-        } else {
-          const agents = listAgents(ctx.db).filter((a) => a.enabled);
-          verbose(ctx, `Scanning ${agents.length} enabled agents`);
-          for (const agent of agents) {
-            verbose(ctx, `  - ${agent.name} (${agent.id})`);
-          }
-          scanned = scanSkillsFromAgents(ctx.db, agents);
+        const agents = listAgents(ctx.db).filter((a) => a.enabled);
+        verbose(ctx, `Scanning ${agents.length} enabled agents`);
+        for (const agent of agents) {
+          verbose(ctx, `  - ${agent.name} (${agent.id})`);
         }
+        const scanned: ScannedSkill[] = scanSkillsFromAgents(ctx.db, agents);
 
         verbose(ctx, `Scan complete: found ${scanned.length} skills`);
 

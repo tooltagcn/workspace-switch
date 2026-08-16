@@ -111,13 +111,13 @@ function QuickActions() {
 
 function ReverseScanSummary() {
   const { t } = useTranslation();
-  const [scanResult, setScanResult] = useState<{ skills: any[]; folders: any[] } | null>(null);
+  const [scanResult, setScanResult] = useState<{ skills: any[] } | null>(null);
   const [scanning, setScanning] = useState(false);
 
   const runScan = async () => {
     setScanning(true);
     try {
-      const result = await api.scanSkills('agents');
+      const result = await api.scanSkills();
       setScanResult(result);
     } catch {
       // scan failed silently
@@ -144,9 +144,9 @@ function ReverseScanSummary() {
         <div className="text-sm">
           <p className="text-gray-600">
             {t('dashboard.scanSummary', {
-              newCount: scanResult.skills.filter((s: any) => s.classification === 'new').length,
-              conflictCount: scanResult.skills.filter((s: any) => s.classification === 'conflict').length,
-              syncedCount: scanResult.skills.filter((s: any) => s.classification === 'synced').length,
+              newCount: (scanResult.skills ?? []).filter((s: any) => s.classification === 'new').length,
+              conflictCount: (scanResult.skills ?? []).filter((s: any) => s.classification === 'conflict').length,
+              syncedCount: (scanResult.skills ?? []).filter((s: any) => s.classification === 'synced').length,
             })}
           </p>
         </div>

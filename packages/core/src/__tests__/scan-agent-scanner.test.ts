@@ -234,5 +234,74 @@ describe('Agent Scanner', () => {
       const results = scanMcpsFromAgents(db, [agent]);
       expect(results).toHaveLength(2);
     });
+
+    it('scans MCPs from toml config with agent-specific field', () => {
+      const agent = createAgentWithDirs({ mcpFile: 'config.toml', mcpField: 'mcp_servers' });
+      const agentDir = agent.userRoot!;
+      fs.mkdirSync(agentDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(agentDir, 'config.toml'),
+        [
+          '[mcp_servers.playwright]',
+          'command = "npx"',
+          'args = ["@playwright/mcp@latest"]',
+          '',
+          '[mcp_servers.weather]',
+          'command = "python"',
+          'env = { "API_KEY" = "abc123" }',
+          '',
+        ].join('\n'),
+      );
+
+      const results = scanMcpsFromAgents(db, [agent]);
+      expect(results).toHaveLength(2);
+
+      const playwright = results.find((r) => r.name === 'playwright')!;
+      expect(playwright.schema.command).toBe('npx');
+      expect(playwright.schema.args).toEqual(['@playwright/mcp@latest']);
+
+      const weather = results.find((r) => r.name === 'weather')!;
+      expect(weather.schema.env).toEqual({ API_KEY: 'abc123' });
+    });
+
+    it('scans MCP with url from toml as sse transport', () => {
+      const agent = createAgentWithDirs({ mcpFile: 'config.toml', mcpField: 'mcp_servers' });
+      const agentDir = agent.userRoot!;
+      fs.mkdirSync(agentDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(agentDir, 'config.toml'),
+        [
+          '[mcp_servers.remote]',
+          'url = "http://localhost:8080"',
+          '',
+        ].join('\n'),
+      );
+
+      const results = scanMcpsFromAgents(db, [agent]);
+      expect(results).toHaveLength(1);
+      expect(results[0].schema.transport).toBe('sse');
+      expect(results[0].schema.url).toBe('http://localhost:8080');
+    });
+
+    it('ignores sections outside the mcp field in toml', () => {
+      const agent = createAgentWithDirs({ mcpFile: 'config.toml', mcpField: 'mcp_servers' });
+      const agentDir = agent.userRoot!;
+      fs.mkdirSync(agentDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(agentDir, 'config.toml'),
+        [
+          '[other_section]',
+          'command = "not-an-mcp"',
+          '',
+          '[mcp_servers.real]',
+          'command = "npx"',
+          '',
+        ].join('\n'),
+      );
+
+      const results = scanMcpsFromAgents(db, [agent]);
+      expect(results).toHaveLength(1);
+      expect(results[0].name).toBe('real');
+    });
   });
 });

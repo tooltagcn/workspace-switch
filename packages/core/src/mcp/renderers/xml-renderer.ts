@@ -114,7 +114,7 @@ export const xmlRenderer: McpRenderer = {
     return result;
   },
 
-  serialize(config: Record<string, unknown>): string {
+  serialize(config: Record<string, unknown>, _template?: AgentTemplate): string {
     const lines: string[] = [];
     lines.push('<?xml version="1.0" encoding="UTF-8"?>');
 

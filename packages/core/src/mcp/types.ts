@@ -94,7 +94,7 @@ export interface BatchTestProgress {
 export interface McpRenderer {
   render(mcp: import('./schema.js').WsMcpSchema, template: import('../agent/template-types.js').AgentTemplate): string;
   parse(content: string, field: string): Record<string, unknown>;
-  serialize(config: Record<string, unknown>): string;
+  serialize(config: Record<string, unknown>, template?: import('../agent/template-types.js').AgentTemplate): string;
 }
 
 export interface SecretStore {

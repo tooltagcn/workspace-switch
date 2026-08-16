@@ -29,6 +29,7 @@ const TEMPLATE_FILES = [
   'factory.json',
   'droid.json',
   'aider.json',
+  'codebuddy.json',
 ];
 
 const thisDir = path.dirname(fileURLToPath(import.meta.url));

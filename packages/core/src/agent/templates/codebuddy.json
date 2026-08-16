@@ -1,0 +1,20 @@
+{
+  "id": "codebuddy",
+  "name": "CodeBuddy",
+  "configDirName": ".codebuddy",
+  "mcpFile": ".mcp.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "codebuddy",
+  "targetFormat": "json-map",
+  "entryFormat": {
+    "format": "json-map",
+    "envTransform": "${VAR}",
+    "fieldMapping": {
+      "command": "command",
+      "args": "args",
+      "url": "url",
+      "env": "env"
+    }
+  }
+}

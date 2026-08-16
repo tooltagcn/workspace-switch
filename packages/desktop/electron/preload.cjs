@@ -22,7 +22,7 @@ const api = {
   removeSkillTag: (skillId, tag) => ipcRenderer.invoke('skill:removeTag', skillId, tag),
 
   // Skill scan / apply
-  scanSkills: (mode) => ipcRenderer.invoke('skill:scan', mode),
+  scanSkills: () => ipcRenderer.invoke('skill:scan'),
   applySkill: (skillId, agentId) => ipcRenderer.invoke('skill:apply', skillId, agentId),
   unapplySkill: (skillId, agentId) => ipcRenderer.invoke('skill:unapply', skillId, agentId),
   getAppliedAgentsForSkill: (skillId) => ipcRenderer.invoke('skill:appliedAgents', skillId),
@@ -45,7 +45,7 @@ const api = {
   deleteMcp: (id) => ipcRenderer.invoke('mcp:delete', id),
 
   // MCP scan / apply
-  scanMcps: (mode) => ipcRenderer.invoke('mcp:scan', mode),
+  scanMcps: () => ipcRenderer.invoke('mcp:scan'),
   applyMcp: (mcpId, agentId) => ipcRenderer.invoke('mcp:apply', mcpId, agentId),
   unapplyMcp: (mcpId, agentId) => ipcRenderer.invoke('mcp:unapply', mcpId, agentId),
   syncMcp: (mcpId) => ipcRenderer.invoke('mcp:sync', mcpId),

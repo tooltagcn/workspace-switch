@@ -15,7 +15,7 @@ export interface WsApi {
   deleteSkill: (id: string) => Promise<any>;
   addSkillTag: (skillId: string, tag: string) => Promise<any>;
   removeSkillTag: (skillId: string, tag: string) => Promise<any>;
-  scanSkills: (mode: string) => Promise<any>;
+  scanSkills: () => Promise<any>;
   applySkill: (skillId: string, agentId: string) => Promise<any>;
   unapplySkill: (skillId: string, agentId: string) => Promise<any>;
   getAppliedAgentsForSkill: (skillId: string) => Promise<any>;
@@ -34,7 +34,7 @@ export interface WsApi {
   createMcp: (data: unknown) => Promise<any>;
   updateMcp: (id: string, data: unknown) => Promise<any>;
   deleteMcp: (id: string) => Promise<any>;
-  scanMcps: (mode: string) => Promise<any>;
+  scanMcps: () => Promise<any>;
   applyMcp: (mcpId: string, agentId: string) => Promise<any>;
   unapplyMcp: (mcpId: string, agentId: string) => Promise<any>;
   syncMcp: (mcpId: string) => Promise<any>;

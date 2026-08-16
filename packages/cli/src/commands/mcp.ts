@@ -17,16 +17,13 @@ import {
   unsyncMcpFromWorkspace,
   unsyncAllMcpsFromAgent,
   scanMcpsFromAgents,
-  scanHomeHiddenFolders,
-  scanMcpsFromFolders,
   importScannedMcps,
-  loadTemplates,
   validateWsSchema,
   checkMcpConsistency,
   fixMcpConsistency,
   createSecretStore,
 } from '@ws/core';
-import type { McpTransport, ScannedMcp, ScanMode, WsMcpSchema } from '@ws/core';
+import type { McpTransport, ScannedMcp, WsMcpSchema } from '@ws/core';
 import { createContext, cleanupContext } from '../lib/context.js';
 import { outputJson, outputTable, success, fail } from '../lib/output.js';
 
@@ -65,7 +62,7 @@ export function registerMcp(program: Command): void {
         const appliedMap = new Map<string, { agents: string[]; outOfSync: boolean }>();
         for (const applied of appliedMcps) {
           const existing = appliedMap.get(applied.resource_id);
-          const isOutOfSync = applied.applied_config_hash && applied.config_hash && applied.applied_config_hash !== applied.config_hash;
+          const isOutOfSync = !!(applied.applied_config_hash && applied.config_hash && applied.applied_config_hash !== applied.config_hash);
 
           if (existing) {
             existing.agents.push(applied.agent_name);
@@ -391,23 +388,12 @@ export function registerMcp(program: Command): void {
 
   mcp
     .command('sync')
-    .description('Reverse scan: import MCP servers from agents or home directories')
-    .option('--mode <mode>', 'Scan mode: agents|home|full', 'full')
-    .action(async (options, cmd) => {
+    .description('Reverse scan: import MCP servers from enabled agents')
+    .action(async (_options, cmd) => {
       const ctx = createContext(cmd);
       try {
-        const mode = options.mode as ScanMode;
-        let scanned: ScannedMcp[];
-
-        if (mode === 'home' || mode === 'full') {
-          const userHome = process.env.HOME ?? '~';
-          const templates = loadTemplates();
-          const folders = scanHomeHiddenFolders(userHome, templates);
-          scanned = scanMcpsFromFolders(ctx.db, folders, templates);
-        } else {
-          const agents = listAgents(ctx.db).filter((a) => a.enabled);
-          scanned = scanMcpsFromAgents(ctx.db, agents);
-        }
+        const agents = listAgents(ctx.db).filter((a) => a.enabled);
+        const scanned: ScannedMcp[] = scanMcpsFromAgents(ctx.db, agents);
 
         if (ctx.json) {
           outputJson({ scanned, count: scanned.length });

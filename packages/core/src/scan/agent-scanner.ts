@@ -287,7 +287,8 @@ function parseTomlValue(raw: string): unknown {
       for (const pair of inner.split(',')) {
         const eqIdx = pair.indexOf('=');
         if (eqIdx === -1) continue;
-        const k = pair.slice(0, eqIdx).trim();
+        let k = pair.slice(0, eqIdx).trim();
+        if (k.startsWith('"') && k.endsWith('"')) k = k.slice(1, -1);
         let v = pair.slice(eqIdx + 1).trim();
         if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
         obj[k] = v;

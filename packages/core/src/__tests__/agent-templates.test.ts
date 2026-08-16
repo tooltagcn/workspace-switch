@@ -7,13 +7,14 @@ import { initBuiltinAgents } from '../agent/init-builtins.js';
 import { listAgents } from '../agent/registry.js';
 
 describe('Agent templates', () => {
-  it('loads 14 built-in templates', () => {
+  it('loads 15 built-in templates', () => {
     const templates = loadTemplates();
-    expect(templates).toHaveLength(14);
+    expect(templates).toHaveLength(15);
     const ids = templates.map((t) => t.id).sort();
     expect(ids).toEqual([
       'aider',
       'claude-code',
+      'codebuddy',
       'codex',
       'copilot',
       'cursor',
@@ -91,10 +92,10 @@ describe('initBuiltinAgents', () => {
     db.close();
   });
 
-  it('creates all 14 builtin agents', () => {
+  it('creates all 15 builtin agents', () => {
     initBuiltinAgents(db, '/Users/test');
     const agents = listAgents(db);
-    expect(agents).toHaveLength(14);
+    expect(agents).toHaveLength(15);
     for (const a of agents) {
       expect(a.builtin).toBe(true);
     }
@@ -111,6 +112,6 @@ describe('initBuiltinAgents', () => {
     initBuiltinAgents(db, '/Users/test');
     initBuiltinAgents(db, '/Users/test');
     const agents = listAgents(db);
-    expect(agents).toHaveLength(14);
+    expect(agents).toHaveLength(15);
   });
 });

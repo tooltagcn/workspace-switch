@@ -105,8 +105,11 @@ const jsonMapRenderer: McpRenderer = {
     }
   },
 
-  serialize(config: Record<string, unknown>): string {
-    const transformed = transformConfigEnv(config, (varName) => `\${env:${varName}}`);
+  serialize(config: Record<string, unknown>, template?: AgentTemplate): string {
+    const envTransform = template?.entryFormat?.envTransform ?? '${env:VAR}';
+    const formatVar = (varName: string): string =>
+      envTransform === 'bare' ? `"${varName}"` : envTransform.replace('VAR', varName);
+    const transformed = transformConfigEnv(config, formatVar);
     return JSON.stringify(transformed, null, 2) + '\n';
   },
 };
@@ -199,7 +202,7 @@ const tomlTableRenderer: McpRenderer = {
     return result;
   },
 
-  serialize(config: Record<string, unknown>): string {
+  serialize(config: Record<string, unknown>, _template?: AgentTemplate): string {
     const lines: string[] = [];
 
     for (const [key, value] of Object.entries(config)) {

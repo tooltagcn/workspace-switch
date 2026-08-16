@@ -156,7 +156,7 @@ export const yamlRenderer: McpRenderer = {
     return result;
   },
 
-  serialize(config: Record<string, unknown>): string {
+  serialize(config: Record<string, unknown>, _template?: AgentTemplate): string {
     const lines: string[] = [];
 
     for (const [key, value] of Object.entries(config)) {

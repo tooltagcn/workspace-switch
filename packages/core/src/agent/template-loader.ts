@@ -18,6 +18,7 @@ const TEMPLATE_FILES = [
   'factory.json',
   'droid.json',
   'aider.json',
+  'codebuddy.json',
 ];
 
 let cachedTemplates: AgentTemplate[] | null = null;

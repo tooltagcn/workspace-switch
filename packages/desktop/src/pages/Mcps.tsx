@@ -411,7 +411,6 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const { fetchMcps } = useMcpStore();
   const [step, setStep] = useState(1);
-  const [mode, setMode] = useState<'agents' | 'home' | 'full'>('agents');
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -421,8 +420,11 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
   const runScan = async () => {
     setScanning(true);
     try {
-      const result = await api.scanMcps(mode);
+      const result = await api.scanMcps();
       setResults(result.mcps ?? []);
+      if ((result.mcps ?? []).length > 0) {
+        setStep(2);
+      }
     } catch {
       // scan failed
     } finally {
@@ -461,32 +463,16 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex gap-2 mb-6">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3].map((s) => (
             <div key={s} className={`flex-1 h-1 rounded ${step >= s ? 'bg-blue-500' : 'bg-gray-200'}`} />
           ))}
         </div>
 
         <div className="flex-1 overflow-auto">
           {step === 1 && (
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
-              {(['agents', 'home', 'full'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${mode === m ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
-                >
-                  <div className="font-medium">{t(`skill.reverseScan.mode${m.charAt(0).toUpperCase() + m.slice(1)}` as any)}</div>
-                  <div className="text-sm text-gray-500">{t(`skill.reverseScan.mode${m.charAt(0).toUpperCase() + m.slice(1)}Desc` as any)}</div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === 2 && (
             <div>
               <p className="text-sm text-gray-600 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
-              <p className="text-sm text-gray-600">Ready to scan for MCP server configurations.</p>
+              <p className="text-sm text-gray-600">Ready to scan enabled agent configurations.</p>
               <button
                 onClick={runScan}
                 disabled={scanning}
@@ -494,15 +480,10 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
               >
                 {scanning ? t('mcp.reverseScan.scanning') : t('common.next')}
               </button>
-              {!scanning && results.length > 0 && (
-                <button onClick={() => setStep(3)} className="ml-3 px-4 py-2 text-blue-600">
-                  {t('common.next')}
-                </button>
-              )}
             </div>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <div>
               <p className="text-sm text-gray-600 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
               {results.length === 0 ? (
@@ -533,7 +514,7 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 3 && (
             <div>
               <p className="text-sm text-gray-600 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
               {importDone ? (
@@ -564,9 +545,9 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
           >
             {t('common.previous')}
           </button>
-          {step < 4 && results.length > 0 && (
+          {step === 2 && (
             <button
-              onClick={() => setStep((s) => Math.min(4, s + 1))}
+              onClick={() => setStep((s) => Math.min(3, s + 1))}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
             >
               {t('common.next')}

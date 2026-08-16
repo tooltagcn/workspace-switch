@@ -18,6 +18,8 @@ import {
   createMcp,
   updateMcp,
   deleteMcp,
+  addMcpTag,
+  removeMcpTag,
   listProviders,
   getProvider,
   createProvider,
@@ -184,6 +186,9 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('skill:delete', (_event, id: string) => deleteSkill(getDb(), id));
   ipcMain.handle('skill:addTag', (_event, skillId: string, tag: string) => addSkillTag(getDb(), skillId, tag));
   ipcMain.handle('skill:removeTag', (_event, skillId: string, tag: string) => removeSkillTag(getDb(), skillId, tag));
+
+  ipcMain.handle('mcp:addTag', (_event, mcpId: string, tag: string) => addMcpTag(getDb(), mcpId, tag));
+  ipcMain.handle('mcp:removeTag', (_event, mcpId: string, tag: string) => removeMcpTag(getDb(), mcpId, tag));
 
   // Skill scan (user-level agent dirs + all project agent dirs)
   ipcMain.handle('skill:scan', () => {

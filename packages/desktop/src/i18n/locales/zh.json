@@ -48,7 +48,9 @@
     "total": "总计",
     "filter": "筛选",
     "sort": "排序",
-    "tags": "标签"
+    "tags": "标签",
+    "filterByTag": "按标签筛选",
+    "allTags": "全部标签"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -208,6 +210,14 @@
   },
   "mcp": {
     "title": "MCP 服务器",
+    "tags": "标签",
+    "tagManager": {
+      "title": "MCP 标签管理",
+      "addTag": "添加标签",
+      "removeTag": "移除标签",
+      "batchTag": "批量打标签",
+      "selectedMcps": "已选择 {{count}} 个 MCP"
+    },
     "name": "名称",
     "command": "命令",
     "args": "参数",

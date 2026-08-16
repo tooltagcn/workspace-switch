@@ -43,8 +43,8 @@ export default function Layout() {
     { path: '/agents', label: t('nav.agents') },
     { path: '/skills', label: t('nav.skills') },
     { path: '/mcps', label: t('nav.mcps') },
-    { path: '/providers', label: t('nav.providers') },
     { path: '/projects', label: t('nav.projects') },
+    { path: '/providers', label: t('nav.providers') },
     { path: '/settings', label: t('nav.settings') },
   ];
 

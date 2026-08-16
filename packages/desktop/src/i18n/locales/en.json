@@ -48,7 +48,9 @@
     "total": "Total",
     "filter": "Filter",
     "sort": "Sort",
-    "tags": "Tags"
+    "tags": "Tags",
+    "filterByTag": "Filter by tag",
+    "allTags": "All tags"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -208,6 +210,14 @@
   },
   "mcp": {
     "title": "MCP Servers",
+    "tags": "Tags",
+    "tagManager": {
+      "title": "MCP Tag Manager",
+      "addTag": "Add Tag",
+      "removeTag": "Remove Tag",
+      "batchTag": "Batch Tag",
+      "selectedMcps": "{{count}} MCPs selected"
+    },
     "name": "Name",
     "command": "Command",
     "args": "Arguments",

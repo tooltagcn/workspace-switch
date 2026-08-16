@@ -43,6 +43,8 @@ const api = {
   createMcp: (data) => ipcRenderer.invoke('mcp:create', data),
   updateMcp: (id, data) => ipcRenderer.invoke('mcp:update', id, data),
   deleteMcp: (id) => ipcRenderer.invoke('mcp:delete', id),
+  addMcpTag: (mcpId, tag) => ipcRenderer.invoke('mcp:addTag', mcpId, tag),
+  removeMcpTag: (mcpId, tag) => ipcRenderer.invoke('mcp:removeTag', mcpId, tag),
 
   // MCP scan / apply
   scanMcps: () => ipcRenderer.invoke('mcp:scan'),

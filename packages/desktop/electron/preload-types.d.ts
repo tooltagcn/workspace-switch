@@ -34,6 +34,8 @@ export interface WsApi {
   createMcp: (data: unknown) => Promise<any>;
   updateMcp: (id: string, data: unknown) => Promise<any>;
   deleteMcp: (id: string) => Promise<any>;
+  addMcpTag: (mcpId: string, tag: string) => Promise<any>;
+  removeMcpTag: (mcpId: string, tag: string) => Promise<any>;
   scanMcps: () => Promise<any>;
   applyMcp: (mcpId: string, agentId: string) => Promise<any>;
   unapplyMcp: (mcpId: string, agentId: string) => Promise<any>;

@@ -674,6 +674,110 @@ function McpDoctorDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function McpTagManager({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const { mcps, fetchMcps, addTag, removeTag } = useMcpStore();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [newTag, setNewTag] = useState('');
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBatchTag = async () => {
+    if (!newTag) return;
+    for (const id of selectedIds) {
+      await addTag(id, newTag);
+    }
+    await fetchMcps();
+    setNewTag('');
+    setSelectedIds(new Set());
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">{t('mcp.tagManager.title')}</h3>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
+        </div>
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+            <span className="text-sm">{t('mcp.tagManager.selectedMcps', { count: selectedIds.size })}</span>
+            <input
+              type="text"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              placeholder={t('mcp.tagManager.addTag')}
+              className="flex-1 px-2 py-1 text-sm border dark:border-gray-700 rounded"
+            />
+            <button
+              onClick={handleBatchTag}
+              disabled={!newTag}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            >
+              {t('mcp.tagManager.batchTag')}
+            </button>
+          </div>
+        )}
+        <div className="flex-1 overflow-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
+              <tr>
+                <th className="px-3 py-2 text-left w-8">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === mcps.length && mcps.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(new Set(mcps.map((m) => m.id)));
+                      else setSelectedIds(new Set());
+                    }}
+                  />
+                </th>
+                <th className="px-3 py-2 text-left">{t('mcp.name')}</th>
+                <th className="px-3 py-2 text-left">{t('mcp.tags')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mcps.map((mcp) => (
+                <tr key={mcp.id} className="border-t dark:border-gray-700">
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(mcp.id)}
+                      onChange={() => toggleSelect(mcp.id)}
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-sm">{mcp.name}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {mcp.tags.map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                          {tag}
+                          <button
+                            onClick={() => removeTag(mcp.id, tag)}
+                            className="hover:text-red-600"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Mcps() {
   const { t } = useTranslation();
   const { mcps, loading, fetchMcps, deleteMcp, testMcp, testingMcpIds, batchTesting, batchProgress, startBatchTest, syncMcp } = useMcpStore();
@@ -684,14 +788,19 @@ export default function Mcps() {
   const [showDoctor, setShowDoctor] = useState(false);
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [debugMcp, setDebugMcp] = useState<McpServer | null>(null);
+  const [showTagManager, setShowTagManager] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [bulkAction, setBulkAction] = useState<'tag' | 'apply' | 'unapply' | 'delete' | null>(null);
   const [bulkApplyResources, setBulkApplyResources] = useState<ApplyResource[] | null>(null);
   const [bulkUnapplyResources, setBulkUnapplyResources] = useState<ApplyResource[] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string>('');
+
+  const allTags = Array.from(new Set(mcps.flatMap((m) => m.tags))).sort((a, b) => a.localeCompare(b));
 
   const filteredMcps = mcps.filter((m) => {
+    if (selectedTag && !m.tags.includes(selectedTag)) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return m.name.toLowerCase().includes(q)
@@ -744,6 +853,13 @@ export default function Mcps() {
       for (const id of bulkSelected) {
         await deleteMcp(id);
       }
+    } else if (bulkAction === 'tag') {
+      const tag = prompt('Enter tag name:');
+      if (tag) {
+        for (const id of bulkSelected) {
+          await api.addMcpTag(id, tag);
+        }
+      }
     }
     await fetchMcps();
     setBulkSelected(new Set());
@@ -780,6 +896,12 @@ export default function Mcps() {
             className="px-4 py-2 border dark:border-gray-700 border-blue-500 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50"
           >
             {t('dashboard.reverseScan')}
+          </button>
+          <button
+            onClick={() => setShowTagManager(true)}
+            className="px-4 py-2 border dark:border-gray-700 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            {t('mcp.tagManager.title')}
           </button>
           <button
             onClick={() => setShowAddDialog(true)}
@@ -834,6 +956,16 @@ export default function Mcps() {
             placeholder={t('common.search') + '...'}
             className="w-full max-w-sm px-3 py-1.5 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
+          <select
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+            className="px-3 py-1.5 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">{t('common.allTags')}</option>
+            {allTags.map((tag) => (
+              <option key={tag} value={tag}>{tag}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -856,6 +988,7 @@ export default function Mcps() {
                   <th className="px-4 py-2 text-left">{t('mcp.transport')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.testStatus')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.appliedTo')}</th>
+                  <th className="px-4 py-2 text-left">{t('mcp.tags')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.command')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.env')}</th>
                   <th className="px-4 py-2 text-left">{t('common.actions')}</th>
@@ -913,6 +1046,14 @@ export default function Mcps() {
                       ) : (
                         <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
                       )}
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {mcp.tags.slice(0, 3).map((tag) => (
+                          <span key={tag} className="text-xs px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">{tag}</span>
+                        ))}
+                        {mcp.tags.length > 3 && <span className="text-xs text-gray-400 dark:text-gray-500">+{mcp.tags.length - 3}</span>}
+                      </div>
                     </td>
                     <td className="px-4 py-2 font-mono text-sm text-gray-600 dark:text-gray-300">
                       {mcp.command ?? mcp.url ?? '-'}
@@ -974,6 +1115,7 @@ export default function Mcps() {
 
       {showAddDialog && <McpAddDialog onClose={() => setShowAddDialog(false)} />}
       {editingMcp && <McpEditDialog mcp={editingMcp} onClose={() => setEditingMcp(null)} />}
+      {showTagManager && <McpTagManager onClose={() => setShowTagManager(false)} />}
       {showReverseScan && <McpReverseScanWizard onClose={() => setShowReverseScan(false)} />}
       {showDoctor && <McpDoctorDialog onClose={() => setShowDoctor(false)} />}
       {debugMcp && (

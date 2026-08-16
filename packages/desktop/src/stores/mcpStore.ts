@@ -41,6 +41,8 @@ interface McpStore {
   createMcp: (data: unknown) => Promise<McpServer>;
   updateMcp: (id: string, data: unknown) => Promise<McpServer>;
   deleteMcp: (id: string) => Promise<void>;
+  addTag: (mcpId: string, tag: string) => Promise<void>;
+  removeTag: (mcpId: string, tag: string) => Promise<void>;
   testMcp: (mcpId: string) => Promise<void>;
   startBatchTest: () => Promise<void>;
   checkConsistency: () => Promise<any>;
@@ -82,6 +84,16 @@ export const useMcpStore = create<McpStore>((set, get) => ({
   deleteMcp: async (id) => {
     await api.deleteMcp(id);
     set({ mcps: get().mcps.filter((m) => m.id !== id) });
+  },
+  addTag: async (mcpId, tag) => {
+    await api.addMcpTag(mcpId, tag);
+    const mcp = await api.getMcp(mcpId);
+    set({ mcps: get().mcps.map((m) => (m.id === mcpId ? mcp : m)) });
+  },
+  removeTag: async (mcpId, tag) => {
+    await api.removeMcpTag(mcpId, tag);
+    const mcp = await api.getMcp(mcpId);
+    set({ mcps: get().mcps.map((m) => (m.id === mcpId ? mcp : m)) });
   },
   testMcp: async (mcpId) => {
     const testing = get().testingMcpIds;

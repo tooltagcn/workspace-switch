@@ -652,6 +652,7 @@ export default function Skills() {
   const [showDoctor, setShowDoctor] = useState(false);
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string>('');
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [bulkAction, setBulkAction] = useState<'tag' | 'apply' | 'unapply' | 'delete' | null>(null);
@@ -733,8 +734,11 @@ export default function Skills() {
     loadAppliedAgents();
   }, [skills]);
 
+  const allTags = Array.from(new Set(skills.flatMap((s) => s.tags))).sort((a, b) => a.localeCompare(b));
+
   const filtered = skills
     .filter((s) => {
+      if (selectedTag && !s.tags.includes(selectedTag)) return false;
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
       return s.name.toLowerCase().includes(q) || (s.description?.toLowerCase().includes(q) ?? false);
@@ -775,7 +779,7 @@ export default function Skills() {
         </div>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center gap-2">
         <input
           type="text"
           value={searchQuery}
@@ -783,6 +787,16 @@ export default function Skills() {
           placeholder={t('common.search')}
           className="px-3 py-2 text-sm border dark:border-gray-700 rounded-lg w-72 focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
+        <select
+          value={selectedTag}
+          onChange={(e) => setSelectedTag(e.target.value)}
+          className="px-3 py-2 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <option value="">{t('common.allTags')}</option>
+          {allTags.map((tag) => (
+            <option key={tag} value={tag}>{tag}</option>
+          ))}
+        </select>
       </div>
 
       <div className="flex gap-6">

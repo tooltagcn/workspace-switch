@@ -26,21 +26,21 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
   }, [mcp.id, mcp.testStatus]);
 
   const statusColor: Record<string, string> = {
-    untested: 'bg-gray-100 text-gray-600',
-    passed: 'bg-green-100 text-green-700',
-    failed: 'bg-red-100 text-red-700',
-    config_changed: 'bg-yellow-100 text-yellow-700',
+    untested: 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300',
+    passed: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+    failed: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+    config_changed: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 w-96 max-h-[80vh] overflow-auto">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96 max-h-[80vh] overflow-auto">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">{mcp.name}</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
       </div>
       <div className="space-y-3">
         <div>
-          <span className="text-sm text-gray-500">{t('mcp.testStatus')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.testStatus')}</span>
           <div className="flex items-center gap-2 mt-1">
             <span className={`text-xs px-2 py-0.5 rounded ${statusColor[mcp.testStatus] ?? statusColor.untested}`}>
               {t(`mcp.statusLabels.${mcp.testStatus}` as any)}
@@ -54,39 +54,39 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
             </button>
           </div>
           {mcp.testStatus === 'failed' && mcp.testError && (
-            <p className="text-xs text-red-500 mt-1 break-all">{mcp.testError}</p>
+            <p className="text-xs text-red-500 dark:text-red-400 mt-1 break-all">{mcp.testError}</p>
           )}
           {mcp.testedAt && (
-            <p className="text-xs text-gray-400 mt-1">{new Date(mcp.testedAt).toLocaleString()}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{new Date(mcp.testedAt).toLocaleString()}</p>
           )}
         </div>
         <div>
-          <span className="text-sm text-gray-500">{t('mcp.transport')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.transport')}</span>
           <p className="text-sm mt-1">
             {mcp.transport ? t(`mcp.transportTypes.${mcp.transport}` as any) : '-'}
           </p>
         </div>
         {mcp.command && (
           <div>
-            <span className="text-sm text-gray-500">{t('mcp.command')}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.command')}</span>
             <p className="text-sm font-mono mt-1">{mcp.command} {mcp.args.join(' ')}</p>
           </div>
         )}
         {mcp.url && (
           <div>
-            <span className="text-sm text-gray-500">{t('mcp.url')}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.url')}</span>
             <p className="text-sm font-mono mt-1">{mcp.url}</p>
           </div>
         )}
         <div>
-          <span className="text-sm text-gray-500">{t('mcp.description')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.description')}</span>
           <p className="text-sm mt-1">{mcp.description ?? '-'}</p>
         </div>
         {Object.keys(mcp.env).length > 0 && (
           <div>
             <button
               onClick={() => setShowEnv(!showEnv)}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700"
             >
               {t('mcp.envVars')} ({Object.keys(mcp.env).length}) {showEnv ? '▾' : '▸'}
             </button>
@@ -94,8 +94,8 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
               <div className="mt-2 space-y-1">
                 {Object.entries(mcp.env).map(([key, _val]) => (
                   <div key={key} className="flex justify-between text-xs font-mono">
-                    <span className="text-gray-600">{key}</span>
-                    <span className="text-gray-400">{t('mcp.masked')}</span>
+                    <span className="text-gray-600 dark:text-gray-300">{key}</span>
+                    <span className="text-gray-400 dark:text-gray-500">{t('mcp.masked')}</span>
                   </div>
                 ))}
               </div>
@@ -107,19 +107,19 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
             <div>
               <button
                 onClick={() => setShowTools(!showTools)}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700"
               >
                 {t('mcp.tools')} ({tools.length}) {showTools ? '▾' : '▸'}
               </button>
               {showTools && (
                 <div className="mt-2 space-y-1">
                   {tools.length === 0 ? (
-                    <p className="text-xs text-gray-400">{t('mcp.noTools')}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('mcp.noTools')}</p>
                   ) : (
                     tools.map((tool) => (
-                      <div key={tool.id} className="text-xs p-2 bg-gray-50 rounded">
-                        <div className="font-mono font-medium text-gray-700">{tool.name}</div>
-                        {tool.description && <div className="text-gray-500 mt-0.5">{tool.description}</div>}
+                      <div key={tool.id} className="text-xs p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="font-mono font-medium text-gray-700 dark:text-gray-200">{tool.name}</div>
+                        {tool.description && <div className="text-gray-500 dark:text-gray-400 mt-0.5">{tool.description}</div>}
                       </div>
                     ))
                   )}
@@ -129,19 +129,19 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
             <div>
               <button
                 onClick={() => setShowPrompts(!showPrompts)}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700"
               >
                 {t('mcp.prompts')} ({prompts.length}) {showPrompts ? '▾' : '▸'}
               </button>
               {showPrompts && (
                 <div className="mt-2 space-y-1">
                   {prompts.length === 0 ? (
-                    <p className="text-xs text-gray-400">{t('mcp.noPrompts')}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('mcp.noPrompts')}</p>
                   ) : (
                     prompts.map((p) => (
-                      <div key={p.id} className="text-xs p-2 bg-gray-50 rounded">
-                        <div className="font-mono font-medium text-gray-700">{p.name}</div>
-                        {p.description && <div className="text-gray-500 mt-0.5">{p.description}</div>}
+                      <div key={p.id} className="text-xs p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="font-mono font-medium text-gray-700 dark:text-gray-200">{p.name}</div>
+                        {p.description && <div className="text-gray-500 dark:text-gray-400 mt-0.5">{p.description}</div>}
                       </div>
                     ))
                   )}
@@ -151,13 +151,13 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
           </>
         )}
         <div>
-          <span className="text-sm text-gray-500">{t('common.tags')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('common.tags')}</span>
           <div className="flex flex-wrap gap-1 mt-1">
             {mcp.tags.length === 0 ? (
-              <span className="text-sm text-gray-400">{t('common.none')}</span>
+              <span className="text-sm text-gray-400 dark:text-gray-500">{t('common.none')}</span>
             ) : (
               mcp.tags.map((tag) => (
-                <span key={tag} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">{tag}</span>
+                <span key={tag} className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">{tag}</span>
               ))
             )}
           </div>
@@ -212,24 +212,24 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[480px]">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[480px]">
         <h3 className="text-lg font-semibold mb-4">{t('mcp.addMcp')}</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.name')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.name')}</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.transport')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.transport')}</label>
             <select
               value={form.transport}
               onChange={(e) => setForm((f) => ({ ...f, transport: e.target.value as any }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="stdio">stdio</option>
               <option value="sse">sse</option>
@@ -239,50 +239,50 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
           {form.transport === 'stdio' ? (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.command')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.command')}</label>
                 <input
                   type="text"
                   value={form.command}
                   onChange={(e) => setForm((f) => ({ ...f, command: e.target.value }))}
                   placeholder="npx, node, python..."
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.args')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.args')}</label>
                 <input
                   type="text"
                   value={form.args}
                   onChange={(e) => setForm((f) => ({ ...f, args: e.target.value }))}
                   placeholder="arg1 arg2 arg3"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.url')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.url')}</label>
               <input
                 type="text"
                 value={form.url}
                 onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
                 placeholder="http://localhost:3000"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.description')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('common.description')}</label>
             <input
               type="text"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">{t('common.cancel')}</button>
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>
           <button
             onClick={handleSubmit}
             disabled={!form.name}
@@ -326,24 +326,24 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[480px]">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[480px]">
         <h3 className="text-lg font-semibold mb-4">{t('mcp.editMcp')}</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.name')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.name')}</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.transport')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.transport')}</label>
             <select
               value={form.transport}
               onChange={(e) => setForm((f) => ({ ...f, transport: e.target.value as any }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="stdio">stdio</option>
               <option value="sse">sse</option>
@@ -353,47 +353,47 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
           {form.transport === 'stdio' ? (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.command')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.command')}</label>
                 <input
                   type="text"
                   value={form.command}
                   onChange={(e) => setForm((f) => ({ ...f, command: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.args')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.args')}</label>
                 <input
                   type="text"
                   value={form.args}
                   onChange={(e) => setForm((f) => ({ ...f, args: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('mcp.url')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.url')}</label>
               <input
                 type="text"
                 value={form.url}
                 onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.description')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('common.description')}</label>
             <input
               type="text"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">{t('common.cancel')}</button>
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>
           <button
             onClick={handleSubmit}
             disabled={!form.name}
@@ -456,23 +456,23 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[640px] max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[640px] max-h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">{t('mcp.reverseScan.title')}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
         </div>
 
         <div className="flex gap-2 mb-6">
           {[1, 2, 3].map((s) => (
-            <div key={s} className={`flex-1 h-1 rounded ${step >= s ? 'bg-blue-500' : 'bg-gray-200'}`} />
+            <div key={s} className={`flex-1 h-1 rounded ${step >= s ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
           ))}
         </div>
 
         <div className="flex-1 overflow-auto">
           {step === 1 && (
             <div>
-              <p className="text-sm text-gray-600 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
-              <p className="text-sm text-gray-600">Ready to scan enabled agent configurations.</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Ready to scan enabled agent configurations.</p>
               <button
                 onClick={runScan}
                 disabled={scanning}
@@ -485,16 +485,16 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
 
           {step === 2 && (
             <div>
-              <p className="text-sm text-gray-600 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
               {results.length === 0 ? (
-                <p className="text-gray-500">{t('mcp.reverseScan.noResults')}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('mcp.reverseScan.noResults')}</p>
               ) : (
                 <div className="space-y-2">
                   {results.map((r: any, i: number) => {
-                    const classColor = r.classification === 'new' ? 'bg-green-100 text-green-700' : r.classification === 'conflict' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600';
+                    const classColor = r.classification === 'new' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : r.classification === 'conflict' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300';
                     const classLabel = r.classification === 'new' ? t('skill.reverseScan.newFound') : r.classification === 'conflict' ? t('skill.reverseScan.conflict') : t('skill.reverseScan.syncedHidden');
                     return (
-                      <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <div key={i} className="flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(String(i))}
@@ -503,7 +503,7 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
                         />
                         <div className="flex-1">
                           <div className="font-medium text-sm">{r.name}</div>
-                          <div className="text-xs text-gray-500">{r.agentName} - {r.schema?.transport ?? 'stdio'}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{r.agentName} - {r.schema?.transport ?? 'stdio'}</div>
                         </div>
                         <span className={`text-xs px-2 py-0.5 rounded ${classColor}`}>{classLabel}</span>
                       </div>
@@ -516,10 +516,10 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
 
           {step === 3 && (
             <div>
-              <p className="text-sm text-gray-600 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{t(`mcp.reverseScan.step${step}`)}</p>
               {importDone ? (
                 <div className="text-center py-8">
-                  <div className="text-green-600 text-lg font-medium">{t('mcp.reverseScan.importComplete')}</div>
+                  <div className="text-green-600 dark:text-green-400 text-lg font-medium">{t('mcp.reverseScan.importComplete')}</div>
                 </div>
               ) : (
                 <div>
@@ -537,11 +537,11 @@ function McpReverseScanWizard({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        <div className="flex justify-between mt-6 pt-4 border-t">
+        <div className="flex justify-between mt-6 pt-4 border-t dark:border-gray-700">
           <button
             onClick={() => setStep((s) => Math.max(1, s - 1))}
             disabled={step === 1}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+            className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 disabled:opacity-50"
           >
             {t('common.previous')}
           </button>
@@ -587,48 +587,48 @@ function McpDoctorDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">{t('mcp.doctor.title')}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&#x2715;</button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">&#x2715;</button>
         </div>
 
         {checking ? (
           <div className="flex-1 flex items-center justify-center py-12">
-            <p className="text-gray-500">{t('common.loading')}</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
           </div>
         ) : fixResult ? (
           <div className="flex-1 overflow-auto space-y-4">
             <div className="text-center py-6">
-              <div className="text-green-600 text-lg font-medium">{t('mcp.doctor.fixComplete')}</div>
+              <div className="text-green-600 dark:text-green-400 text-lg font-medium">{t('mcp.doctor.fixComplete')}</div>
             </div>
             {fixResult.synced.length > 0 && (
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-sm font-medium text-green-700">{t('mcp.doctor.synced', { count: fixResult.synced.length })}</p>
-                <p className="text-xs text-green-600 mt-1">{fixResult.synced.join(', ')}</p>
+              <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                <p className="text-sm font-medium text-green-700 dark:text-green-300">{t('mcp.doctor.synced', { count: fixResult.synced.length })}</p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">{fixResult.synced.join(', ')}</p>
               </div>
             )}
             {fixResult.deleted.length > 0 && (
-              <div className="p-3 bg-red-50 rounded-lg">
-                <p className="text-sm font-medium text-red-700">{t('mcp.doctor.deleted', { count: fixResult.deleted.length })}</p>
-                <p className="text-xs text-red-600 mt-1">{fixResult.deleted.join(', ')}</p>
+              <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                <p className="text-sm font-medium text-red-700 dark:text-red-300">{t('mcp.doctor.deleted', { count: fixResult.deleted.length })}</p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{fixResult.deleted.join(', ')}</p>
               </div>
             )}
           </div>
         ) : (
           <div className="flex-1 overflow-auto space-y-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {t('mcp.doctor.summary', { dirCount: result.directoryCount, dbCount: result.databaseCount })}
             </p>
 
             {result.consistent ? (
               <div className="text-center py-8">
-                <div className="text-green-600 text-lg font-medium">{t('mcp.doctor.consistent')}</div>
+                <div className="text-green-600 dark:text-green-400 text-lg font-medium">{t('mcp.doctor.consistent')}</div>
               </div>
             ) : (
               <>
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
                       <th className="px-3 py-2 text-left text-sm">{t('common.name')}</th>
                       <th className="px-3 py-2 text-left text-sm">{t('common.status')}</th>
@@ -637,18 +637,18 @@ function McpDoctorDialog({ onClose }: { onClose: () => void }) {
                   </thead>
                   <tbody>
                     {result.items.map((item: any, i: number) => (
-                      <tr key={i} className="border-t">
+                      <tr key={i} className="border-t dark:border-gray-700">
                         <td className="px-3 py-2 text-sm font-medium">{item.name}</td>
                         <td className="px-3 py-2">
                           <span className={`text-xs px-2 py-0.5 rounded ${
-                            item.location === 'directory' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                            item.location === 'directory' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300'
                           }`}>
                             {item.location === 'directory' ? t('mcp.doctor.locationDir') : t('mcp.doctor.locationDb')}
                           </span>
                         </td>
                         <td className="px-3 py-2">
                           <span className={`text-xs px-2 py-0.5 rounded ${
-                            item.action === 'sync' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            item.action === 'sync' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                           }`}>
                             {item.action === 'sync' ? t('mcp.doctor.actionSync') : t('mcp.doctor.actionDelete')}
                           </span>
@@ -702,10 +702,10 @@ export default function Mcps() {
   });
 
   const statusColor: Record<string, string> = {
-    untested: 'bg-gray-100 text-gray-600',
-    passed: 'bg-green-100 text-green-700',
-    failed: 'bg-red-100 text-red-700',
-    config_changed: 'bg-yellow-100 text-yellow-700',
+    untested: 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300',
+    passed: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+    failed: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+    config_changed: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
   };
 
   const toggleBulk = (id: string) => {
@@ -765,19 +765,19 @@ export default function Mcps() {
           <button
             onClick={() => startBatchTest()}
             disabled={batchTesting || mcps.length === 0}
-            className="px-4 py-2 border border-green-500 text-green-600 rounded-lg hover:bg-green-50 disabled:opacity-50"
+            className="px-4 py-2 border dark:border-gray-700 border-green-500 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-50 disabled:opacity-50"
           >
             {batchTesting ? t('mcp.batchTesting') : t('mcp.batchTest')}
           </button>
           <button
             onClick={() => setShowDoctor(true)}
-            className="px-4 py-2 border border-yellow-500 text-yellow-600 rounded-lg hover:bg-yellow-50"
+            className="px-4 py-2 border dark:border-gray-700 border-yellow-500 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-50"
           >
             {t('mcp.doctor.button')}
           </button>
           <button
             onClick={() => setShowReverseScan(true)}
-            className="px-4 py-2 border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50"
+            className="px-4 py-2 border dark:border-gray-700 border-blue-500 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50"
           >
             {t('dashboard.reverseScan')}
           </button>
@@ -791,36 +791,36 @@ export default function Mcps() {
       </div>
 
       {batchTesting && batchProgress && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-blue-700">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
               {t('mcp.batchTesting')} - {batchProgress.currentMcpName}
             </span>
-            <span className="text-sm text-blue-600">
+            <span className="text-sm text-blue-600 dark:text-blue-400">
               {batchProgress.completed}/{batchProgress.total}
             </span>
           </div>
-          <div className="w-full bg-blue-200 rounded-full h-2">
+          <div className="w-full bg-blue-200 dark:bg-blue-900/30 rounded-full h-2">
             <div
               className="bg-blue-500 h-2 rounded-full transition-all"
               style={{ width: `${batchProgress.total > 0 ? (batchProgress.completed / batchProgress.total) * 100 : 0}%` }}
             />
           </div>
-          <div className="flex gap-4 mt-1 text-xs text-blue-600">
+          <div className="flex gap-4 mt-1 text-xs text-blue-600 dark:text-blue-400">
             <span>{t('mcp.batchPassed')}: {batchProgress.passed}</span>
             <span>{t('mcp.batchFailed')}: {batchProgress.failed}</span>
           </div>
         </div>
       )}
       {!batchTesting && batchProgress && (
-        <div className="mb-4 p-3 bg-green-50 rounded-lg flex items-center justify-between">
-          <span className="text-sm font-medium text-green-700">
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-between">
+          <span className="text-sm font-medium text-green-700 dark:text-green-300">
             {t('mcp.batchComplete')}
           </span>
           <div className="flex gap-4 text-sm">
-            <span className="text-green-600">{t('mcp.batchPassed')}: {batchProgress.passed}</span>
-            <span className="text-red-600">{t('mcp.batchFailed')}: {batchProgress.failed}</span>
-            <span className="text-gray-600">{t('mcp.batchTest')}: {batchProgress.total}</span>
+            <span className="text-green-600 dark:text-green-400">{t('mcp.batchPassed')}: {batchProgress.passed}</span>
+            <span className="text-red-600 dark:text-red-400">{t('mcp.batchFailed')}: {batchProgress.failed}</span>
+            <span className="text-gray-600 dark:text-gray-300">{t('mcp.batchTest')}: {batchProgress.total}</span>
           </div>
         </div>
       )}
@@ -832,7 +832,7 @@ export default function Mcps() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('common.search') + '...'}
-            className="w-full max-w-sm px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full max-w-sm px-3 py-1.5 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -840,10 +840,10 @@ export default function Mcps() {
       <div className="flex gap-6">
         <div className="flex-1">
           {filteredMcps.length === 0 ? (
-            <p className="text-gray-600">{t('common.noData')}</p>
+            <p className="text-gray-600 dark:text-gray-300">{t('common.noData')}</p>
           ) : (
-            <table className="w-full bg-white rounded-lg shadow">
-              <thead className="bg-gray-50">
+            <table className="w-full bg-white dark:bg-gray-800 rounded-lg shadow">
+              <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th className="px-4 py-2 text-left w-8">
                     <input
@@ -865,7 +865,7 @@ export default function Mcps() {
                 {filteredMcps.map((mcp) => (
                   <tr
                     key={mcp.id}
-                    className={`border-t cursor-pointer hover:bg-gray-50 ${selectedMcp?.id === mcp.id ? 'bg-blue-50' : ''}`}
+                    className={`border-t dark:border-gray-700 cursor-pointer hover:bg-gray-50 ${selectedMcp?.id === mcp.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
                     onClick={() => setSelectedMcp(mcp)}
                   >
                     <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
@@ -877,7 +877,7 @@ export default function Mcps() {
                     </td>
                     <td className="px-4 py-2 font-medium">{mcp.name}</td>
                     <td className="px-4 py-2">
-                      <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">
+                      <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-900 rounded">
                         {mcp.transport ?? 'stdio'}
                       </span>
                     </td>
@@ -886,14 +886,14 @@ export default function Mcps() {
                         {t(`mcp.statusLabels.${mcp.testStatus}` as any)}
                       </span>
                       {mcp.testStatus === 'failed' && mcp.testError && (
-                        <p className="text-xs text-red-500 mt-1 break-all max-w-xs truncate" title={mcp.testError}>{mcp.testError}</p>
+                        <p className="text-xs text-red-500 dark:text-red-400 mt-1 break-all max-w-xs truncate" title={mcp.testError}>{mcp.testError}</p>
                       )}
                     </td>
                     <td className="px-4 py-2">
                       {mcp.applied && mcp.applied.agents.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {mcp.applied.agents.map((agentName) => (
-                            <span key={agentName} className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                            <span key={agentName} className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">
                               {agentName}
                             </span>
                           ))}
@@ -911,13 +911,13 @@ export default function Mcps() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">-</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 font-mono text-sm text-gray-600">
+                    <td className="px-4 py-2 font-mono text-sm text-gray-600 dark:text-gray-300">
                       {mcp.command ?? mcp.url ?? '-'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-500">
+                    <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
                       {Object.keys(mcp.env).length > 0 ? `${Object.keys(mcp.env).length} vars` : '-'}
                     </td>
                     <td className="px-4 py-2">
@@ -925,19 +925,19 @@ export default function Mcps() {
                         <button
                           onClick={(e) => { e.stopPropagation(); testMcp(mcp.id); }}
                           disabled={testingMcpIds.has(mcp.id)}
-                          className="text-sm text-green-600 hover:text-green-800 disabled:opacity-50"
+                          className="text-sm text-green-600 dark:text-green-400 hover:text-green-800 disabled:opacity-50"
                         >
                           {testingMcpIds.has(mcp.id) ? t('mcp.testing') : t('mcp.test')}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setDebugMcp(mcp); }}
-                          className="text-sm text-purple-600 hover:text-purple-800"
+                          className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800"
                         >
                           {t('mcp.debug')}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditingMcp(mcp); }}
-                          className="text-sm text-blue-600 hover:text-blue-800"
+                          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800"
                         >
                           {t('common.edit')}
                         </button>
@@ -949,7 +949,7 @@ export default function Mcps() {
                               if (selectedMcp?.id === mcp.id) setSelectedMcp(null);
                             }
                           }}
-                          className="text-sm text-red-600 hover:text-red-800"
+                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-800"
                         >
                           {t('common.delete')}
                         </button>
@@ -1027,9 +1027,9 @@ export default function Mcps() {
 
       {showBulkConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-[400px]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[400px]">
             <h3 className="text-lg font-semibold mb-4">{t('bulk.confirmAction')}</h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
               {bulkAction === 'delete'
                 ? t('bulk.confirmDelete', { count: bulkSelected.size })
                 : `${bulkAction} ${bulkSelected.size} items?`}
@@ -1037,7 +1037,7 @@ export default function Mcps() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowBulkConfirm(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800"
               >
                 {t('common.cancel')}
               </button>

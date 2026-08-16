@@ -70,7 +70,7 @@ export default function SkillDiscoveryPanel() {
   return (
     <div className="space-y-3">
       {providers.length > 1 && (
-        <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg">
+        <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-gray-900 rounded-lg">
           {providers.map((p) => (
             <button
               key={p.id}
@@ -82,8 +82,8 @@ export default function SkillDiscoveryPanel() {
               }}
               className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 activeProviderId === p.id
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
               }`}
             >
               {p.name}
@@ -93,7 +93,7 @@ export default function SkillDiscoveryPanel() {
       )}
 
       {activeProvider && (
-        <p className="text-xs text-gray-400">{activeProvider.description}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">{activeProvider.description}</p>
       )}
 
       <div className="flex gap-2">
@@ -103,7 +103,7 @@ export default function SkillDiscoveryPanel() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           placeholder={activeProvider?.inputPlaceholder ?? t('skill.addWizard.searchPlaceholder')}
-          className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+          className="flex-1 px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
         />
         <button
           onClick={handleSearch}
@@ -114,7 +114,7 @@ export default function SkillDiscoveryPanel() {
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {results.length > 0 && (
         <div className="space-y-2 max-h-[240px] overflow-auto">
@@ -122,11 +122,11 @@ export default function SkillDiscoveryPanel() {
             const isInstalled = installedNames.has(r.name);
             const isInstalling = installingName === r.name;
             return (
-              <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+              <div key={i} className="flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg">
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate">{r.name}</div>
                   {r.description && (
-                    <div className="text-xs text-gray-500 truncate">{r.description}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{r.description}</div>
                   )}
                 </div>
                 <button
@@ -134,7 +134,7 @@ export default function SkillDiscoveryPanel() {
                   disabled={isInstalling || isInstalled}
                   className={`px-3 py-1 text-sm rounded shrink-0 ${
                     isInstalled
-                      ? 'bg-gray-100 text-gray-400 cursor-default'
+                      ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-500 cursor-default'
                       : 'bg-green-500 text-white hover:bg-green-600 disabled:opacity-50'
                   }`}
                 >
@@ -151,7 +151,7 @@ export default function SkillDiscoveryPanel() {
       )}
 
       {!searching && results.length === 0 && !error && query && (
-        <p className="text-sm text-gray-400 text-center py-4">
+        <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
           {t('skill.addWizard.noResults')}
         </p>
       )}

@@ -19,34 +19,34 @@ export default function ProjectList() {
           placeholder={t('project.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-3 py-2 border dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('common.loading')}</div>
       ) : projects.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">{t('project.noProjects')}</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('project.noProjects')}</div>
       ) : (
-        <table className="w-full bg-white rounded-lg shadow">
+        <table className="w-full bg-white dark:bg-gray-800 rounded-lg shadow">
           <thead>
-            <tr className="border-b">
-              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">{t('common.name')}</th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">{t('project.path')}</th>
-              <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">{t('common.actions')}</th>
+            <tr className="border-b dark:border-gray-700">
+              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300">{t('common.name')}</th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300">{t('project.path')}</th>
+              <th className="text-right px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {projects.map((project) => (
               <tr
                 key={project.id}
-                className={`border-b cursor-pointer hover:bg-gray-50 ${
-                  selectedProject?.id === project.id ? 'bg-blue-50' : ''
+                className={`border-b dark:border-gray-700 cursor-pointer hover:bg-gray-50 ${
+                  selectedProject?.id === project.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''
                 }`}
                 onClick={() => selectProject(project.id)}
               >
                 <td className="px-4 py-3 font-medium">{project.name}</td>
-                <td className="px-4 py-3 text-sm text-gray-500 font-mono">{project.path}</td>
+                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 font-mono">{project.path}</td>
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={(e) => {
@@ -55,7 +55,7 @@ export default function ProjectList() {
                         deleteProject(project.id);
                       }
                     }}
-                    className="px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+                    className="px-2 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 rounded"
                   >
                     {t('common.delete')}
                   </button>

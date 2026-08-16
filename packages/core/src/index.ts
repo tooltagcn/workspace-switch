@@ -2,6 +2,7 @@ export { getDatabase, closeDatabase } from './db/index.js';
 export { migrate, verifyMigration } from './db/migrate.js';
 export { SCHEMA_SQL, EXPECTED_TABLES } from './db/schema.js';
 export type { TableName } from './db/schema.js';
+export { getSetting, setSetting } from './settings.js';
 
 export type { Agent, CreateAgentInput, UpdateAgentInput } from './agent/types.js';
 export {

@@ -12,30 +12,30 @@ function SkillDetail({ skill, onClose, onApply }: { skill: Skill; onClose: () =>
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 w-96">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">{skill.name}</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
       </div>
       <div className="space-y-3">
         <div>
-          <span className="text-sm text-gray-500">{t('skill.description')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('skill.description')}</span>
           <p className="text-sm mt-1">{skill.description ?? '-'}</p>
         </div>
         <div>
-          <span className="text-sm text-gray-500">{t('skill.tags')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('skill.tags')}</span>
           <div className="flex flex-wrap gap-1 mt-1">
             {skill.tags.length === 0 ? (
-              <span className="text-sm text-gray-400">{t('common.none')}</span>
+              <span className="text-sm text-gray-400 dark:text-gray-500">{t('common.none')}</span>
             ) : (
               skill.tags.map((tag) => (
-                <span key={tag} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">{tag}</span>
+                <span key={tag} className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">{tag}</span>
               ))
             )}
           </div>
         </div>
         <div>
-          <span className="text-sm text-gray-500">{t('skill.sourcePath')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('skill.sourcePath')}</span>
           <p className="text-sm font-mono mt-1 truncate">{skill.sourcePath ?? '-'}</p>
         </div>
         <button
@@ -137,20 +137,20 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[600px]">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[600px]">
         <h3 className="text-lg font-semibold mb-4">{t('skill.addWizard.title')}</h3>
-        <div className="flex border-b mb-4">
+        <div className="flex border-b dark:border-gray-700 mb-4">
           {tabs.map((tab, i) => (
             <button
               key={i}
               onClick={() => setActiveTab(i)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${activeTab === i ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${activeTab === i ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}
             >
               {tab.label}
             </button>
           ))}
         </div>
-        <p className="text-sm text-gray-500 mb-4">{tabs[activeTab].desc}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{tabs[activeTab].desc}</p>
         <div className="min-h-[180px]">
           {activeTab === 0 && <SkillDiscoveryPanel />}
 
@@ -160,12 +160,12 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragOver ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-300 dark:border-gray-700'}`}
               >
-                <p className="text-sm text-gray-500 mb-2">{t('skill.addWizard.dragDropHint')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('skill.addWizard.dragDropHint')}</p>
                 <button
                   onClick={handleArchiveBrowse}
-                  className="px-4 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-1.5 text-sm border dark:border-gray-700 border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50"
                 >
                   {t('skill.addWizard.browse')}
                 </button>
@@ -173,22 +173,22 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
               {archivePath && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.selectedFile')}</label>
-                    <p className="text-xs font-mono text-gray-500 truncate">{archivePath}</p>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('skill.addWizard.selectedFile')}</label>
+                    <p className="text-xs font-mono text-gray-500 dark:text-gray-400 truncate">{archivePath}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.skillName')}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('skill.addWizard.skillName')}</label>
                     <input
                       type="text"
                       value={archiveName}
                       onChange={(e) => setArchiveName(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </>
               )}
-              {archiveError && <p className="text-sm text-red-600">{archiveError}</p>}
-              {archiveSuccess && <p className="text-sm text-green-600">{t('skill.addWizard.importSuccess')}</p>}
+              {archiveError && <p className="text-sm text-red-600 dark:text-red-400">{archiveError}</p>}
+              {archiveSuccess && <p className="text-sm text-green-600 dark:text-green-400">{t('skill.addWizard.importSuccess')}</p>}
               <div className="flex justify-end">
                 <button
                   onClick={handleArchiveImport}
@@ -204,17 +204,17 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
           {activeTab === 2 && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.selectPath')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('skill.addWizard.selectPath')}</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={localPath}
                     onChange={(e) => setLocalPath(e.target.value)}
-                    className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                   <button
                     onClick={handleLocalBrowse}
-                    className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 shrink-0"
+                    className="px-4 py-2 text-sm border dark:border-gray-700 border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 shrink-0"
                   >
                     {t('skill.addWizard.browse')}
                   </button>
@@ -222,17 +222,17 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
               </div>
               {localPath && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('skill.addWizard.skillName')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('skill.addWizard.skillName')}</label>
                   <input
                     type="text"
                     value={localName}
                     onChange={(e) => setLocalName(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               )}
-              {localError && <p className="text-sm text-red-600">{localError}</p>}
-              {localSuccess && <p className="text-sm text-green-600">{t('skill.addWizard.importSuccess')}</p>}
+              {localError && <p className="text-sm text-red-600 dark:text-red-400">{localError}</p>}
+              {localSuccess && <p className="text-sm text-green-600 dark:text-green-400">{t('skill.addWizard.importSuccess')}</p>}
               <div className="flex justify-end">
                 <button
                   onClick={handleLocalImport}
@@ -246,7 +246,7 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
           )}
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">{t('common.cancel')}</button>
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>
         </div>
       </div>
     </div>
@@ -279,20 +279,20 @@ function TagManager({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">{t('skill.tagManager.title')}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
         </div>
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 rounded-lg">
+          <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
             <span className="text-sm">{t('skill.tagManager.selectedSkills', { count: selectedIds.size })}</span>
             <input
               type="text"
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               placeholder={t('skill.tagManager.addTag')}
-              className="flex-1 px-2 py-1 text-sm border rounded"
+              className="flex-1 px-2 py-1 text-sm border dark:border-gray-700 rounded"
             />
             <button
               onClick={handleBatchTag}
@@ -305,7 +305,7 @@ function TagManager({ onClose }: { onClose: () => void }) {
         )}
         <div className="flex-1 overflow-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 sticky top-0">
+            <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
               <tr>
                 <th className="px-3 py-2 text-left w-8">
                   <input
@@ -323,7 +323,7 @@ function TagManager({ onClose }: { onClose: () => void }) {
             </thead>
             <tbody>
               {skills.map((skill) => (
-                <tr key={skill.id} className="border-t">
+                <tr key={skill.id} className="border-t dark:border-gray-700">
                   <td className="px-3 py-2">
                     <input
                       type="checkbox"
@@ -335,7 +335,7 @@ function TagManager({ onClose }: { onClose: () => void }) {
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
                       {skill.tags.map((tag) => (
-                        <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                        <span key={tag} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
                           {tag}
                           <button
                             onClick={() => removeTag(skill.id, tag)}
@@ -412,23 +412,23 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[640px] max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[640px] max-h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">{t('skill.reverseScan.title')}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
         </div>
 
         <div className="flex gap-2 mb-6">
           {[1, 2, 3].map((s) => (
-            <div key={s} className={`flex-1 h-1 rounded ${step >= s ? 'bg-blue-500' : 'bg-gray-200'}`} />
+            <div key={s} className={`flex-1 h-1 rounded ${step >= s ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
           ))}
         </div>
 
         <div className="flex-1 overflow-auto">
           {step === 1 && (
             <div>
-              <p className="text-sm text-gray-600 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
-              <p className="text-sm text-gray-600">Ready to scan enabled agent configurations.</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Ready to scan enabled agent configurations.</p>
               <button
                 onClick={runScan}
                 disabled={scanning}
@@ -437,27 +437,27 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
                 {scanning ? t('skill.reverseScan.scanning') : t('skill.reverseScan.startScan')}
               </button>
               {scanError && (
-                <p className="mt-3 text-sm text-red-600">{t('skill.reverseScan.scanError')}</p>
+                <p className="mt-3 text-sm text-red-600 dark:text-red-400">{t('skill.reverseScan.scanError')}</p>
               )}
               {!scanning && results.length === 0 && !scanError && (
-                <p className="mt-3 text-sm text-gray-500">{t('skill.reverseScan.noImportable')}</p>
+                <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{t('skill.reverseScan.noImportable')}</p>
               )}
             </div>
           )}
 
           {step === 2 && (
             <div>
-              <p className="text-sm text-gray-600 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
               {results.length === 0 ? (
-                <p className="text-gray-500">{t('skill.reverseScan.noResults')}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('skill.reverseScan.noResults')}</p>
               ) : (
                 <div className="space-y-2">
                   {results.map((r: any, i: number) => {
                     if (r.classification === 'synced') return null;
-                    const classColor = r.classification === 'new' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                    const classColor = r.classification === 'new' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
                     const classLabel = r.classification === 'new' ? t('skill.reverseScan.newFound') : t('skill.reverseScan.conflict');
                     return (
-                      <div key={i} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <div key={i} className="flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(String(i))}
@@ -465,14 +465,14 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
                         />
                         <div className="flex-1">
                           <div className="font-medium text-sm">{r.name}</div>
-                          <div className="text-xs text-gray-500">{r.agentName} - {r.sourcePath}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{r.agentName} - {r.sourcePath}</div>
                         </div>
                         <span className={`text-xs px-2 py-0.5 rounded ${classColor}`}>{classLabel}</span>
                       </div>
                     );
                   })}
                   {results.every((r: any) => r.classification === 'synced') && (
-                    <p className="text-sm text-gray-500">{t('skill.reverseScan.noImportable')}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('skill.reverseScan.noImportable')}</p>
                   )}
                 </div>
               )}
@@ -481,10 +481,10 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
 
           {step === 3 && (
             <div>
-              <p className="text-sm text-gray-600 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{t(`skill.reverseScan.step${step}`)}</p>
               {importDone ? (
                 <div className="text-center py-8">
-                  <div className="text-green-600 text-lg font-medium">{t('skill.reverseScan.importComplete')}</div>
+                  <div className="text-green-600 dark:text-green-400 text-lg font-medium">{t('skill.reverseScan.importComplete')}</div>
                 </div>
               ) : (
                 <div>
@@ -497,7 +497,7 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
                     {importing ? t('skill.reverseScan.importing') : t('skill.reverseScan.importSelected')}
                   </button>
                   {importError && (
-                    <p className="mt-3 text-sm text-red-600">{t('skill.reverseScan.importError')}</p>
+                    <p className="mt-3 text-sm text-red-600 dark:text-red-400">{t('skill.reverseScan.importError')}</p>
                   )}
                 </div>
               )}
@@ -505,11 +505,11 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        <div className="flex justify-between mt-6 pt-4 border-t">
+        <div className="flex justify-between mt-6 pt-4 border-t dark:border-gray-700">
           <button
             onClick={() => setStep((s) => Math.max(1, s - 1))}
             disabled={step === 1}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+            className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 disabled:opacity-50"
           >
             {t('common.previous')}
           </button>
@@ -555,48 +555,48 @@ function SkillDoctorDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">{t('skill.doctor.title')}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&#x2715;</button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">&#x2715;</button>
         </div>
 
         {checking ? (
           <div className="flex-1 flex items-center justify-center py-12">
-            <p className="text-gray-500">{t('common.loading')}</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
           </div>
         ) : fixResult ? (
           <div className="flex-1 overflow-auto space-y-4">
             <div className="text-center py-6">
-              <div className="text-green-600 text-lg font-medium">{t('skill.doctor.fixComplete')}</div>
+              <div className="text-green-600 dark:text-green-400 text-lg font-medium">{t('skill.doctor.fixComplete')}</div>
             </div>
             {fixResult.synced.length > 0 && (
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-sm font-medium text-green-700">{t('skill.doctor.synced', { count: fixResult.synced.length })}</p>
-                <p className="text-xs text-green-600 mt-1">{fixResult.synced.join(', ')}</p>
+              <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                <p className="text-sm font-medium text-green-700 dark:text-green-300">{t('skill.doctor.synced', { count: fixResult.synced.length })}</p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">{fixResult.synced.join(', ')}</p>
               </div>
             )}
             {fixResult.deleted.length > 0 && (
-              <div className="p-3 bg-red-50 rounded-lg">
-                <p className="text-sm font-medium text-red-700">{t('skill.doctor.deleted', { count: fixResult.deleted.length })}</p>
-                <p className="text-xs text-red-600 mt-1">{fixResult.deleted.join(', ')}</p>
+              <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                <p className="text-sm font-medium text-red-700 dark:text-red-300">{t('skill.doctor.deleted', { count: fixResult.deleted.length })}</p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{fixResult.deleted.join(', ')}</p>
               </div>
             )}
           </div>
         ) : (
           <div className="flex-1 overflow-auto space-y-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {t('skill.doctor.summary', { dirCount: result.directoryCount, dbCount: result.databaseCount })}
             </p>
 
             {result.consistent ? (
               <div className="text-center py-8">
-                <div className="text-green-600 text-lg font-medium">{t('skill.doctor.consistent')}</div>
+                <div className="text-green-600 dark:text-green-400 text-lg font-medium">{t('skill.doctor.consistent')}</div>
               </div>
             ) : (
               <>
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
                       <th className="px-3 py-2 text-left text-sm">{t('common.name')}</th>
                       <th className="px-3 py-2 text-left text-sm">{t('common.status')}</th>
@@ -605,18 +605,18 @@ function SkillDoctorDialog({ onClose }: { onClose: () => void }) {
                   </thead>
                   <tbody>
                     {result.items.map((item: any, i: number) => (
-                      <tr key={i} className="border-t">
+                      <tr key={i} className="border-t dark:border-gray-700">
                         <td className="px-3 py-2 text-sm font-medium">{item.name}</td>
                         <td className="px-3 py-2">
                           <span className={`text-xs px-2 py-0.5 rounded ${
-                            item.location === 'directory' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                            item.location === 'directory' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300'
                           }`}>
                             {item.location === 'directory' ? t('skill.doctor.locationDir') : t('skill.doctor.locationDb')}
                           </span>
                         </td>
                         <td className="px-3 py-2">
                           <span className={`text-xs px-2 py-0.5 rounded ${
-                            item.action === 'sync' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            item.action === 'sync' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                           }`}>
                             {item.action === 'sync' ? t('skill.doctor.actionSync') : t('skill.doctor.actionDelete')}
                           </span>
@@ -750,19 +750,19 @@ export default function Skills() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowDoctor(true)}
-            className="px-4 py-2 border border-yellow-500 text-yellow-600 rounded-lg hover:bg-yellow-50"
+            className="px-4 py-2 border dark:border-gray-700 border-yellow-500 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-50"
           >
             {t('skill.doctor.button')}
           </button>
           <button
             onClick={() => setShowReverseScan(true)}
-            className="px-4 py-2 border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50"
+            className="px-4 py-2 border dark:border-gray-700 border-blue-500 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50"
           >
             {t('dashboard.reverseScan')}
           </button>
           <button
             onClick={() => setShowTagManager(true)}
-            className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 border dark:border-gray-700 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50"
           >
             {t('skill.tagManager.title')}
           </button>
@@ -781,17 +781,17 @@ export default function Skills() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={t('common.search')}
-          className="px-3 py-2 text-sm border rounded-lg w-72 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="px-3 py-2 text-sm border dark:border-gray-700 rounded-lg w-72 focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
       </div>
 
       <div className="flex gap-6">
         <div className="flex-1">
           {filtered.length === 0 ? (
-            <p className="text-gray-600">{t('common.noData')}</p>
+            <p className="text-gray-600 dark:text-gray-300">{t('common.noData')}</p>
           ) : (
-            <table className="w-full bg-white rounded-lg shadow">
-              <thead className="bg-gray-50">
+            <table className="w-full bg-white dark:bg-gray-800 rounded-lg shadow">
+              <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th className="px-4 py-2 text-left w-8">
                     <input
@@ -811,7 +811,7 @@ export default function Skills() {
                 {filtered.map((skill) => (
                   <tr
                     key={skill.id}
-                    className={`border-t cursor-pointer hover:bg-gray-50 ${selectedSkill?.id === skill.id ? 'bg-blue-50' : ''}`}
+                    className={`border-t dark:border-gray-700 cursor-pointer hover:bg-gray-50 ${selectedSkill?.id === skill.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
                     onClick={() => setSelectedSkill(skill)}
                   >
                     <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
@@ -822,25 +822,25 @@ export default function Skills() {
                       />
                     </td>
                     <td className="px-4 py-2 font-medium">{skill.name}</td>
-                    <td className="px-4 py-2 text-sm text-gray-600 truncate max-w-[200px]">{skill.description ?? '-'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 truncate max-w-[200px]">{skill.description ?? '-'}</td>
                     <td className="px-4 py-2">
                       <div className="flex flex-wrap gap-1">
                         {skill.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">{tag}</span>
+                          <span key={tag} className="text-xs px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">{tag}</span>
                         ))}
-                        {skill.tags.length > 3 && <span className="text-xs text-gray-400">+{skill.tags.length - 3}</span>}
+                        {skill.tags.length > 3 && <span className="text-xs text-gray-400 dark:text-gray-500">+{skill.tags.length - 3}</span>}
                       </div>
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex flex-wrap gap-1">
                         {(appliedAgentsMap.get(skill.id) ?? []).slice(0, 3).map((a) => (
-                          <span key={a.agentId} className="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded">{a.agentName}</span>
+                          <span key={a.agentId} className="text-xs px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">{a.agentName}</span>
                         ))}
                         {(appliedAgentsMap.get(skill.id) ?? []).length > 3 && (
-                          <span className="text-xs text-gray-400">+{(appliedAgentsMap.get(skill.id) ?? []).length - 3}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">+{(appliedAgentsMap.get(skill.id) ?? []).length - 3}</span>
                         )}
                         {(appliedAgentsMap.get(skill.id) ?? []).length === 0 && (
-                          <span className="text-xs text-gray-400">-</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
                         )}
                       </div>
                     </td>
@@ -853,7 +853,7 @@ export default function Skills() {
                             if (selectedSkill?.id === skill.id) setSelectedSkill(null);
                           }
                         }}
-                        className="text-sm text-red-600 hover:text-red-800"
+                        className="text-sm text-red-600 dark:text-red-400 hover:text-red-800"
                       >
                         {t('common.delete')}
                       </button>
@@ -918,9 +918,9 @@ export default function Skills() {
 
       {showBulkConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-[400px]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[400px]">
             <h3 className="text-lg font-semibold mb-4">{t('bulk.confirmAction')}</h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
               {bulkAction === 'delete'
                 ? t('bulk.confirmDelete', { count: bulkSelected.size })
                 : `${bulkAction} ${bulkSelected.size} items?`}
@@ -928,7 +928,7 @@ export default function Skills() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowBulkConfirm(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800"
               >
                 {t('common.cancel')}
               </button>

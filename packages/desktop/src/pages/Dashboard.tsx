@@ -24,24 +24,24 @@ function WorkspaceHealthCard() {
   }, [agents, skills, mcps]);
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold mb-4">{t('dashboard.workspaceHealth')}</h3>
       <div className="space-y-3">
         <div className="flex justify-between">
-          <span className="text-gray-600">{t('dashboard.totalAgents')}</span>
+          <span className="text-gray-600 dark:text-gray-300">{t('dashboard.totalAgents')}</span>
           <span className="font-medium">{agents.length}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">{t('dashboard.totalSkills')}</span>
+          <span className="text-gray-600 dark:text-gray-300">{t('dashboard.totalSkills')}</span>
           <span className="font-medium">{skills.length}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">{t('dashboard.totalMcps')}</span>
+          <span className="text-gray-600 dark:text-gray-300">{t('dashboard.totalMcps')}</span>
           <span className="font-medium">{mcps.length}</span>
         </div>
-        <div className="flex justify-between items-center pt-2 border-t">
-          <span className="text-gray-600">{t('dashboard.integrity')}</span>
-          <span className={`px-2 py-1 rounded text-sm ${integrityOk ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+        <div className="flex justify-between items-center pt-2 border-t dark:border-gray-700">
+          <span className="text-gray-600 dark:text-gray-300">{t('dashboard.integrity')}</span>
+          <span className={`px-2 py-1 rounded text-sm ${integrityOk ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200'}`}>
             {integrityOk ? t('dashboard.integrityOk') : t('dashboard.integrityWarning')}
           </span>
         </div>
@@ -55,20 +55,20 @@ function AgentSyncStatus() {
   const { agents } = useAgentStore();
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold mb-2">{t('dashboard.agentSyncStatus')}</h3>
-      <p className="text-sm text-gray-500 mb-4">{t('dashboard.agentSyncDesc')}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('dashboard.agentSyncDesc')}</p>
       {agents.length === 0 ? (
-        <p className="text-gray-500 text-sm">{t('common.noData')}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('common.noData')}</p>
       ) : (
         <div className="space-y-2">
           {agents.map((agent) => (
-            <div key={agent.id} className="flex items-center justify-between py-2 border-b last:border-0">
+            <div key={agent.id} className="flex items-center justify-between py-2 border-b dark:border-gray-700 last:border-0">
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${agent.enabled ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <span className={`w-2 h-2 rounded-full ${agent.enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
                 <span className="font-medium text-sm">{agent.name}</span>
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded ${agent.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-xs px-2 py-0.5 rounded ${agent.enabled ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300'}`}>
                 {agent.enabled ? t('dashboard.synced') : t('dashboard.notSynced')}
               </span>
             </div>
@@ -91,17 +91,17 @@ function QuickActions() {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold mb-4">{t('dashboard.quickActions')}</h3>
       <div className="grid grid-cols-2 gap-3">
         {actions.map((action) => (
           <button
             key={action.label}
             onClick={action.onClick}
-            className="p-3 text-left rounded-lg border hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            className="p-3 text-left rounded-lg border dark:border-gray-700 hover:border-blue-300 hover:bg-blue-50 transition-colors"
           >
             <div className="font-medium text-sm">{action.label}</div>
-            {action.desc && <div className="text-xs text-gray-500 mt-1">{action.desc}</div>}
+            {action.desc && <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{action.desc}</div>}
           </button>
         ))}
       </div>
@@ -127,7 +127,7 @@ function ReverseScanSummary() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">{t('dashboard.recentScan')}</h3>
         <button
@@ -139,10 +139,10 @@ function ReverseScanSummary() {
         </button>
       </div>
       {!scanResult ? (
-        <p className="text-gray-500 text-sm">{t('dashboard.noScanYet')}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('dashboard.noScanYet')}</p>
       ) : (
         <div className="text-sm">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             {t('dashboard.scanSummary', {
               newCount: (scanResult.skills ?? []).filter((s: any) => s.classification === 'new').length,
               conflictCount: (scanResult.skills ?? []).filter((s: any) => s.classification === 'conflict').length,

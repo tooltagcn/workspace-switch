@@ -365,7 +365,7 @@
     "themeSystem": "System",
     "language": "Language",
     "langEn": "English",
-    "langZh": "中文 (Coming Soon)",
+    "langZh": "中文",
     "apiKeys": "API Keys",
     "apiKeysDesc": "Manage API keys stored in system Keychain",
     "general": "General",

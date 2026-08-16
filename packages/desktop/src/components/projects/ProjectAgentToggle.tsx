@@ -14,7 +14,7 @@ export default function ProjectAgentToggle() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('project.agents')}</h3>
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{t('project.agents')}</h3>
       <div className="space-y-2">
         {visibleAgents.map((agent) => {
           const appliedCount = projectSkills.filter((s) =>
@@ -24,13 +24,13 @@ export default function ProjectAgentToggle() {
           return (
             <div
               key={agent.agentId}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
             >
               <div>
                 <span className="font-medium text-sm">{agent.agentName}</span>
-                <span className="ml-2 text-xs text-gray-400">{agent.configDirName}</span>
+                <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{agent.configDirName}</span>
                 {appliedCount > 0 && (
-                  <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                  <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
                     {appliedCount} {appliedCount !== 1 ? t('project.skillCountPlural', { count: appliedCount }) : t('project.skillCount', { count: appliedCount })}
                   </span>
                 )}
@@ -49,7 +49,7 @@ export default function ProjectAgentToggle() {
                   }}
                   className="sr-only peer"
                 />
-                <div className="w-9 h-5 bg-gray-300 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                <div className="w-9 h-5 bg-gray-300 dark:bg-gray-600 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border dark:border-gray-700 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
               </label>
             </div>
           );
@@ -57,7 +57,7 @@ export default function ProjectAgentToggle() {
         {hasMore && (
           <button
             onClick={() => setShowAll(!showAll)}
-            className="w-full text-center py-2 text-sm text-blue-600 hover:text-blue-700"
+            className="w-full text-center py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700"
           >
             {showAll ? t('project.showLess') : t('project.showMore', { count: selectedProject.agents.length - 3 })}
           </button>

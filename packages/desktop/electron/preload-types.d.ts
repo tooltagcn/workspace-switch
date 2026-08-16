@@ -89,4 +89,8 @@ export interface WsApi {
   getLogPath: () => Promise<string | null>;
   setDebugMode: (enabled: boolean) => Promise<void>;
   isDebugMode: () => Promise<boolean>;
+
+  // App settings
+  getSetting: (key: string) => Promise<string | null>;
+  setSetting: (key: string, value: string) => Promise<void>;
 }

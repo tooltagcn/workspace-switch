@@ -43,12 +43,12 @@ export default function Settings() {
       <h2 className="text-2xl font-bold mb-6">{t('settings.title')}</h2>
 
       <div className="space-y-6 max-w-2xl">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-1">{t('settings.general')}</h3>
-          <p className="text-sm text-gray-500 mb-4">{t('settings.workspacePathDesc')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('settings.workspacePathDesc')}</p>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {t('settings.workspacePath')}
             </label>
             <div className="flex gap-2">
@@ -57,7 +57,7 @@ export default function Settings() {
                 value={pathInput}
                 onChange={(e) => setPathInput(e.target.value)}
                 placeholder="~/workspace"
-                className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="flex-1 px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <button
                 onClick={handleSavePath}
@@ -69,7 +69,7 @@ export default function Settings() {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               {t('settings.theme')}
             </label>
             <div className="flex gap-2">
@@ -77,10 +77,10 @@ export default function Settings() {
                 <button
                   key={th.value}
                   onClick={() => setTheme(th.value)}
-                  className={`px-4 py-2 rounded-lg border ${
+                  className={`px-4 py-2 rounded-lg border dark:border-gray-700 ${
                     theme === th.value
                       ? 'bg-blue-500 text-white border-blue-500'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   {th.label}
@@ -90,45 +90,55 @@ export default function Settings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               {t('settings.language')}
             </label>
             <div className="flex gap-2">
               <button
-                onClick={() => i18n.changeLanguage('en')}
-                className={`px-4 py-2 rounded-lg border ${
+                onClick={() => {
+                  i18n.changeLanguage('en');
+                  api.setSetting('language', 'en').catch(() => {});
+                }}
+                className={`px-4 py-2 rounded-lg border dark:border-gray-700 ${
                   i18n.language === 'en'
                     ? 'bg-blue-500 text-white border-blue-500'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:bg-gray-50'
                 }`}
               >
                 {t('settings.langEn')}
               </button>
               <button
-                disabled
-                className="px-4 py-2 rounded-lg border bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                onClick={() => {
+                  i18n.changeLanguage('zh');
+                  api.setSetting('language', 'zh').catch(() => {});
+                }}
+                className={`px-4 py-2 rounded-lg border dark:border-gray-700 ${
+                  i18n.language === 'zh'
+                    ? 'bg-blue-500 text-white border-blue-500'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:bg-gray-50'
+                }`}
               >
                 {t('settings.langZh')}
               </button>
             </div>
           </div>
 
-          <div className="border-t pt-4 mt-4">
+          <div className="border-t dark:border-gray-700 pt-4 mt-4">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
                   {t('settings.debug')}
                 </label>
-                <p className="text-xs text-gray-500">{t('settings.debugDesc')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.debugDesc')}</p>
               </div>
               <button
                 onClick={handleToggleDebug}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  debugMode ? 'bg-blue-500' : 'bg-gray-300'
+                  debugMode ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-gray-800 transition-transform ${
                     debugMode ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -136,10 +146,10 @@ export default function Settings() {
             </div>
             {logPath && (
               <div className="mt-2">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                   {t('settings.logFilePath')}
                 </label>
-                <code className="block text-xs bg-gray-50 border rounded px-2 py-1 text-gray-600 select-all">
+                <code className="block text-xs bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded px-2 py-1 text-gray-600 dark:text-gray-300 select-all">
                   {logPath}
                 </code>
               </div>
@@ -148,24 +158,24 @@ export default function Settings() {
         </div>
 
         {keytarOk && (
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold mb-1">{t('settings.apiKeys')}</h3>
-            <p className="text-sm text-gray-500 mb-4">{t('settings.apiKeysDesc')}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('settings.apiKeysDesc')}</p>
             {providers.length === 0 ? (
-              <p className="text-sm text-gray-400">{t('provider.noProviders')}</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">{t('provider.noProviders')}</p>
             ) : (
               <div className="space-y-2">
                 {providers.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between py-2 border-b last:border-b-0"
+                    className="flex items-center justify-between py-2 border-b dark:border-gray-700 last:border-b-0"
                   >
                     <span className="font-medium text-sm">{p.name}</span>
                     <span
                       className={`text-xs px-2 py-0.5 rounded ${
                         p.apiKeyRef
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-600'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                          : 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300'
                       }`}
                     >
                       {p.apiKeyRef

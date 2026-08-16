@@ -365,7 +365,7 @@
     "themeSystem": "跟随系统",
     "language": "语言",
     "langEn": "English",
-    "langZh": "中文（即将推出）",
+    "langZh": "中文",
     "apiKeys": "API 密钥",
     "apiKeysDesc": "管理系统钥匙串中存储的 API 密钥",
     "general": "通用",

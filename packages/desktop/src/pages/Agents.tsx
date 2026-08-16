@@ -22,15 +22,15 @@ function AgentDetail({ agent, onClose }: { agent: Agent; onClose: () => void }) 
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 w-96">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">{agent.name}</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
       </div>
       <div className="space-y-2">
         {fields.map((f) => (
           <div key={f.label} className="flex justify-between text-sm">
-            <span className="text-gray-500">{f.label}</span>
+            <span className="text-gray-500 dark:text-gray-400">{f.label}</span>
             <span className="font-mono text-right max-w-[200px] truncate">{f.value}</span>
           </div>
         ))}
@@ -88,42 +88,42 @@ function AgentAddDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[480px]">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[480px]">
         <h3 className="text-lg font-semibold mb-4">{t('agent.addAgent')}</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.name')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('agent.name')}</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.configDirName')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('agent.configDirName')}</label>
             <input
               type="text"
               value={form.configDirName}
               onChange={(e) => setForm((f) => ({ ...f, configDirName: e.target.value }))}
               placeholder=".claude, .agents, .cursor..."
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.userRoot')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('agent.userRoot')}</label>
             <input
               type="text"
               value={form.userRoot}
               onChange={(e) => handlePathPaste(e.target.value)}
               placeholder={t('agent.pastePath')}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <button
             onClick={handleAutoDetect}
             disabled={detecting || !form.configDirName}
-            className="text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400"
+            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 disabled:text-gray-400"
           >
             {detecting ? t('agent.detecting') : t('agent.autoDetect')}
           </button>
@@ -135,11 +135,11 @@ function AgentAddDialog({ onClose }: { onClose: () => void }) {
               onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
               className="rounded"
             />
-            <label htmlFor="agent-enabled" className="text-sm text-gray-700">{t('agent.enabled')}</label>
+            <label htmlFor="agent-enabled" className="text-sm text-gray-700 dark:text-gray-200">{t('agent.enabled')}</label>
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">{t('common.cancel')}</button>
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>
           <button
             onClick={handleSubmit}
             disabled={!form.name || !form.configDirName}
@@ -162,17 +162,17 @@ function BuiltinMcpInfo({ agent }: { agent: Agent }) {
     { label: t('agent.skillDir'), value: agent.skillDir ?? '-' },
   ];
   return (
-    <div className="border-t pt-4">
-      <p className="text-sm font-medium text-gray-700 mb-2">{t('agent.mcpConfig', 'MCP Configuration')}</p>
-      <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+    <div className="border-t dark:border-gray-700 pt-4">
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{t('agent.mcpConfig', 'MCP Configuration')}</p>
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-1.5">
         {items.map((item) => (
           <div key={item.label} className="flex justify-between text-sm">
-            <span className="text-gray-500">{item.label}</span>
-            <span className="font-mono text-gray-700">{item.value}</span>
+            <span className="text-gray-500 dark:text-gray-400">{item.label}</span>
+            <span className="font-mono text-gray-700 dark:text-gray-200">{item.value}</span>
           </div>
         ))}
       </div>
-      <p className="text-xs text-gray-400 mt-2">{t('agent.builtinMcpHint', 'MCP configuration is managed by the built-in template.')}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">{t('agent.builtinMcpHint', 'MCP configuration is managed by the built-in template.')}</p>
     </div>
   );
 }
@@ -205,51 +205,51 @@ function CustomMcpFields({ form, setForm, templates, templateId, onQuickSetup }:
 
   return (
     <>
-      <div className="border-t pt-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="border-t dark:border-gray-700 pt-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
           {t('agent.quickSetup', 'Quick Setup / \u9884\u8BBE')}
         </label>
         <select
           value={templateId}
           onChange={(e) => onQuickSetup(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">{t('agent.noTemplate', 'None (manual config)')}</option>
           {templates.map((tmpl: any) => (
             <option key={tmpl.id} value={tmpl.id}>{tmpl.name} ({tmpl.id})</option>
           ))}
         </select>
-        <p className="text-xs text-gray-400 mt-1">{t('agent.quickSetupHint', 'Select a preset to auto-fill MCP fields below. You can edit them freely.')}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('agent.quickSetupHint', 'Select a preset to auto-fill MCP fields below. You can edit them freely.')}</p>
       </div>
 
-      <div className="border-t pt-4 space-y-3">
-        <p className="text-sm font-medium text-gray-700">{t('agent.mcpConfig', 'MCP Configuration')}</p>
+      <div className="border-t dark:border-gray-700 pt-4 space-y-3">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('agent.mcpConfig', 'MCP Configuration')}</p>
         <div>
-          <label className="block text-sm text-gray-500 mb-1">{t('agent.mcpFile')}</label>
+          <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">{t('agent.mcpFile')}</label>
           <input
             type="text"
             value={form.mcpFile}
             onChange={(e) => setForm((f) => ({ ...f, mcpFile: e.target.value }))}
             placeholder="mcp.json, config.toml..."
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-500 mb-1">{t('agent.mcpField')}</label>
+          <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">{t('agent.mcpField')}</label>
           <input
             type="text"
             value={form.mcpField}
             onChange={(e) => setForm((f) => ({ ...f, mcpField: e.target.value }))}
             placeholder="mcpServers, mcp_servers..."
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-500 mb-1">{t('agent.targetFormat', 'Target Format')}</label>
+          <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">{t('agent.targetFormat', 'Target Format')}</label>
           <select
             value={form.targetFormat}
             onChange={(e) => setForm((f) => ({ ...f, targetFormat: e.target.value }))}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">{t('agent.autoDetect', 'Auto-detect from file extension')}</option>
             <option value="json-map">JSON Map</option>
@@ -263,61 +263,61 @@ function CustomMcpFields({ form, setForm, templates, templateId, onQuickSetup }:
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800"
         >
           {showAdvanced ? t('agent.hideAdvanced', 'Hide Advanced') : t('agent.showAdvanced', 'Show Advanced')}
         </button>
       </div>
 
       {showAdvanced && (
-        <div className="border-t pt-4 space-y-3">
+        <div className="border-t dark:border-gray-700 pt-4 space-y-3">
           <div>
-            <label className="block text-sm text-gray-500 mb-1">{t('agent.envTransform', 'Env Transform')}</label>
+            <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">{t('agent.envTransform', 'Env Transform')}</label>
             <input
               type="text"
               value={form.envTransform}
               onChange={(e) => setForm((f) => ({ ...f, envTransform: e.target.value }))}
               placeholder="${env:VAR} or bare"
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-500 mb-2">{t('agent.fieldMapping', 'Field Mapping')}</label>
+            <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2">{t('agent.fieldMapping', 'Field Mapping')}</label>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-gray-400">command</label>
+                <label className="text-xs text-gray-400 dark:text-gray-500">command</label>
                 <input
                   type="text"
                   value={form.fieldMappingCommand}
                   onChange={(e) => setForm((f) => ({ ...f, fieldMappingCommand: e.target.value }))}
-                  className="w-full px-2 py-1 border rounded text-sm"
+                  className="w-full px-2 py-1 border dark:border-gray-700 rounded text-sm"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">args</label>
+                <label className="text-xs text-gray-400 dark:text-gray-500">args</label>
                 <input
                   type="text"
                   value={form.fieldMappingArgs}
                   onChange={(e) => setForm((f) => ({ ...f, fieldMappingArgs: e.target.value }))}
-                  className="w-full px-2 py-1 border rounded text-sm"
+                  className="w-full px-2 py-1 border dark:border-gray-700 rounded text-sm"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">url</label>
+                <label className="text-xs text-gray-400 dark:text-gray-500">url</label>
                 <input
                   type="text"
                   value={form.fieldMappingUrl}
                   onChange={(e) => setForm((f) => ({ ...f, fieldMappingUrl: e.target.value }))}
-                  className="w-full px-2 py-1 border rounded text-sm"
+                  className="w-full px-2 py-1 border dark:border-gray-700 rounded text-sm"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">env</label>
+                <label className="text-xs text-gray-400 dark:text-gray-500">env</label>
                 <input
                   type="text"
                   value={form.fieldMappingEnv}
                   onChange={(e) => setForm((f) => ({ ...f, fieldMappingEnv: e.target.value }))}
-                  className="w-full px-2 py-1 border rounded text-sm"
+                  className="w-full px-2 py-1 border dark:border-gray-700 rounded text-sm"
                 />
               </div>
             </div>
@@ -407,25 +407,25 @@ function AgentEditDialog({ agent, onClose }: { agent: Agent; onClose: () => void
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[520px] max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[520px] max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold mb-4">{t('agent.editAgent')}</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.name')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('agent.name')}</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.configDirName')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('agent.configDirName')}</label>
             <input
               type="text"
               value={form.configDirName}
               onChange={(e) => setForm((f) => ({ ...f, configDirName: e.target.value }))}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -442,33 +442,33 @@ function AgentEditDialog({ agent, onClose }: { agent: Agent; onClose: () => void
               )
           }
 
-          <div className="border-t pt-4 space-y-3">
+          <div className="border-t dark:border-gray-700 pt-4 space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">MCP Config Path</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">MCP Config Path</label>
               <input
                 type="text"
                 value={mcpConfigPath}
                 onChange={(e) => setMcpConfigPath(e.target.value)}
                 placeholder="~/.config/agent/settings.json"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.userRoot')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('agent.userRoot')}</label>
               <input
                 type="text"
                 value={form.userRoot}
                 onChange={(e) => setForm((f) => ({ ...f, userRoot: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent.projectRoot')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('agent.projectRoot')}</label>
               <input
                 type="text"
                 value={form.projectRoot}
                 onChange={(e) => setForm((f) => ({ ...f, projectRoot: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -479,12 +479,12 @@ function AgentEditDialog({ agent, onClose }: { agent: Agent; onClose: () => void
                 onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
                 className="rounded"
               />
-              <label htmlFor="edit-agent-enabled" className="text-sm text-gray-700">{t('agent.enabled')}</label>
+              <label htmlFor="edit-agent-enabled" className="text-sm text-gray-700 dark:text-gray-200">{t('agent.enabled')}</label>
             </div>
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">{t('common.cancel')}</button>
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>
           <button
             onClick={handleSubmit}
             disabled={!form.name || !form.configDirName}
@@ -526,10 +526,10 @@ export default function Agents() {
       <div className="flex gap-6">
         <div className="flex-1">
           {agents.length === 0 ? (
-            <p className="text-gray-600">{t('common.noData')}</p>
+            <p className="text-gray-600 dark:text-gray-300">{t('common.noData')}</p>
           ) : (
-            <table className="w-full bg-white rounded-lg shadow">
-              <thead className="bg-gray-50">
+            <table className="w-full bg-white dark:bg-gray-800 rounded-lg shadow">
+              <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th className="px-4 py-2 text-left">{t('agent.name')}</th>
                   <th className="px-4 py-2 text-left">{t('agent.configDirName')}</th>
@@ -542,21 +542,21 @@ export default function Agents() {
                 {agents.map((agent) => (
                   <tr
                     key={agent.id}
-                    className={`border-t cursor-pointer hover:bg-gray-50 ${selectedAgent?.id === agent.id ? 'bg-blue-50' : ''}`}
+                    className={`border-t dark:border-gray-700 cursor-pointer hover:bg-gray-50 ${selectedAgent?.id === agent.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
                     onClick={() => setSelectedAgent(agent)}
                   >
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{agent.name}</span>
                         {agent.builtin && (
-                          <span className="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded">{t('agent.builtin')}</span>
+                          <span className="text-xs px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded">{t('agent.builtin')}</span>
                         )}
                       </div>
                     </td>
                     <td className="px-4 py-2 font-mono text-sm">{agent.configDirName}</td>
-                    <td className="px-4 py-2 font-mono text-sm text-gray-500 truncate max-w-[200px]">{agent.userRoot ?? '-'}</td>
+                    <td className="px-4 py-2 font-mono text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{agent.userRoot ?? '-'}</td>
                     <td className="px-4 py-2">
-                      <span className={`text-xs px-2 py-0.5 rounded ${agent.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded ${agent.enabled ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300'}`}>
                         {agent.enabled ? t('agent.status.active') : t('agent.status.inactive')}
                       </span>
                     </td>
@@ -564,7 +564,7 @@ export default function Agents() {
                       <div className="flex gap-2">
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditingAgent(agent); }}
-                          className="text-sm text-blue-600 hover:text-blue-800"
+                          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800"
                         >
                           {t('common.edit')}
                         </button>
@@ -577,7 +577,7 @@ export default function Agents() {
                                 if (selectedAgent?.id === agent.id) setSelectedAgent(null);
                               }
                             }}
-                            className="text-sm text-red-600 hover:text-red-800"
+                            className="text-sm text-red-600 dark:text-red-400 hover:text-red-800"
                           >
                             {t('common.delete')}
                           </button>

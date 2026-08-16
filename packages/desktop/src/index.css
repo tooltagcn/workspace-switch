@@ -15,3 +15,23 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+html.dark,
+html.dark body {
+  background-color: #111827;
+}
+
+/* Ensure form controls are readable in dark mode even when a component
+   does not set an explicit bg/text class on the input. */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #374151; /* gray-700 */
+  color: #f3f4f6; /* gray-100 */
+  border-color: #4b5563; /* gray-600 */
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #9ca3af; /* gray-400 */
+}

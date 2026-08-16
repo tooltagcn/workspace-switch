@@ -20,15 +20,15 @@ export default function BulkActionBar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg z-40">
       <div className="px-6 py-3 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
           {t('bulk.selected', { count: selectedCount })}
         </span>
         <div className="flex gap-2">
           <button
             onClick={onTag}
-            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200"
           >
             {t('bulk.tagSelected')}
           </button>
@@ -40,7 +40,7 @@ export default function BulkActionBar({
           </button>
           <button
             onClick={onUnapply}
-            className="px-3 py-1.5 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200"
+            className="px-3 py-1.5 text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200"
           >
             {t('bulk.unapplySelected')}
           </button>

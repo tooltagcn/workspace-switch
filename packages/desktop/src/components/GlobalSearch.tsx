@@ -141,8 +141,8 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-[15vh]" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-[560px] max-h-[400px] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <div className="p-3 border-b flex items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-[560px] max-h-[400px] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="p-3 border-b dark:border-gray-700 flex items-center">
           <input
             ref={inputRef}
             type="text"
@@ -154,7 +154,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
           />
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
             title={t('common.close', 'Close')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,14 +164,14 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {results.length === 0 && query.trim() && (
-            <div className="text-center text-gray-400 py-8 text-sm">{t('search.noResults')}</div>
+            <div className="text-center text-gray-400 dark:text-gray-500 py-8 text-sm">{t('search.noResults')}</div>
           )}
           {(Object.keys(grouped) as Array<keyof typeof grouped>).map((type) => {
             const items = grouped[type];
             if (items.length === 0) return null;
             return (
               <div key={type} className="mb-2">
-                <div className="text-xs font-semibold text-gray-400 uppercase px-3 py-1">
+                <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase px-3 py-1">
                   {groupLabels[type]}
                 </div>
                 {items.map((item) => {
@@ -182,13 +182,13 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       key={`${item.type}-${item.id}`}
                       onClick={() => handleNavigate(item)}
                       className={`px-3 py-2 rounded-lg cursor-pointer flex items-center justify-between ${
-                        idx === selectedIndex ? 'bg-blue-50' : 'hover:bg-gray-50'
+                        idx === selectedIndex ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50'
                       }`}
                     >
                       <div>
                         <div className="text-sm font-medium">{item.name}</div>
                         {item.description && (
-                          <div className="text-xs text-gray-500 truncate max-w-[400px]">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[400px]">
                             {item.description}
                           </div>
                         )}

@@ -17,7 +17,7 @@ export default function Projects() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">{t('project.title')}</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('project.title')}</h1>
         <button
           onClick={() => setAddOpen(true)}
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
@@ -30,7 +30,7 @@ export default function Projects() {
         <div className="space-y-6">
           <button
             onClick={clearSelection}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
             &larr; {t('project.backToList')}
           </button>

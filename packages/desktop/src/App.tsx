@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout.js';
 import Dashboard from './pages/Dashboard.js';
@@ -7,8 +8,13 @@ import Mcps from './pages/Mcps.js';
 import Providers from './pages/Providers.js';
 import Settings from './pages/Settings.js';
 import Projects from './pages/Projects.js';
+import { useUiStore } from './stores/uiStore.js';
 
 export default function App() {
+  useEffect(() => {
+    useUiStore.getState().loadSettings();
+  }, []);
+
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
@@ -16,8 +22,8 @@ export default function App() {
         <Route path="agents" element={<Agents />} />
         <Route path="skills" element={<Skills />} />
         <Route path="mcps" element={<Mcps />} />
-        <Route path="providers" element={<Providers />} />
         <Route path="projects" element={<Projects />} />
+        <Route path="providers" element={<Providers />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

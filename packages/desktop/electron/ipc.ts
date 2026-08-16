@@ -93,6 +93,8 @@ import {
   setDebugMode,
   isDebugMode,
   getLogFilePath,
+  getSetting,
+  setSetting,
 } from '@ws/core';
 import { darwinSymlink } from '@ws/core';
 import path from 'node:path';
@@ -670,6 +672,12 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('logger:getPath', () => getLogFilePath());
   ipcMain.handle('logger:setDebug', (_event, enabled: boolean) => setDebugMode(enabled));
   ipcMain.handle('logger:isDebug', () => isDebugMode());
+
+  // App settings (theme, language, etc.) — key/value in workspace_config
+  ipcMain.handle('settings:get', (_event, key: string) => getSetting(getDb(), key));
+  ipcMain.handle('settings:set', (_event, key: string, value: string) => {
+    setSetting(getDb(), key, value);
+  });
 }
 
 export function cleanupIpc(): void {

@@ -109,6 +109,10 @@ const api = {
   getLogPath: () => ipcRenderer.invoke('logger:getPath'),
   setDebugMode: (enabled) => ipcRenderer.invoke('logger:setDebug', enabled),
   isDebugMode: () => ipcRenderer.invoke('logger:isDebug'),
+
+  // App settings
+  getSetting: (key) => ipcRenderer.invoke('settings:get', key),
+  setSetting: (key, value) => ipcRenderer.invoke('settings:set', key, value),
 };
 
 contextBridge.exposeInMainWorld('wsApi', api);

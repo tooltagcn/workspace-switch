@@ -124,10 +124,10 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">{t('unapply.title')}: {resourceLabel}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
         </div>
 
         <div className="flex gap-2 mb-6">
@@ -136,7 +136,7 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
               key={s}
               className={`flex-1 h-1 rounded ${
                 step === s ? 'bg-orange-500' :
-                (['selectAgents', 'confirm', 'applying', 'results'].indexOf(step) > i) ? 'bg-green-500' : 'bg-gray-200'
+                (['selectAgents', 'confirm', 'applying', 'results'].indexOf(step) > i) ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
               }`}
             />
           ))}
@@ -148,24 +148,24 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium">{t('unapply.selectAgents')}</h4>
                 {visibleAgents.length > 0 && (
-                  <button onClick={selectAll} className="text-sm text-blue-600 hover:text-blue-800">
+                  <button onClick={selectAll} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800">
                     {selectedAgentIds.size === candidateAgents.length ? t('common.deselectAll') : t('common.selectAll')}
                   </button>
                 )}
               </div>
               {loading ? (
-                <p className="text-gray-500 text-sm">{t('common.loading')}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{t('common.loading')}</p>
               ) : error ? (
-                <p className="text-red-500 text-sm">{error}</p>
+                <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>
               ) : visibleAgents.length === 0 ? (
-                <p className="text-gray-500 text-sm">{t('unapply.noAppliedAgents')}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{t('unapply.noAppliedAgents')}</p>
               ) : (
                 <div className="space-y-2">
                   {visibleAgents.map((agent) => (
                     <label
                       key={agent.id}
-                      className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedAgentIds.has(agent.id) ? 'border-orange-300 bg-orange-50' : 'hover:bg-gray-50'
+                      className={`flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg cursor-pointer transition-colors ${
+                        selectedAgentIds.has(agent.id) ? 'border-orange-300 bg-orange-50 dark:bg-orange-900/30' : 'hover:bg-gray-50'
                       }`}
                     >
                       <input
@@ -176,7 +176,7 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
                       />
                       <div className="flex-1">
                         <div className="font-medium text-sm">{agent.name}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {(appliedAgentsMap.get(agent.id) ?? []).join(', ')}
                         </div>
                       </div>
@@ -190,14 +190,14 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
           {step === 'confirm' && (
             <div>
               <h4 className="font-medium mb-3">{t('unapply.confirmTitle')}</h4>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                 {t('unapply.confirmDesc', { agents: selectedAgentIds.size, resources: resources.length })}
               </p>
               <div className="space-y-1">
                 {agents.filter((a) => selectedAgentIds.has(a.id)).map((a) => (
-                  <div key={a.id} className="text-sm text-gray-500 flex justify-between">
+                  <div key={a.id} className="text-sm text-gray-500 dark:text-gray-400 flex justify-between">
                     <span>{a.name}</span>
-                    <span className="text-xs text-gray-400">{(appliedAgentsMap.get(a.id) ?? []).join(', ')}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{(appliedAgentsMap.get(a.id) ?? []).join(', ')}</span>
                   </div>
                 ))}
               </div>
@@ -206,14 +206,14 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
 
           {step === 'applying' && (
             <div className="text-center py-8">
-              <p className="text-sm text-gray-600 mb-4">{t('unapply.applying')}</p>
-              <div className="w-full bg-gray-200 rounded-full h-3">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{t('unapply.applying')}</p>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                 <div
                   className="bg-orange-500 h-3 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-2">{Math.round(progress)}%</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{Math.round(progress)}%</p>
             </div>
           )}
 
@@ -221,25 +221,25 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
             <div>
               <h4 className="font-medium mb-3">{t('unapply.resultSummary')}</h4>
               <div className="flex gap-4 mb-4">
-                <div className="flex-1 p-3 bg-green-50 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600">{succeeded}</div>
-                  <div className="text-xs text-green-700">{t('apply.succeeded')}</div>
+                <div className="flex-1 p-3 bg-green-50 dark:bg-green-900/30 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{succeeded}</div>
+                  <div className="text-xs text-green-700 dark:text-green-300">{t('apply.succeeded')}</div>
                 </div>
                 {failed > 0 && (
-                  <div className="flex-1 p-3 bg-red-50 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-red-600">{failed}</div>
-                    <div className="text-xs text-red-700">{t('apply.failed')}</div>
+                  <div className="flex-1 p-3 bg-red-50 dark:bg-red-900/30 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">{failed}</div>
+                    <div className="text-xs text-red-700 dark:text-red-300">{t('apply.failed')}</div>
                   </div>
                 )}
               </div>
               <div className="space-y-2">
                 {results.map((r) => (
-                  <div key={r.agentId} className="flex items-center gap-2 p-2 border rounded text-sm">
-                    <span className={r.success ? 'text-green-600' : 'text-red-600'}>
+                  <div key={r.agentId} className="flex items-center gap-2 p-2 border dark:border-gray-700 rounded text-sm">
+                    <span className={r.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                       {r.success ? '✓' : '✗'}
                     </span>
                     <span className="font-medium">{r.agentName}</span>
-                    {r.error && <span className="text-xs text-red-500 ml-auto truncate max-w-[200px]">{r.error}</span>}
+                    {r.error && <span className="text-xs text-red-500 dark:text-red-400 ml-auto truncate max-w-[200px]">{r.error}</span>}
                   </div>
                 ))}
               </div>
@@ -247,10 +247,10 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
           )}
         </div>
 
-        <div className="flex justify-between mt-6 pt-4 border-t">
+        <div className="flex justify-between mt-6 pt-4 border-t dark:border-gray-700">
           {step === 'selectAgents' && (
             <>
-              <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">{t('common.cancel')}</button>
+              <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>
               <button
                 onClick={() => setStep('confirm')}
                 disabled={selectedAgentIds.size === 0}
@@ -262,7 +262,7 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
           )}
           {step === 'confirm' && (
             <>
-              <button onClick={() => setStep('selectAgents')} className="px-4 py-2 text-gray-600 hover:text-gray-800">{t('common.back')}</button>
+              <button onClick={() => setStep('selectAgents')} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.back')}</button>
               <button
                 onClick={handleUnapply}
                 className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"

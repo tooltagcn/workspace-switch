@@ -422,6 +422,16 @@
     "mcpCountPlural": "{{count}} 个 MCP 服务器",
     "applyMcp": "应用 MCP",
     "noMcps": "该项目暂无已应用的 MCP 服务器",
-    "availableMcps": "可用 MCP 服务器"
+    "availableMcps": "可用 MCP 服务器",
+    "reverseScan": {
+      "title": "反向扫描",
+      "hint": "扫描本项目各代理目录下直接配置的技能 / MCP，并导入到主工作区配置中集中管理。",
+      "scan": "扫描",
+      "scanning": "扫描中...",
+      "importing": "导入中...",
+      "import": "导入 ({{count}})",
+      "imported": "已将 {{count}} 项导入主工作区配置。",
+      "allSynced": "所有扫描到的配置均已同步到主工作区。"
+    }
   }
 }

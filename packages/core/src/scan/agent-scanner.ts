@@ -2,6 +2,8 @@ import type Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Agent } from '../agent/types.js';
+import type { Project } from '../project/types.js';
+import { expandCustomPath } from '../agent/expand-paths.js';
 import type { WsMcpSchema } from '../mcp/schema.js';
 import type { ScannedSkill, ScannedMcp, ScanClassification } from './types.js';
 
@@ -353,6 +355,102 @@ export function scanMcpsFromAgents(
     if (!agent.enabled || !agent.mcpFile || !agent.userRoot) continue;
 
     const filePath = path.join(agent.userRoot, agent.mcpFile);
+    if (!fs.existsSync(filePath)) continue;
+
+    let schemas: WsMcpSchema[];
+    if (agent.mcpFile.endsWith('.toml')) {
+      schemas = parseTomlMcpFile(filePath, agent.mcpField ?? 'mcpServers');
+    } else {
+      schemas = parseJsonMcpFile(filePath, agent.mcpField ?? 'mcpServers');
+    }
+
+    for (const schema of schemas) {
+      const classification = classifyMcp(db, schema.name, schema);
+      results.push({
+        name: schema.name,
+        agentId: agent.id,
+        agentName: agent.name,
+        sourcePath: filePath,
+        classification,
+        schema,
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Reverse-scan skills that live directly under a project's agent directories
+ * (`<project.path>/<agent.configDirName>/<agent.skillDir>`), mirroring
+ * {@link scanSkillsFromAgents} which scans the user-level `userRoot`.
+ *
+ * Skills deployed by Workspace Switch are symlinks into the Master Workspace and
+ * are skipped, so only locally-authored skills are discovered.
+ */
+export function scanSkillsFromProject(
+  db: Database.Database,
+  project: Project,
+  agents: Agent[],
+): ScannedSkill[] {
+  const results: ScannedSkill[] = [];
+
+  for (const agent of agents) {
+    if (!agent.skillDir || !agent.configDirName) continue;
+
+    const skillDir = path.join(project.path, agent.configDirName, agent.skillDir);
+    if (!fs.existsSync(skillDir)) continue;
+
+    const entries = fs.readdirSync(skillDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+
+      const fullPath = path.join(skillDir, entry.name);
+
+      if (fs.lstatSync(fullPath).isSymbolicLink()) continue;
+
+      const skillMdPath = path.join(fullPath, 'SKILL.md');
+      if (!fs.existsSync(skillMdPath)) continue;
+
+      const content = fs.readFileSync(skillMdPath, 'utf-8');
+      const frontmatter = parseFrontmatter(content);
+      const name = frontmatter.name;
+      if (!name) continue;
+
+      const classification = classifySkill(db, name, fullPath);
+
+      results.push({
+        name,
+        agentId: agent.id,
+        agentName: agent.name,
+        sourcePath: fullPath,
+        classification,
+        description: frontmatter.description ?? null,
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Reverse-scan MCP servers configured directly in a project's agent config files
+ * (`<project.path>/<agent.configDirName>/<agent.mcpFile>`, or `agent.mcpConfigPath`
+ * when set), mirroring {@link scanMcpsFromAgents}.
+ */
+export function scanMcpsFromProject(
+  db: Database.Database,
+  project: Project,
+  agents: Agent[],
+): ScannedMcp[] {
+  const results: ScannedMcp[] = [];
+
+  for (const agent of agents) {
+    if (!agent.mcpFile || !agent.configDirName) continue;
+
+    const filePath = agent.mcpConfigPath
+      ? expandCustomPath(agent.mcpConfigPath)
+      : path.join(project.path, agent.configDirName, agent.mcpFile);
     if (!fs.existsSync(filePath)) continue;
 
     let schemas: WsMcpSchema[];

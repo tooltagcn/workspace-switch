@@ -126,7 +126,7 @@ export type { ConsistencyResult, ConsistencyItem, FixResult } from './sync/consi
 export { checkSkillConsistency, fixSkillConsistency, checkMcpConsistency, fixMcpConsistency } from './sync/consistency.js';
 
 export type { ScanClassification, ScannedSkill, ScannedMcp } from './scan/types.js';
-export { scanSkillsFromAgents, scanMcpsFromAgents } from './scan/agent-scanner.js';
+export { scanSkillsFromAgents, scanMcpsFromAgents, scanSkillsFromProject, scanMcpsFromProject } from './scan/agent-scanner.js';
 export type { ImportSkillResult, ImportMcpResult } from './scan/importer.js';
 export { importScannedSkills, importScannedMcps } from './scan/importer.js';
 

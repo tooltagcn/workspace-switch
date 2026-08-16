@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '../../stores/projectStore.js';
 import ProjectAgentToggle from './ProjectAgentToggle.js';
 import ProjectSkillList from './ProjectSkillList.js';
+import ProjectReverseScan from './ProjectReverseScan.js';
 
 export default function ProjectDetail() {
   const { t } = useTranslation();
@@ -57,6 +58,10 @@ export default function ProjectDetail() {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <ProjectSkillList />
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <ProjectReverseScan />
       </div>
     </div>
   );

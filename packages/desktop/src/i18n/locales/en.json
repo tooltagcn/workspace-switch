@@ -422,6 +422,16 @@
     "mcpCountPlural": "{{count}} MCP servers",
     "applyMcp": "Apply MCP",
     "noMcps": "No MCP servers applied to this project",
-    "availableMcps": "Available MCP Servers"
+    "availableMcps": "Available MCP Servers",
+    "reverseScan": {
+      "title": "Reverse Scan",
+      "hint": "Scan skills / MCPs configured directly under this project's agent directories and import them into the Master Workspace config for centralized management.",
+      "scan": "Scan",
+      "scanning": "Scanning...",
+      "importing": "Importing...",
+      "import": "Import ({{count}})",
+      "imported": "Imported {{count}} item(s) into the Master Workspace config.",
+      "allSynced": "All scanned config is already synced to the Master Workspace."
+    }
   }
 }

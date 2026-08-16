@@ -7,9 +7,14 @@ import {
   deleteProject,
   getEnabledAgentsForProject,
   toggleAgentForProject,
+  listAgents,
+  scanSkillsFromProject,
+  scanMcpsFromProject,
+  importScannedSkills,
+  importScannedMcps,
 } from '@ws/core';
 import { createContext, cleanupContext } from '../lib/context.js';
-import { outputJson, outputTable, success, fail } from '../lib/output.js';
+import { outputJson, outputTable, success, fail, verbose } from '../lib/output.js';
 
 export function registerProject(program: Command): void {
   const project = program
@@ -353,6 +358,114 @@ export function registerProject(program: Command): void {
         } else {
           fail(`Failed to unapply MCP: ${result.error}`);
         }
+      } finally {
+        cleanupContext(ctx);
+      }
+    });
+
+  const scan = project
+    .command('scan')
+    .description('Reverse-scan skills/MCPs configured directly under a project\'s agent directories');
+
+  scan
+    .command('skills')
+    .description('Reverse-scan skills from a project\'s agent directories into the Master Workspace config')
+    .argument('<projectId>', 'Project ID')
+    .action(async (projectId: string, _options, cmd) => {
+      const ctx = createContext(cmd);
+      try {
+        const proj = getProject(ctx.db, projectId);
+        if (!proj) {
+          fail(`Project not found: ${projectId}`);
+          return;
+        }
+        const enabledIds = new Set(getEnabledAgentsForProject(ctx.db, projectId).map((e) => e.agentId));
+        const agents = listAgents(ctx.db).filter((a) => enabledIds.has(a.id));
+        verbose(ctx, `Scanning ${agents.length} enabled agents under project ${proj.path}`);
+
+        const scanned = scanSkillsFromProject(ctx.db, proj, agents);
+        verbose(ctx, `Scan complete: found ${scanned.length} skills`);
+
+        if (ctx.json) {
+          outputJson({ scanned, count: scanned.length });
+          return;
+        }
+
+        if (scanned.length === 0) {
+          success('No skills found under this project\'s agent directories.');
+          return;
+        }
+
+        outputTable(
+          ['Name', 'Agent', 'Classification', 'Path'],
+          scanned.map((s) => [s.name, s.agentName, s.classification, s.sourcePath]),
+        );
+
+        const toImport = scanned.filter((s) => s.classification !== 'synced');
+        if (toImport.length === 0) {
+          success('All scanned skills are already in the Master Workspace config.');
+          return;
+        }
+
+        success(`\n${toImport.length} skill(s) to import. Importing...`);
+        const results = importScannedSkills(ctx.db, toImport, ctx.dataDir);
+        outputTable(
+          ['Name', 'Destination', 'Status'],
+          results.map((r) => [r.name, r.destinationPath, r.alreadyExisted ? 'existed' : r.classification]),
+        );
+        success('\nImport complete. Use `project skill apply` to deploy them to agents.');
+      } finally {
+        cleanupContext(ctx);
+      }
+    });
+
+  scan
+    .command('mcps')
+    .description('Reverse-scan MCP servers from a project\'s agent config files into the Master Workspace config')
+    .argument('<projectId>', 'Project ID')
+    .action(async (projectId: string, _options, cmd) => {
+      const ctx = createContext(cmd);
+      try {
+        const proj = getProject(ctx.db, projectId);
+        if (!proj) {
+          fail(`Project not found: ${projectId}`);
+          return;
+        }
+        const enabledIds = new Set(getEnabledAgentsForProject(ctx.db, projectId).map((e) => e.agentId));
+        const agents = listAgents(ctx.db).filter((a) => enabledIds.has(a.id));
+        verbose(ctx, `Scanning ${agents.length} enabled agents under project ${proj.path}`);
+
+        const scanned = scanMcpsFromProject(ctx.db, proj, agents);
+        verbose(ctx, `Scan complete: found ${scanned.length} MCP servers`);
+
+        if (ctx.json) {
+          outputJson({ scanned, count: scanned.length });
+          return;
+        }
+
+        if (scanned.length === 0) {
+          success('No MCP servers found under this project\'s agent config files.');
+          return;
+        }
+
+        outputTable(
+          ['Name', 'Agent', 'Classification', 'Config File'],
+          scanned.map((m) => [m.name, m.agentName, m.classification, m.sourcePath]),
+        );
+
+        const toImport = scanned.filter((m) => m.classification !== 'synced');
+        if (toImport.length === 0) {
+          success('All scanned MCP servers are already in the Master Workspace config.');
+          return;
+        }
+
+        success(`\n${toImport.length} MCP server(s) to import. Importing...`);
+        const results = importScannedMcps(ctx.db, toImport, ctx.dataDir);
+        outputTable(
+          ['Name', 'Destination', 'Status'],
+          results.map((r) => [r.name, r.destinationPath, r.alreadyExisted ? 'existed' : r.classification]),
+        );
+        success('\nImport complete. Use `project mcp apply` to deploy them to agents.');
       } finally {
         cleanupContext(ctx);
       }

@@ -104,6 +104,10 @@ const api = {
   projectApplyMcp: (projectId, mcpName, agentId) => ipcRenderer.invoke('project:applyMcp', projectId, mcpName, agentId),
   projectUnapplyMcp: (projectId, mcpName, agentId) => ipcRenderer.invoke('project:unapplyMcp', projectId, mcpName, agentId),
   projectAvailableMcps: (projectId, agentId) => ipcRenderer.invoke('project:availableMcps', projectId, agentId),
+  projectScanSkills: (projectId) => ipcRenderer.invoke('project:scanSkills', projectId),
+  projectScanMcps: (projectId) => ipcRenderer.invoke('project:scanMcps', projectId),
+  projectImportScannedSkills: (skills) => ipcRenderer.invoke('project:importScannedSkills', skills),
+  projectImportScannedMcps: (mcps) => ipcRenderer.invoke('project:importScannedMcps', mcps),
 
   // Logger
   getLogPath: () => ipcRenderer.invoke('logger:getPath'),

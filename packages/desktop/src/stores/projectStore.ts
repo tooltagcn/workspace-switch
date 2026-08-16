@@ -61,6 +61,10 @@ interface ProjectStore {
   applyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<void>;
   unapplyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<void>;
   fetchAvailableMcps: (projectId: string, agentId?: string) => Promise<void>;
+  scanSkills: (projectId: string) => Promise<any[]>;
+  scanMcps: (projectId: string) => Promise<any[]>;
+  importScannedSkills: (skills: unknown[]) => Promise<any[]>;
+  importScannedMcps: (mcps: unknown[]) => Promise<any[]>;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -179,6 +183,44 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       set({ availableMcps: mcps });
     } catch (err) {
       set({ error: String(err) });
+    }
+  },
+
+  scanSkills: async (projectId: string) => {
+    try {
+      const result = await api.projectScanSkills(projectId);
+      return result.skills as any[];
+    } catch (err) {
+      set({ error: String(err) });
+      return [];
+    }
+  },
+
+  scanMcps: async (projectId: string) => {
+    try {
+      const result = await api.projectScanMcps(projectId);
+      return result.mcps as any[];
+    } catch (err) {
+      set({ error: String(err) });
+      return [];
+    }
+  },
+
+  importScannedSkills: async (skills: unknown[]) => {
+    try {
+      return (await api.projectImportScannedSkills(skills)) as any[];
+    } catch (err) {
+      set({ error: String(err) });
+      return [];
+    }
+  },
+
+  importScannedMcps: async (mcps: unknown[]) => {
+    try {
+      return (await api.projectImportScannedMcps(mcps)) as any[];
+    } catch (err) {
+      set({ error: String(err) });
+      return [];
     }
   },
 }));

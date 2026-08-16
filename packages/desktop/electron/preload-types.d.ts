@@ -84,6 +84,10 @@ export interface WsApi {
   projectApplyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<any>;
   projectUnapplyMcp: (projectId: string, mcpName: string, agentId: string) => Promise<any>;
   projectAvailableMcps: (projectId: string, agentId?: string) => Promise<any>;
+  projectScanSkills: (projectId: string) => Promise<any>;
+  projectScanMcps: (projectId: string) => Promise<any>;
+  projectImportScannedSkills: (skills: unknown[]) => Promise<any>;
+  projectImportScannedMcps: (mcps: unknown[]) => Promise<any>;
 
   // Logger
   getLogPath: () => Promise<string | null>;

@@ -32,6 +32,8 @@ import {
   deleteTag,
   scanSkillsFromAgents,
   scanMcpsFromAgents,
+  scanSkillsFromProject,
+  scanMcpsFromProject,
   importScannedSkills,
   importScannedMcps,
   applyMcpToAgent,
@@ -183,10 +185,23 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('skill:addTag', (_event, skillId: string, tag: string) => addSkillTag(getDb(), skillId, tag));
   ipcMain.handle('skill:removeTag', (_event, skillId: string, tag: string) => removeSkillTag(getDb(), skillId, tag));
 
-  // Skill scan
+  // Skill scan (user-level agent dirs + all project agent dirs)
   ipcMain.handle('skill:scan', () => {
     const d = getDb();
-    return { skills: scanSkillsFromAgents(d, listAgents(d)) };
+    const skills = scanSkillsFromAgents(d, listAgents(d));
+    const seen = new Set(skills.map((s) => s.sourcePath));
+    for (const project of listProjects(d)) {
+      const enabled = getEnabledAgentsForProject(d, project.id);
+      const enabledIds = new Set(enabled.map((e) => e.agentId));
+      const agents = listAgents(d).filter((a) => enabledIds.has(a.id));
+      for (const s of scanSkillsFromProject(d, project, agents)) {
+        if (!seen.has(s.sourcePath)) {
+          seen.add(s.sourcePath);
+          skills.push(s);
+        }
+      }
+    }
+    return { skills };
   });
 
   // Skill apply (sync to agent via symlink)
@@ -321,10 +336,24 @@ export function registerIpcHandlers(): void {
   });
   ipcMain.handle('mcp:delete', (_event, id: string) => deleteMcp(getDb(), id));
 
-  // MCP scan
+  // MCP scan (user-level agent dirs + all project agent dirs)
   ipcMain.handle('mcp:scan', () => {
     const d = getDb();
-    return { mcps: scanMcpsFromAgents(d, listAgents(d)) };
+    const mcps = scanMcpsFromAgents(d, listAgents(d));
+    const seen = new Set(mcps.map((m) => `${m.sourcePath}::${m.name}`));
+    for (const project of listProjects(d)) {
+      const enabled = getEnabledAgentsForProject(d, project.id);
+      const enabledIds = new Set(enabled.map((e) => e.agentId));
+      const agents = listAgents(d).filter((a) => enabledIds.has(a.id));
+      for (const m of scanMcpsFromProject(d, project, agents)) {
+        const key = `${m.sourcePath}::${m.name}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          mcps.push(m);
+        }
+      }
+    }
+    return { mcps };
   });
 
   // MCP apply
@@ -666,6 +695,44 @@ export function registerIpcHandlers(): void {
       }
       return allMcps;
     } catch (e) { logger.error('project:availableMcps error:', e); throw e; }
+  });
+
+  // Project reverse scan: discover skills/MCPs configured directly under a project's agent dirs
+  function getProjectScanAgents(projectId: string) {
+    const d = getDb();
+    const enabled = getEnabledAgentsForProject(d, projectId);
+    const enabledIds = new Set(enabled.map((e) => e.agentId));
+    return listAgents(d).filter((a) => enabledIds.has(a.id));
+  }
+
+  ipcMain.handle('project:scanSkills', (_event, projectId: string) => {
+    try {
+      const d = getDb();
+      const proj = getProject(d, projectId);
+      if (!proj) throw new Error('Project not found');
+      return { skills: scanSkillsFromProject(d, proj, getProjectScanAgents(projectId)) };
+    } catch (e) { logger.error('project:scanSkills error:', e); throw e; }
+  });
+
+  ipcMain.handle('project:scanMcps', (_event, projectId: string) => {
+    try {
+      const d = getDb();
+      const proj = getProject(d, projectId);
+      if (!proj) throw new Error('Project not found');
+      return { mcps: scanMcpsFromProject(d, proj, getProjectScanAgents(projectId)) };
+    } catch (e) { logger.error('project:scanMcps error:', e); throw e; }
+  });
+
+  ipcMain.handle('project:importScannedSkills', (_event, skills: unknown[]) => {
+    try {
+      return importScannedSkills(getDb(), skills as any, getDataDir());
+    } catch (e) { logger.error('project:importScannedSkills error:', e); throw e; }
+  });
+
+  ipcMain.handle('project:importScannedMcps', (_event, mcps: unknown[]) => {
+    try {
+      return importScannedMcps(getDb(), mcps as any, getDataDir());
+    } catch (e) { logger.error('project:importScannedMcps error:', e); throw e; }
   });
 
   // Logger handlers

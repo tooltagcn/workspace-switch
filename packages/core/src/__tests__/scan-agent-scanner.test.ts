@@ -7,8 +7,9 @@ import { migrate } from '../db/migrate.js';
 import { createAgent } from '../agent/registry.js';
 import { createSkill } from '../skill/manager.js';
 import { createMcp } from '../mcp/manager.js';
-import { scanSkillsFromAgents, scanMcpsFromAgents } from '../scan/agent-scanner.js';
+import { scanSkillsFromAgents, scanMcpsFromAgents, scanSkillsFromProject, scanMcpsFromProject } from '../scan/agent-scanner.js';
 import type { Agent } from '../agent/types.js';
+import type { Project } from '../project/types.js';
 
 describe('Agent Scanner', () => {
   let db: Database.Database;
@@ -302,6 +303,82 @@ describe('Agent Scanner', () => {
       const results = scanMcpsFromAgents(db, [agent]);
       expect(results).toHaveLength(1);
       expect(results[0].name).toBe('real');
+    });
+  });
+
+  describe('scanSkillsFromProject / scanMcpsFromProject', () => {
+    function makeProject(): Project {
+      return {
+        id: 'test-project',
+        name: 'Test Project',
+        path: path.join(tmpDir, 'project'),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    it('scans new skills from a project agent directory', () => {
+      const agent = createAgentWithDirs();
+      const project = makeProject();
+      const agentDir = path.join(project.path, agent.configDirName!);
+      createSkillOnDisk(agentDir, 'project-skill');
+
+      const results = scanSkillsFromProject(db, project, [agent]);
+      expect(results).toHaveLength(1);
+      expect(results[0].name).toBe('project-skill');
+      expect(results[0].classification).toBe('new');
+    });
+
+    it('skips symlinks deployed by Workspace Switch', () => {
+      const agent = createAgentWithDirs();
+      const project = makeProject();
+      const agentDir = path.join(project.path, agent.configDirName!);
+      const skillDir = path.join(agentDir, 'skills');
+      fs.mkdirSync(skillDir, { recursive: true });
+
+      const realDir = path.join(tmpDir, 'real-project-skill');
+      fs.mkdirSync(realDir);
+      fs.writeFileSync(
+        path.join(realDir, 'SKILL.md'),
+        '---\nname: linked-skill\ndescription: A linked skill\n---\n',
+      );
+      fs.symlinkSync(realDir, path.join(skillDir, 'linked-skill'), 'dir');
+
+      const results = scanSkillsFromProject(db, project, [agent]);
+      expect(results).toHaveLength(0);
+    });
+
+    it('classifies project skills as synced/conflict like the agent scanner', () => {
+      const agent = createAgentWithDirs();
+      const project = makeProject();
+      const agentDir = path.join(project.path, agent.configDirName!);
+      const skillPath = createSkillOnDisk(agentDir, 'project-skill');
+      createSkill(db, { name: 'project-skill', sourcePath: skillPath });
+
+      const results = scanSkillsFromProject(db, project, [agent]);
+      expect(results).toHaveLength(1);
+      expect(results[0].classification).toBe('synced');
+    });
+
+    it('scans new MCP servers from a project agent config file', () => {
+      const agent = createAgentWithDirs();
+      const project = makeProject();
+      const agentDir = path.join(project.path, agent.configDirName!);
+      createMcpConfigFile(agentDir, {
+        'project-server': { command: 'npx', args: ['mcp-project'] },
+      });
+
+      const results = scanMcpsFromProject(db, project, [agent]);
+      expect(results).toHaveLength(1);
+      expect(results[0].name).toBe('project-server');
+      expect(results[0].classification).toBe('new');
+    });
+
+    it('returns empty when no project agent config file exists', () => {
+      const agent = createAgentWithDirs();
+      const project = makeProject();
+      const results = scanMcpsFromProject(db, project, [agent]);
+      expect(results).toHaveLength(0);
     });
   });
 });

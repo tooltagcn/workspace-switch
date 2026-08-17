@@ -743,7 +743,7 @@ export default function Skills() {
       const q = searchQuery.toLowerCase();
       return s.name.toLowerCase().includes(q) || (s.description?.toLowerCase().includes(q) ?? false);
     })
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   if (loading) return <div>{t('common.loading')}</div>;
 

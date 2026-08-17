@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/ipc.js';
-import { useSkillStore } from '../../stores/skillStore.js';
+import { useSkillStore, type Skill } from '../../stores/skillStore.js';
 
 interface ProviderInfo {
   id: string;
@@ -18,7 +18,6 @@ interface SearchResult {
 
 export default function SkillDiscoveryPanel() {
   const { t } = useTranslation();
-  const { fetchSkills } = useSkillStore();
 
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [activeProviderId, setActiveProviderId] = useState('');
@@ -26,7 +25,7 @@ export default function SkillDiscoveryPanel() {
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [error, setError] = useState('');
-  const [installingName, setInstallingName] = useState<string | null>(null);
+  const [installingNames, setInstallingNames] = useState<Set<string>>(new Set());
   const [installedNames, setInstalledNames] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -54,16 +53,22 @@ export default function SkillDiscoveryPanel() {
   };
 
   const handleInstall = async (name: string, source: string) => {
-    if (!activeProviderId) return;
-    setInstallingName(name);
+    if (!activeProviderId || installingNames.has(name) || installedNames.has(name)) return;
+    setInstallingNames((prev) => new Set(prev).add(name));
     try {
-      await api.installSkillDiscovery(activeProviderId, name, source);
+      const created = (await api.installSkillDiscovery(activeProviderId, name, source)) as Skill | undefined;
       setInstalledNames((prev) => new Set(prev).add(name));
-      await fetchSkills();
+      if (created) {
+        useSkillStore.setState((s) => ({ skills: [...s.skills, created] }));
+      }
     } catch {
-      // error shown inline via installingName reset
+      // error shown inline via installingNames reset
     } finally {
-      setInstallingName(null);
+      setInstallingNames((prev) => {
+        const next = new Set(prev);
+        next.delete(name);
+        return next;
+      });
     }
   };
 
@@ -120,7 +125,7 @@ export default function SkillDiscoveryPanel() {
         <div className="space-y-2 max-h-[240px] overflow-auto">
           {results.map((r, i) => {
             const isInstalled = installedNames.has(r.name);
-            const isInstalling = installingName === r.name;
+            const isInstalling = installingNames.has(r.name);
             return (
               <div key={i} className="flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg">
                 <div className="flex-1 min-w-0">
@@ -139,7 +144,7 @@ export default function SkillDiscoveryPanel() {
                   }`}
                 >
                   {isInstalled
-                    ? t('skill.addWizard.importSuccess')
+                    ? t('skill.addWizard.installed')
                     : isInstalling
                       ? t('skill.addWizard.installing')
                       : t('skill.addWizard.installBtn')}

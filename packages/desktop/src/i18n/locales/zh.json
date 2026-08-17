@@ -158,6 +158,7 @@
       "searchPlaceholder": "搜索技能...",
       "installBtn": "安装",
       "installing": "安装中...",
+      "installed": "已安装",
       "importing": "导入中...",
       "importSuccess": "导入成功",
       "selectedFile": "已选文件",

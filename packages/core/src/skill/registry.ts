@@ -1,7 +1,4 @@
-import { execFile, spawn } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const execFileAsync = promisify(execFile);
+import { spawn } from 'node:child_process';
 
 export interface SkillSearchResult {
   name: string;
@@ -9,27 +6,40 @@ export interface SkillSearchResult {
   source: string;
 }
 
+export const SKILL_SEARCH_TIMEOUT_MS = 60_000;
+
 export async function searchSkillsOnline(query: string): Promise<SkillSearchResult[]> {
   if (!query || query.trim().length === 0) {
     throw new Error('Search query must not be empty');
   }
 
+  const startedAt = Date.now();
+  const args = ['skills', 'search', query];
+  console.log(`[skill-search] start: npx ${args.join(' ')} (timeout=${(SKILL_SEARCH_TIMEOUT_MS / 1000)}s)`);
+
   try {
-    const { stdout } = await execFileAsync('npx', ['skills', 'search', query], {
-      timeout: 30_000,
-      maxBuffer: 10 * 1024 * 1024,
+    const { stdout } = await runWithOutput('npx', args, {
+      timeout: SKILL_SEARCH_TIMEOUT_MS,
+      label: 'skill-search',
       env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
     });
 
+    const elapsed = Date.now() - startedAt;
+    console.log(`[skill-search] done in ${elapsed}ms, stdout bytes=${stdout.length}`);
     return parseSearchOutput(stdout);
   } catch (err: unknown) {
+    const elapsed = Date.now() - startedAt;
+    const detail = execDetail(err);
     if (isExecError(err) && err.code === 'ENOENT') {
+      console.error(`[skill-search] npx not available after ${elapsed}ms`);
       throw new Error('npx is not available. Install Node.js to use online skill search.');
     }
     if (isExecError(err) && err.killed) {
-      throw new Error('Skill search timed out after 30 seconds');
+      console.error(`[skill-search] timed out after ${elapsed}ms${detail}`);
+      throw new Error(`Skill search timed out after ${SKILL_SEARCH_TIMEOUT_MS / 1000} seconds${detail}`);
     }
-    throw new Error(`Skill search failed: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(`[skill-search] failed after ${elapsed}ms: ${err instanceof Error ? err.message : String(err)}${detail}`);
+    throw new Error(`Skill search failed: ${err instanceof Error ? err.message : String(err)}${detail}`);
   }
 }
 
@@ -125,6 +135,13 @@ function isExecError(err: unknown): err is NodeJS.ErrnoException & { killed?: bo
   return err instanceof Error && ('code' in err || 'killed' in err);
 }
 
+function execDetail(err: unknown): string {
+  if (err instanceof Error && 'stdout' in err) {
+    return `\nstdout: ${(err as any).stdout}\nstderr: ${(err as any).stderr}`;
+  }
+  return '';
+}
+
 export interface InstallFromRegistryOptions {
   skillsDir: string;
   skillName: string;
@@ -138,8 +155,9 @@ export interface InstallResult {
 function runWithOutput(
   cmd: string,
   args: string[],
-  opts: { timeout: number; env?: NodeJS.ProcessEnv },
+  opts: { timeout: number; env?: NodeJS.ProcessEnv; label?: string },
 ): Promise<{ stdout: string; stderr: string }> {
+  const label = opts.label ?? 'skill-install';
   return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { env: opts.env, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
@@ -159,11 +177,11 @@ function runWithOutput(
 
     child.stdout.on('data', (d) => {
       stdout += d.toString();
-      process.stdout.write(`[skill-install:stdout] ${d}`);
+      process.stdout.write(`[${label}:stdout] ${d}`);
     });
     child.stderr.on('data', (d) => {
       stderr += d.toString();
-      process.stderr.write(`[skill-install:stderr] ${d}`);
+      process.stderr.write(`[${label}:stderr] ${d}`);
     });
 
     child.on('error', (err) => {

@@ -9,12 +9,42 @@ vi.mock('node:child_process', () => {
   return {
     ...actual,
     execFile: vi.fn(),
+    spawn: vi.fn(),
   };
 });
 
+let mockHome = '';
+vi.mock('node:os', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:os')>();
+  return {
+    ...actual,
+    homedir: () => mockHome,
+  };
+});
+
+function createFakeChild() {
+  const child: any = {
+    stdout: { on: (_e: string, cb: Function) => { child._onStdout = cb; } },
+    stderr: { on: (_e: string, cb: Function) => { child._onStderr = cb; } },
+    kill: vi.fn(),
+    _handlers: {} as Record<string, Function>,
+    on(event: string, cb: Function) { child._handlers[event] = cb; },
+    emitStdout(d: string) { child._onStdout?.(d); },
+    emitStderr(d: string) { child._onStderr?.(d); },
+    emitClose(code: number) { child._handlers.close?.(code); },
+    emitError(err: Error) { child._handlers.error?.(err); },
+  };
+  return child;
+}
+
 describe('searchSkillsOnline', () => {
-  beforeEach(() => {
+  let fakeChild: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    fakeChild = createFakeChild();
+    const { spawn } = await import('node:child_process');
+    vi.mocked(spawn).mockReturnValue(fakeChild);
   });
 
   afterEach(() => {
@@ -31,16 +61,11 @@ describe('searchSkillsOnline', () => {
 react-hooks	A collection of React hooks skills	https://github.com/user/react-hooks
 typescript-utils	TypeScript utility skills	https://github.com/user/ts-utils
 `;
+    const promise = searchSkillsOnline('react');
+    fakeChild.emitStdout(mockOutput);
+    fakeChild.emitClose(0);
 
-    const { execFile } = await import('node:child_process');
-    const mockExecFile = vi.mocked(execFile);
-    mockExecFile.mockImplementation(
-      ((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-        cb(null, { stdout: mockOutput, stderr: '' });
-      }) as any,
-    );
-
-    const results = await searchSkillsOnline('react');
+    const results = await promise;
     expect(results).toHaveLength(2);
     expect(results[0].name).toBe('react-hooks');
     expect(results[0].description).toBe('A collection of React hooks skills');
@@ -48,53 +73,49 @@ typescript-utils	TypeScript utility skills	https://github.com/user/ts-utils
   });
 
   it('handles npx not available', async () => {
-    const { execFile } = await import('node:child_process');
-    const mockExecFile = vi.mocked(execFile);
     const err = new Error('spawn npx ENOENT') as NodeJS.ErrnoException;
     err.code = 'ENOENT';
-    mockExecFile.mockImplementation(
-      ((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-        cb(err);
-      }) as any,
-    );
+    const promise = searchSkillsOnline('test');
+    fakeChild.emitError(err);
 
-    await expect(searchSkillsOnline('test')).rejects.toThrow('npx is not available');
+    await expect(promise).rejects.toThrow('npx is not available');
   });
 
   it('handles timeout', async () => {
-    const { execFile } = await import('node:child_process');
-    const mockExecFile = vi.mocked(execFile);
-    const err = new Error('timeout') as NodeJS.ErrnoException & { killed: boolean };
-    err.killed = true;
-    mockExecFile.mockImplementation(
-      ((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-        cb(err);
-      }) as any,
-    );
-
-    await expect(searchSkillsOnline('test')).rejects.toThrow('timed out');
+    vi.useFakeTimers();
+    const promise = searchSkillsOnline('test');
+    vi.advanceTimersByTime(60_000);
+    await expect(promise).rejects.toThrow('timed out');
+    vi.useRealTimers();
   });
 
   it('returns empty array for empty output', async () => {
-    const { execFile } = await import('node:child_process');
-    const mockExecFile = vi.mocked(execFile);
-    mockExecFile.mockImplementation(
-      ((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-        cb(null, { stdout: '', stderr: '' });
-      }) as any,
-    );
+    const promise = searchSkillsOnline('nonexistent');
+    fakeChild.emitStdout('');
+    fakeChild.emitClose(0);
 
-    const results = await searchSkillsOnline('nonexistent');
+    const results = await promise;
     expect(results).toEqual([]);
   });
 });
 
 describe('installSkillFromRegistry', () => {
   let tmpDir: string;
+  let fakeChild: any;
+  let spawned: Promise<void>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ws-install-'));
+    mockHome = tmpDir;
+    fakeChild = createFakeChild();
+    const { spawn } = await import('node:child_process');
+    let resolveSpawned!: () => void;
+    spawned = new Promise((r) => { resolveSpawned = r; });
+    vi.mocked(spawn).mockImplementation((..._args: any[]) => {
+      resolveSpawned();
+      return fakeChild;
+    });
   });
 
   afterEach(() => {
@@ -104,49 +125,40 @@ describe('installSkillFromRegistry', () => {
     }
   });
 
-  it('calls npx skills install with correct args', async () => {
-    const { execFile } = await import('node:child_process');
-    const mockExecFile = vi.mocked(execFile);
-    mockExecFile.mockImplementation(
-      ((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-        cb(null, { stdout: '', stderr: '' });
-      }) as any,
-    );
-
-    const skillsDir = path.join(tmpDir, 'skills');
-    const result = await installSkillFromRegistry({
-      skillsDir,
-      skillName: 'my-skill',
-    });
-
-    expect(result.name).toBe('my-skill');
-    expect(mockExecFile).toHaveBeenCalledWith(
-      'npx',
-      ['skills', 'install', 'my-skill', '--dir', expect.any(String)],
-      expect.any(Object),
-      expect.any(Function),
-    );
-  });
-
   it('rejects empty skill name', async () => {
     await expect(
       installSkillFromRegistry({ skillsDir: tmpDir, skillName: '' }),
     ).rejects.toThrow('must not be empty');
   });
 
+  it('calls npx skills add with correct args and copies files', async () => {
+    const skillsDir = path.join(tmpDir, 'skills');
+    const actualName = 'my-skill';
+    const agentSkillsDir = path.join(mockHome, '.agents', 'skills', actualName);
+    fs.mkdirSync(agentSkillsDir, { recursive: true });
+
+    const promise = installSkillFromRegistry({ skillsDir, skillName: actualName });
+    await spawned;
+    fakeChild.emitClose(0);
+    const result = await promise;
+
+    expect(result.name).toBe(actualName);
+    const { spawn } = await import('node:child_process');
+    expect(vi.mocked(spawn)).toHaveBeenCalledWith(
+      'npx',
+      ['--yes', 'skills', 'add', actualName, '--all', '-g', '-y'],
+      expect.any(Object),
+    );
+    expect(fs.existsSync(path.join(skillsDir, actualName))).toBe(true);
+  });
+
   it('handles npx not available', async () => {
-    const { execFile } = await import('node:child_process');
-    const mockExecFile = vi.mocked(execFile);
     const err = new Error('spawn npx ENOENT') as NodeJS.ErrnoException;
     err.code = 'ENOENT';
-    mockExecFile.mockImplementation(
-      ((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-        cb(err);
-      }) as any,
-    );
+    const promise = installSkillFromRegistry({ skillsDir: tmpDir, skillName: 'test' });
+    await spawned;
+    fakeChild.emitError(err);
 
-    await expect(
-      installSkillFromRegistry({ skillsDir: tmpDir, skillName: 'test' }),
-    ).rejects.toThrow('npx is not available');
+    await expect(promise).rejects.toThrow('npx is not available');
   });
 });

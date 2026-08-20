@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { listAgents, updateAgent } from './registry.js';
 import { resolveTemplateForAgent } from './template-loader.js';
@@ -25,7 +26,7 @@ export function detectAgents(db: Database.Database): DetectionResult[] {
     const candidates = resolveCandidateDirNames(template);
     const userHome = agent.userRoot
       ? path.dirname(agent.userRoot)
-      : process.env.HOME ?? '';
+      : os.homedir();
 
     let detectedDir: string | null = null;
     for (const dirName of candidates) {

@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
 import {
@@ -287,7 +288,7 @@ export function registerMcp(program: Command): void {
         if (!template) fail(`No template found for agent: ${agent!.id}`);
         if (!template.mcpFile || !template.mcpField) fail('Agent template does not support MCP');
 
-        const userRoot = agent!.userRoot ?? path.join(process.env.HOME ?? '~', template.configDirName);
+        const userRoot = agent!.userRoot ?? path.join(os.homedir(), template.configDirName);
 
         if (options.mcp) {
           const mcpName = options.mcp;

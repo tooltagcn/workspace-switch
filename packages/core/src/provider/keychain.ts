@@ -2,6 +2,8 @@ import { platform } from 'node:os';
 
 const SERVICE_PREFIX = 'workspace-switch';
 
+const SUPPORTED_PLATFORMS = ['darwin', 'win32', 'linux'];
+
 let keytarModule: typeof import('keytar') | null = null;
 let keytarLoadAttempted = false;
 
@@ -9,7 +11,7 @@ async function loadKeytar(): Promise<typeof import('keytar') | null> {
   if (keytarLoadAttempted) return keytarModule;
 
   keytarLoadAttempted = true;
-  if (platform() !== 'darwin') return null;
+  if (!SUPPORTED_PLATFORMS.includes(platform())) return null;
 
   try {
     keytarModule = await import('keytar');
@@ -20,7 +22,7 @@ async function loadKeytar(): Promise<typeof import('keytar') | null> {
 }
 
 export function isKeytarSupported(): boolean {
-  return platform() === 'darwin';
+  return SUPPORTED_PLATFORMS.includes(platform());
 }
 
 function serviceForProvider(providerName: string): string {

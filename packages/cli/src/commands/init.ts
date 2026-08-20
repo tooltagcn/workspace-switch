@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import os from 'node:os';
 import {
   initWorkspace,
   initBuiltinAgents,
@@ -15,7 +16,7 @@ export function registerInit(program: Command): void {
       const ctx = createContext(cmd);
       try {
         const wsResult = initWorkspace(ctx.dataDir);
-        initBuiltinAgents(ctx.db, process.env.HOME ?? '~');
+        initBuiltinAgents(ctx.db, os.homedir());
         const integrity = verifyWorkspaceIntegrity(ctx.dataDir);
 
         if (ctx.json) {

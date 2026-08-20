@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from 'electron';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerIpcHandlers, cleanupIpc } from './ipc.js';
@@ -30,7 +31,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  const dataDir = path.join(process.env.HOME ?? '~', '.workspace_switch');
+  const dataDir = path.join(os.homedir(), '.workspace_switch');
   initLogger(dataDir);
   logger.info('Electron app ready, registering IPC handlers...');
   registerIpcHandlers();

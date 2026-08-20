@@ -4,6 +4,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { ScannedSkill, ScannedMcp } from './types.js';
 import { saveMcpToWorkspace } from '../mcp/storage.js';
+import { getSymlinkImpl } from '../sync/symlink.js';
 
 export interface ImportSkillResult {
   name: string;
@@ -29,7 +30,7 @@ function copyDirRecursive(src: string, dest: string): void {
       copyDirRecursive(srcPath, destPath);
     } else if (entry.isSymbolicLink()) {
       const target = fs.readlinkSync(srcPath);
-      fs.symlinkSync(target, destPath);
+      getSymlinkImpl().createSymlink(target, destPath);
     } else {
       fs.copyFileSync(srcPath, destPath);
     }

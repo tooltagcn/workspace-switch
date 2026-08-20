@@ -100,7 +100,8 @@ import {
   getSetting,
   setSetting,
 } from '@ws/core';
-import { darwinSymlink } from '@ws/core';
+import { getSymlinkImpl } from '@ws/core';
+import os from 'node:os';
 import path from 'node:path';
 
 let db: ReturnType<typeof getDatabase> | null = null;
@@ -109,12 +110,12 @@ let dataDir: string;
 function getDb() {
   if (!db) {
     try {
-      dataDir = path.join(process.env.HOME ?? '~', '.workspace_switch');
+      dataDir = path.join(os.homedir(), '.workspace_switch');
       logger.info('Initializing workspace at:', dataDir);
       initWorkspace(dataDir);
       db = getDatabase(dataDir);
       logger.info('Database opened');
-      initBuiltinAgents(db, process.env.HOME ?? '~');
+      initBuiltinAgents(db, os.homedir());
       logger.info('Built-in agents initialized');
       verifyWorkspaceIntegrity(dataDir);
       logger.info('Workspace integrity verified');
@@ -215,8 +216,8 @@ export function registerIpcHandlers(): void {
     const agent = getAgent(d, agentId);
     const skill = getSkill(d, skillId);
     if (!agent || !skill) throw new Error('Agent or skill not found');
-    const platform = process.platform === 'darwin' ? darwinSymlink : darwinSymlink;
-    return syncSkillToWorkspace(d, agent, skill.name, getDataDir(), platform);
+    const symlink = getSymlinkImpl();
+    return syncSkillToWorkspace(d, agent, skill.name, getDataDir(), symlink);
   });
 
   // Skill applied agents
@@ -230,8 +231,8 @@ export function registerIpcHandlers(): void {
     const agent = getAgent(d, agentId);
     const skill = getSkill(d, skillId);
     if (!agent || !skill) throw new Error('Agent or skill not found');
-    const platform = process.platform === 'darwin' ? darwinSymlink : darwinSymlink;
-    return unsyncSkillFromWorkspace(d, agent, skill.name, platform);
+    const symlink = getSymlinkImpl();
+    return unsyncSkillFromWorkspace(d, agent, skill.name, symlink);
   });
 
   // Skill import scanned
@@ -276,22 +277,37 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('skill:discovery:search', async (_event, providerId: string, query: string) => {
-    const provider = getSkillProvider(providerId);
-    if (!provider) throw new Error(`Unknown skill provider: ${providerId}`);
-    return provider.search(query);
+    logger.info(`skill:discovery:search provider=${providerId} query=${JSON.stringify(query)}`);
+    try {
+      const provider = getSkillProvider(providerId);
+      if (!provider) throw new Error(`Unknown skill provider: ${providerId}`);
+      const results = await provider.search(query);
+      logger.info(`skill:discovery:search done: ${results.length} results`);
+      return results;
+    } catch (e) {
+      logger.error('skill:discovery:search error:', e);
+      throw e;
+    }
   });
 
   ipcMain.handle('skill:discovery:install', async (_event, providerId: string, name: string, source: string) => {
-    const provider = getSkillProvider(providerId);
-    if (!provider) throw new Error(`Unknown skill provider: ${providerId}`);
-    const skillsDir = path.join(getDataDir(), 'skills');
-    const result = await provider.install(name, source, skillsDir);
-    const validation = validateSkill(result.dir);
-    return createSkill(getDb(), {
-      name: result.name,
-      sourcePath: result.dir,
-      description: validation.description ?? null,
-    });
+    logger.info(`skill:discovery:install provider=${providerId} name=${JSON.stringify(name)}`);
+    try {
+      const provider = getSkillProvider(providerId);
+      if (!provider) throw new Error(`Unknown skill provider: ${providerId}`);
+      const skillsDir = path.join(getDataDir(), 'skills');
+      const result = await provider.install(name, source, skillsDir);
+      const validation = validateSkill(result.dir);
+      logger.info(`skill:discovery:install done: ${result.name}`);
+      return createSkill(getDb(), {
+        name: result.name,
+        sourcePath: result.dir,
+        description: validation.description ?? null,
+      });
+    } catch (e) {
+      logger.error('skill:discovery:install error:', e);
+      throw e;
+    }
   });
 
   // Native dialogs
@@ -576,7 +592,7 @@ export function registerIpcHandlers(): void {
     try { return updateProject(getDb(), id, data); } catch (e) { logger.error('project:update error:', e); throw e; }
   });
   ipcMain.handle('project:delete', (_event, id: string) => {
-    try { return deleteProject(getDb(), id, darwinSymlink); } catch (e) { logger.error('project:delete error:', e); throw e; }
+    try { return deleteProject(getDb(), id, getSymlinkImpl()); } catch (e) { logger.error('project:delete error:', e); throw e; }
   });
   ipcMain.handle('project:toggleAgent', (_event, projectId: string, agentId: string, enabled: boolean) => {
     try {
@@ -591,7 +607,7 @@ export function registerIpcHandlers(): void {
              WHERE pra.project_id = ? AND pra.agent_id = ? AND pra.resource_type = 'skill'`,
           ).all(projectId, agentId) as { name: string }[];
           for (const row of appliedRows) {
-            unsyncProjectSkillFromWorkspace(d, proj, agent, row.name, darwinSymlink);
+            unsyncProjectSkillFromWorkspace(d, proj, agent, row.name, getSymlinkImpl());
           }
         }
       }
@@ -615,7 +631,7 @@ export function registerIpcHandlers(): void {
         'SELECT enabled FROM project_agent WHERE project_id = ? AND agent_id = ?',
       ).get(projectId, agentId) as { enabled: number } | undefined;
       if (!pa || pa.enabled !== 1) throw new Error('Agent is disabled for this project');
-      return syncProjectSkillToWorkspace(d, proj, agent, skill.name, getDataDir(), darwinSymlink);
+      return syncProjectSkillToWorkspace(d, proj, agent, skill.name, getDataDir(), getSymlinkImpl());
     } catch (e) { logger.error('project:applySkill error:', e); throw e; }
   });
   ipcMain.handle('project:unapplySkill', (_event, projectId: string, skillId: string, agentId: string) => {
@@ -625,7 +641,7 @@ export function registerIpcHandlers(): void {
       const agent = getAgent(d, agentId);
       const skill = getSkill(d, skillId);
       if (!proj || !agent || !skill) throw new Error('Project, agent, or skill not found');
-      return unsyncProjectSkillFromWorkspace(d, proj, agent, skill.name, darwinSymlink);
+      return unsyncProjectSkillFromWorkspace(d, proj, agent, skill.name, getSymlinkImpl());
     } catch (e) { logger.error('project:unapplySkill error:', e); throw e; }
   });
   ipcMain.handle('project:availableSkills', (_event, projectId: string, agentId?: string) => {

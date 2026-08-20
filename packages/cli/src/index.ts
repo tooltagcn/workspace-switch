@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import os from 'node:os';
 import path from 'node:path';
 import { initLogger, setDebugMode, logger } from '@ws/core';
 import { registerInit } from './commands/init.js';
@@ -20,7 +21,7 @@ program
   .version('0.1.0')
   .option('--json', 'Output in JSON format', false)
   .option('--verbose', 'Enable verbose output', false)
-  .option('--data-dir <path>', 'Data directory', path.join(process.env.HOME ?? '~', '.workspace_switch'));
+  .option('--data-dir <path>', 'Data directory', path.join(os.homedir(), '.workspace_switch'));
 
 program.hook('preAction', () => {
   const opts = program.optsWithGlobals();

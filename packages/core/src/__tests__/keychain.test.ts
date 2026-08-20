@@ -15,7 +15,7 @@ describe('Keychain', () => {
 
 describe('Keychain (mocked)', () => {
   it('setApiKey throws on unsupported platform', async () => {
-    vi.mock('node:os', () => ({ platform: () => 'linux' }));
+    vi.mock('node:os', () => ({ platform: () => 'sunos' }));
 
     const { setApiKey } = await import('../provider/keychain.js');
     await expect(setApiKey('test', 'key')).rejects.toThrow('not available');

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import os from 'node:os';
 import type { AgentTemplate } from './template-types.js';
 
 export interface ExpandedPaths {
@@ -28,7 +29,7 @@ export function resolveCandidateDirNames(template: AgentTemplate): string[] {
 export function expandCustomPath(raw: string): string {
   let expanded = raw;
   if (expanded.startsWith('~/') || expanded === '~') {
-    const home = process.env.HOME ?? process.env.USERPROFILE ?? '~';
+    const home = process.env.HOME ?? process.env.USERPROFILE ?? os.homedir();
     expanded = path.join(home, expanded.slice(2));
   }
   expanded = expanded.replace(/\$\{(\w+)\}/g, (_match, varName) => process.env[varName] ?? '');

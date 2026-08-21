@@ -206,7 +206,9 @@
       "fixComplete": "All discrepancies fixed.",
       "synced": "Synced: {{count}}",
       "deleted": "Removed: {{count}}",
-      "noIssues": "No issues found"
+      "noIssues": "No issues found",
+      "stale": "Out of sync",
+      "staleDetail": "{{field}} in database differs from SKILL.md"
     }
   },
   "mcp": {

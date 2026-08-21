@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createSkill, listSkills, deleteSkill } from '../skill/manager.js';
+import { createSkill, listSkills, deleteSkill, updateSkill } from '../skill/manager.js';
 import { validateSkill } from '../skill/validator.js';
 import { createMcp, listMcps, deleteMcp } from '../mcp/manager.js';
 import { saveMcpToWorkspace, loadMcpFromWorkspace } from '../mcp/storage.js';
@@ -23,6 +23,8 @@ export interface ConsistencyItem {
   orphaned?: boolean;
   missingFile?: boolean;
   targetPath?: string;
+  /** Stable code describing why an item is out of sync (e.g. 'description'). */
+  reason?: string;
 }
 
 export interface ConsistencyResult {
@@ -76,6 +78,27 @@ export function checkSkillConsistency(
     }
   }
 
+  // Stale metadata: present in both directory and database, but the database
+  // description no longer matches the SKILL.md frontmatter. The directory is the
+  // source of truth, so the fix re-reads it back into the database.
+  for (const skill of dbSkills) {
+    if (!dirNameSet.has(skill.name)) continue;
+    const sourcePath = path.join(skillsDir, skill.name);
+    const validation = validateSkill(sourcePath);
+    if (!validation.valid || validation.description === undefined) continue;
+    if (validation.description !== skill.description) {
+      items.push({
+        name: skill.name,
+        location: 'directory',
+        action: 'sync',
+        outOfSync: true,
+        id: skill.id,
+        sourcePath,
+        reason: 'description',
+      });
+    }
+  }
+
   return {
     consistent: items.length === 0,
     items,
@@ -95,11 +118,15 @@ export function fixSkillConsistency(
     if (item.action === 'sync' && item.location === 'directory') {
       const sourcePath = path.join(dataDir, 'skills', item.name);
       const validation = validateSkill(sourcePath);
-      createSkill(db, {
-        name: item.name,
-        sourcePath,
-        description: validation.description ?? null,
-      });
+      if (item.outOfSync && item.id) {
+        updateSkill(db, item.id, { description: validation.description ?? null });
+      } else {
+        createSkill(db, {
+          name: item.name,
+          sourcePath,
+          description: validation.description ?? null,
+        });
+      }
       result.synced.push(item.name);
     } else if (item.action === 'delete' && item.location === 'database' && item.id) {
       deleteSkill(db, item.id);

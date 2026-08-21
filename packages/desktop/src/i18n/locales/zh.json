@@ -206,7 +206,9 @@
       "fixComplete": "所有不一致已修复。",
       "synced": "已同步：{{count}}",
       "deleted": "已移除：{{count}}",
-      "noIssues": "未发现问题"
+      "noIssues": "未发现问题",
+      "stale": "已过期",
+      "staleDetail": "数据库中的{{field}}与 SKILL.md 不一致"
     }
   },
   "mcp": {

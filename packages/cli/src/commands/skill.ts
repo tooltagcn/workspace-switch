@@ -285,8 +285,8 @@ export function registerSkill(program: Command): void {
         const toDelete = result.items.filter((i) => i.action === 'delete');
 
         outputTable(
-          ['Name', 'Location', 'Action'],
-          result.items.map((i) => [i.name, i.location, i.action]),
+          ['Name', 'Location', 'Action', 'Detail'],
+          result.items.map((i) => [i.name, i.location, i.action, i.outOfSync ? `stale (${i.reason ?? 'metadata'})` : '-']),
         );
 
         if (options.apply) {

@@ -620,6 +620,11 @@ function SkillDoctorDialog({ onClose }: { onClose: () => void }) {
                           }`}>
                             {item.action === 'sync' ? t('skill.doctor.actionSync') : t('skill.doctor.actionDelete')}
                           </span>
+                          {item.outOfSync && (
+                            <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                              {t('skill.doctor.staleDetail', { field: item.reason ?? 'metadata' })}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}

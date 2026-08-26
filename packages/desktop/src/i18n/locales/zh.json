@@ -190,7 +190,9 @@
       "noResults": "未找到技能",
       "scanError": "扫描失败，请重试。",
       "importError": "导入失败，请重试。",
-      "noImportable": "所有发现的技能均已同步。"
+      "noImportable": "所有发现的技能均已同步。",
+      "searchPlaceholder": "搜索技能...",
+      "noMatch": "没有匹配的技能。"
     },
     "doctor": {
       "title": "一致性检查 - 技能",
@@ -209,6 +211,28 @@
       "noIssues": "未发现问题",
       "stale": "已过期",
       "staleDetail": "数据库中的{{field}}与 SKILL.md 不一致"
+    },
+    "applyScan": {
+      "title": "应用扫描 - 技能",
+      "button": "应用扫描",
+      "intro": "扫描每个代理的技能目录，并与主工作区和数据库比对，以发现漂移。",
+      "scanning": "扫描中...",
+      "startScan": "开始扫描",
+      "scanError": "扫描失败，请重试。",
+      "noAgents": "未配置任何带技能目录的代理。",
+      "noSkills": "主工作区中没有技能。",
+      "legend": "图例",
+      "stateApplied": "已应用",
+      "stateMissing": "缺失（漂移）",
+      "stateOrphan": "孤立",
+      "stateConflict": "冲突",
+      "stateNotApplied": "未应用",
+      "summary": "已应用：{{applied}} | 缺失：{{missing}} | 孤立：{{orphan}} | 冲突：{{conflict}} | 未应用：{{notApplied}}",
+      "resync": "重新同步",
+      "resyncing": "同步中...",
+      "resyncAll": "重新同步全部漂移",
+      "resyncDone": "已重新同步 {{count}} 个技能。",
+      "resyncError": "重新同步失败，请重试。"
     }
   },
   "mcp": {

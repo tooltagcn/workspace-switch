@@ -29,6 +29,7 @@ const api = {
   importScannedSkills: (skills) => ipcRenderer.invoke('skill:importScanned', skills),
   checkSkillConsistency: () => ipcRenderer.invoke('skill:doctor'),
   fixSkillConsistency: () => ipcRenderer.invoke('skill:fixDoctor'),
+  scanSkillApplyStatus: () => ipcRenderer.invoke('skill:applyScan'),
   importSkillFromLocal: (sourcePath, name) => ipcRenderer.invoke('skill:importLocal', sourcePath, name),
   importSkillFromArchive: (archivePath, name) => ipcRenderer.invoke('skill:importArchive', archivePath, name),
   searchSkillDiscovery: (providerId, query) => ipcRenderer.invoke('skill:discovery:search', providerId, query),

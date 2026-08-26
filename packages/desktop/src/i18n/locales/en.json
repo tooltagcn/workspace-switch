@@ -190,7 +190,9 @@
       "noResults": "No skills found",
       "scanError": "Scan failed. Please try again.",
       "importError": "Import failed. Please try again.",
-      "noImportable": "All discovered skills are already synced."
+      "noImportable": "All discovered skills are already synced.",
+      "searchPlaceholder": "Search skills...",
+      "noMatch": "No skills match your search."
     },
     "doctor": {
       "title": "Consistency Check - Skills",
@@ -209,6 +211,28 @@
       "noIssues": "No issues found",
       "stale": "Out of sync",
       "staleDetail": "{{field}} in database differs from SKILL.md"
+    },
+    "applyScan": {
+      "title": "Apply Scan - Skills",
+      "button": "Apply Scan",
+      "intro": "Scans each agent's skill directory and compares it with the Master Workspace and the database to detect drift.",
+      "scanning": "Scanning...",
+      "startScan": "Run Scan",
+      "scanError": "Scan failed. Please try again.",
+      "noAgents": "No agents with a skill directory are configured.",
+      "noSkills": "No skills in the Master Workspace.",
+      "legend": "Legend",
+      "stateApplied": "Applied",
+      "stateMissing": "Missing (drift)",
+      "stateOrphan": "Orphan",
+      "stateConflict": "Conflict",
+      "stateNotApplied": "Not applied",
+      "summary": "Applied: {{applied}} | Missing: {{missing}} | Orphan: {{orphan}} | Conflict: {{conflict}} | Not applied: {{notApplied}}",
+      "resync": "Resync",
+      "resyncing": "Resyncing...",
+      "resyncAll": "Resync All Drift",
+      "resyncDone": "Resynced {{count}} skills.",
+      "resyncError": "Resync failed. Please try again."
     }
   },
   "mcp": {

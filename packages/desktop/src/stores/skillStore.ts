@@ -23,6 +23,7 @@ interface SkillStore {
   removeTag: (skillId: string, tag: string) => Promise<void>;
   checkConsistency: () => Promise<any>;
   fixConsistency: () => Promise<any>;
+  scanApplyStatus: () => Promise<any>;
 }
 
 export const useSkillStore = create<SkillStore>((set, get) => ({
@@ -69,5 +70,8 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
     const result = await api.fixSkillConsistency();
     await get().fetchSkills();
     return result;
+  },
+  scanApplyStatus: async () => {
+    return api.scanSkillApplyStatus();
   },
 }));

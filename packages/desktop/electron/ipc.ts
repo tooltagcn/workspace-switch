@@ -88,6 +88,7 @@ import {
   importSkillFromLocal,
   importSkillFromArchive,
   validateSkill,
+  scanSkillApplyStatus,
   registerSkillProvider,
   getSkillProvider,
   listSkillProviders,
@@ -246,6 +247,13 @@ export function registerIpcHandlers(): void {
   });
   ipcMain.handle('skill:fixDoctor', () => {
     return fixSkillConsistency(getDb(), getDataDir());
+  });
+
+  // Skill apply scan (verify actual disk state against DB for each skill × agent)
+  ipcMain.handle('skill:applyScan', () => {
+    try {
+      return scanSkillApplyStatus(getDb(), getDataDir());
+    } catch (e) { logger.error('skill:applyScan error:', e); throw e; }
   });
 
   // Skill import from local directory

@@ -40,6 +40,8 @@ export {
   createSkillManually,
 } from './skill/manager.js';
 export type { CreateManualSkillOptions, ManualSkillResult } from './skill/manager.js';
+export type { SkillApplyState, SkillApplyCell, SkillApplyRow, SkillApplyScanResult } from './skill/apply-status.js';
+export { scanSkillApplyStatus } from './skill/apply-status.js';
 
 export type { ImportOptions, ImportResult, OnDuplicate } from './skill/import.js';
 export { importSkillFromLocal, importSkillFromGit, normalizeGitUrl } from './skill/import.js';

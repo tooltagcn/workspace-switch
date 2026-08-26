@@ -7,6 +7,7 @@ import type { ApplyResource } from './components/ApplyToAgentDialog.js';
 import UnapplyFromAgentDialog from './components/UnapplyFromAgentDialog.js';
 import BulkActionBar from '../components/BulkActionBar.js';
 import SkillDiscoveryPanel from './components/SkillDiscoveryPanel.js';
+import ApplyScanWizard from './components/ApplyScanWizard.js';
 
 function SkillDetail({ skill, onClose, onApply }: { skill: Skill; onClose: () => void; onApply: () => void }) {
   const { t } = useTranslation();
@@ -368,6 +369,7 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
   const [importDone, setImportDone] = useState(false);
   const [scanError, setScanError] = useState(false);
   const [importError, setImportError] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const runScan = async () => {
     setScanning(true);
@@ -451,30 +453,60 @@ function ReverseScanWizard({ onClose }: { onClose: () => void }) {
               {results.length === 0 ? (
                 <p className="text-gray-500 dark:text-gray-400">{t('skill.reverseScan.noResults')}</p>
               ) : (
-                <div className="space-y-2">
-                  {results.map((r: any, i: number) => {
-                    if (r.classification === 'synced') return null;
-                    const classColor = r.classification === 'new' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
-                    const classLabel = r.classification === 'new' ? t('skill.reverseScan.newFound') : t('skill.reverseScan.conflict');
+                <>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t('skill.reverseScan.searchPlaceholder')}
+                    className="w-full px-3 py-2 mb-4 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  {(() => {
+                    const q = searchQuery.trim().toLowerCase();
+                    const filtered = q
+                      ? results.filter(
+                          (r: any) =>
+                            r.name.toLowerCase().includes(q) ||
+                            r.agentName.toLowerCase().includes(q) ||
+                            (r.sourcePath ?? '').toLowerCase().includes(q),
+                        )
+                      : results;
+
+                    if (filtered.length === 0) {
+                      return (
+                        <p className="text-gray-500 dark:text-gray-400">{t('skill.reverseScan.noMatch')}</p>
+                      );
+                    }
+
                     return (
-                      <div key={i} className="flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(String(i))}
-                          onChange={() => toggleSelect(String(i))}
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{r.name}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{r.agentName} - {r.sourcePath}</div>
-                        </div>
-                        <span className={`text-xs px-2 py-0.5 rounded ${classColor}`}>{classLabel}</span>
+                      <div className="space-y-2">
+                        {filtered.map((r: any) => {
+                          if (r.classification === 'synced') return null;
+                          const idx = results.indexOf(r);
+                          const classColor = r.classification === 'new' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
+                          const classLabel = r.classification === 'new' ? t('skill.reverseScan.newFound') : t('skill.reverseScan.conflict');
+                          return (
+                            <div key={idx} className="flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(String(idx))}
+                                onChange={() => toggleSelect(String(idx))}
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{r.name}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">{r.agentName} - {r.sourcePath}</div>
+                              </div>
+                              <span className={`text-xs px-2 py-0.5 rounded ${classColor}`}>{classLabel}</span>
+                            </div>
+                          );
+                        })}
+                        {results.every((r: any) => r.classification === 'synced') && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{t('skill.reverseScan.noImportable')}</p>
+                        )}
                       </div>
                     );
-                  })}
-                  {results.every((r: any) => r.classification === 'synced') && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('skill.reverseScan.noImportable')}</p>
-                  )}
-                </div>
+                  })()}
+                </>
               )}
             </div>
           )}
@@ -655,6 +687,7 @@ export default function Skills() {
   const [showTagManager, setShowTagManager] = useState(false);
   const [showReverseScan, setShowReverseScan] = useState(false);
   const [showDoctor, setShowDoctor] = useState(false);
+  const [showApplyScan, setShowApplyScan] = useState(false);
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('');
@@ -768,6 +801,12 @@ export default function Skills() {
             className="px-4 py-2 border dark:border-gray-700 border-blue-500 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50"
           >
             {t('dashboard.reverseScan')}
+          </button>
+          <button
+            onClick={() => setShowApplyScan(true)}
+            className="px-4 py-2 border dark:border-gray-700 border-purple-500 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-50"
+          >
+            {t('skill.applyScan.button')}
           </button>
           <button
             onClick={() => setShowTagManager(true)}
@@ -892,6 +931,7 @@ export default function Skills() {
       {showAddWizard && <SkillAddWizard onClose={() => setShowAddWizard(false)} />}
       {showTagManager && <TagManager onClose={() => setShowTagManager(false)} />}
       {showReverseScan && <ReverseScanWizard onClose={() => setShowReverseScan(false)} />}
+      {showApplyScan && <ApplyScanWizard onClose={() => setShowApplyScan(false)} />}
       {showDoctor && <SkillDoctorDialog onClose={() => setShowDoctor(false)} />}
       {showApplyDialog && selectedSkill && (
         <ApplyToAgentDialog

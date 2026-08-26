@@ -22,6 +22,7 @@ export interface WsApi {
   importScannedSkills: (skills: unknown[]) => Promise<any>;
   checkSkillConsistency: () => Promise<any>;
   fixSkillConsistency: () => Promise<any>;
+  scanSkillApplyStatus: () => Promise<any>;
   importSkillFromLocal: (sourcePath: string, name: string) => Promise<any>;
   importSkillFromArchive: (archivePath: string, name: string) => Promise<any>;
   searchSkillDiscovery: (providerId: string, query: string) => Promise<any>;

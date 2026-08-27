@@ -342,7 +342,12 @@
     "secretStored": "密钥已安全存储",
     "secretDeleted": "密钥已删除",
     "keychainUnavailable": "钥匙串不可用。是否允许以明文形式在数据库中存储密钥？",
-    "secretEnvVar": "密钥环境变量"
+    "secretEnvVar": "密钥环境变量",
+    "errors": {
+      "duplicateName": "名为 \"{{name}}\" 的 MCP 服务器已存在。",
+      "createFailed": "创建 MCP 服务器失败：{{message}}",
+      "updateFailed": "更新 MCP 服务器失败：{{message}}"
+    }
   },
   "apply": {
     "title": "应用到代理",

@@ -336,21 +336,8 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('mcp:list', () => listMcps(getDb()));
   ipcMain.handle('mcp:get', (_event, id: string) => getMcp(getDb(), id));
   ipcMain.handle('mcp:create', (_event, data) => {
-    const result = createMcp(getDb(), data);
-    saveMcpToWorkspace(dataDir, {
-      name: result.name,
-      transport: result.transport ?? 'stdio',
-      command: result.command ?? undefined,
-      url: result.url ?? undefined,
-      args: result.args.length > 0 ? result.args : undefined,
-      env: Object.keys(result.env).length > 0 ? result.env : undefined,
-      description: result.description ?? undefined,
-    });
-    return result;
-  });
-  ipcMain.handle('mcp:update', (_event, id: string, data) => {
-    const result = updateMcp(getDb(), id, data);
-    if (result) {
+    try {
+      const result = createMcp(getDb(), data);
       saveMcpToWorkspace(dataDir, {
         name: result.name,
         transport: result.transport ?? 'stdio',
@@ -360,8 +347,31 @@ export function registerIpcHandlers(): void {
         env: Object.keys(result.env).length > 0 ? result.env : undefined,
         description: result.description ?? undefined,
       });
+      return result;
+    } catch (e) {
+      logger.error('mcp:create error:', e);
+      throw e;
     }
-    return result;
+  });
+  ipcMain.handle('mcp:update', (_event, id: string, data) => {
+    try {
+      const result = updateMcp(getDb(), id, data);
+      if (result) {
+        saveMcpToWorkspace(dataDir, {
+          name: result.name,
+          transport: result.transport ?? 'stdio',
+          command: result.command ?? undefined,
+          url: result.url ?? undefined,
+          args: result.args.length > 0 ? result.args : undefined,
+          env: Object.keys(result.env).length > 0 ? result.env : undefined,
+          description: result.description ?? undefined,
+        });
+      }
+      return result;
+    } catch (e) {
+      logger.error('mcp:update error:', e);
+      throw e;
+    }
   });
   ipcMain.handle('mcp:delete', (_event, id: string) => deleteMcp(getDb(), id));
 

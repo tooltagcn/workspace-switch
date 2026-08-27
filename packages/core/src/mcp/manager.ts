@@ -145,6 +145,13 @@ export function getMcp(db: Database.Database, id: string): McpServer | null {
 }
 
 export function createMcp(db: Database.Database, input: CreateMcpInput): McpServer {
+  const conflicting = db.prepare('SELECT id FROM mcp WHERE name = ?').get(input.name) as
+    | { id: string }
+    | undefined;
+  if (conflicting) {
+    throw new Error(`An MCP server named "${input.name}" already exists.`);
+  }
+
   const id = input.id ?? randomUUID();
   const now = new Date().toISOString();
   const argsJson = input.args ? JSON.stringify(input.args) : null;
@@ -188,6 +195,16 @@ export function updateMcp(
 ): McpServer | null {
   const existing = getMcp(db, id);
   if (!existing) return null;
+
+  if (input.name !== undefined && input.name !== existing.name) {
+    const conflicting = db.prepare('SELECT id FROM mcp WHERE name = ? AND id != ?').get(
+      input.name,
+      id,
+    ) as { id: string } | undefined;
+    if (conflicting) {
+      throw new Error(`An MCP server named "${input.name}" already exists.`);
+    }
+  }
 
   const now = new Date().toISOString();
   const fields: string[] = [];

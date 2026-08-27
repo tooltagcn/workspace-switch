@@ -85,9 +85,17 @@ describe('MCP CRUD', () => {
     expect(mcp.id).toBe('custom-id');
   });
 
-  it('enforces unique name', () => {
+  it('enforces unique name with a friendly error', () => {
     createMcp(db, { name: 'unique' });
-    expect(() => createMcp(db, { name: 'unique' })).toThrow();
+    expect(() => createMcp(db, { name: 'unique' })).toThrow('already exists');
+  });
+
+  it('rejects duplicate name on update (rename collision)', () => {
+    createMcp(db, { name: 'keep' });
+    const mcp = createMcp(db, { name: 'rename' });
+    expect(() => updateMcp(db, mcp.id, { name: 'keep' })).toThrow('already exists');
+    // non-colliding rename still works
+    expect(updateMcp(db, mcp.id, { name: 'renamed-ok' })!.name).toBe('renamed-ok');
   });
 
   it('defaults args and env to empty', () => {

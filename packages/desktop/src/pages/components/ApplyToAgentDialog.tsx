@@ -32,6 +32,7 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
   const [diffPreviews, setDiffPreviews] = useState<Map<string, string>>(new Map());
   const [results, setResults] = useState<ApplyResult[]>([]);
   const [progress, setProgress] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -158,6 +159,12 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
     return false;
   });
 
+  const filteredAgents = compatibleAgents.filter((agent) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return agent.name.toLowerCase().includes(q) || agent.configDirName.toLowerCase().includes(q);
+  });
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
@@ -203,8 +210,19 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
                     : 'No agents with skill support found'}
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {compatibleAgents.map((agent) => {
+                <div>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t('common.search')}
+                    className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none mb-3"
+                  />
+                  {filteredAgents.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">{t('common.noData')}</p>
+                  ) : (
+                    <div className="space-y-2">
+                  {filteredAgents.map((agent) => {
                     const isApplied = appliedAgentIds.has(agent.id);
                     return (
                       <label
@@ -235,6 +253,8 @@ export default function ApplyToAgentDialog({ resourceType, resources, onClose }:
                       </label>
                     );
                   })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

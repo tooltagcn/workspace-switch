@@ -28,6 +28,7 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
   const [candidateAgents, setCandidateAgents] = useState<string[]>([]);
   const [results, setResults] = useState<UnapplyResult[]>([]);
   const [progress, setProgress] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -122,6 +123,12 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
 
   const visibleAgents = agents.filter((a) => candidateAgents.includes(a.id));
 
+  const filteredAgents = visibleAgents.filter((agent) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return agent.name.toLowerCase().includes(q) || agent.configDirName.toLowerCase().includes(q);
+  });
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[560px] max-h-[80vh] flex flex-col">
@@ -160,8 +167,19 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
               ) : visibleAgents.length === 0 ? (
                 <p className="text-gray-500 dark:text-gray-400 text-sm">{t('unapply.noAppliedAgents')}</p>
               ) : (
-                <div className="space-y-2">
-                  {visibleAgents.map((agent) => (
+                <div>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t('common.search')}
+                    className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none mb-3"
+                  />
+                  {filteredAgents.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">{t('common.noData')}</p>
+                  ) : (
+                    <div className="space-y-2">
+                  {filteredAgents.map((agent) => (
                     <label
                       key={agent.id}
                       className={`flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg cursor-pointer transition-colors ${
@@ -182,6 +200,8 @@ export default function UnapplyFromAgentDialog({ resourceType, resources, onClos
                       </div>
                     </label>
                   ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

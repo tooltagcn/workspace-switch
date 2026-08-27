@@ -183,7 +183,7 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
 
 function McpAddDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const { createMcp } = useMcpStore();
+  const { createMcp, mcps } = useMcpStore();
   const [form, setForm] = useState({
     name: '',
     transport: 'stdio' as 'stdio' | 'sse' | 'http',
@@ -192,12 +192,23 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
     args: '',
     description: '',
   });
+  const [error, setError] = useState<string | null>(null);
+
+  const updateForm = (patch: Partial<typeof form>) => {
+    setForm((f) => ({ ...f, ...patch }));
+    if (patch.name !== undefined) setError(null);
+  };
 
   const handleSubmit = async () => {
     if (!form.name) return;
+    const trimmed = form.name.trim();
+    if (mcps.some((m) => m.name.toLowerCase() === trimmed.toLowerCase())) {
+      setError(t('mcp.errors.duplicateName', { name: trimmed }));
+      return;
+    }
     try {
       await createMcp({
-        name: form.name,
+        name: trimmed,
         transport: form.transport,
         command: form.transport === 'stdio' ? form.command : null,
         url: form.transport !== 'stdio' ? form.url : null,
@@ -205,8 +216,12 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
         description: form.description || null,
       });
       onClose();
-    } catch {
-      // error handled by store
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? t('mcp.errors.createFailed', { message: e.message })
+          : t('mcp.errors.createFailed', { message: String(e) }),
+      );
     }
   };
 
@@ -220,9 +235,12 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
             <input
               type="text"
               value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              onChange={(e) => updateForm({ name: e.target.value })}
               className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
+            {error && (
+              <p className="text-sm text-red-500 dark:text-red-400 mt-1">{error}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.transport')}</label>
@@ -298,7 +316,7 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
 
 function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }) {
   const { t } = useTranslation();
-  const { updateMcp } = useMcpStore();
+  const { updateMcp, mcps } = useMcpStore();
   const [form, setForm] = useState({
     name: mcp.name,
     transport: mcp.transport ?? 'stdio',
@@ -307,11 +325,26 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
     args: mcp.args.join(' '),
     description: mcp.description ?? '',
   });
+  const [error, setError] = useState<string | null>(null);
+
+  const updateForm = (patch: Partial<typeof form>) => {
+    setForm((f) => ({ ...f, ...patch }));
+    if (patch.name !== undefined) setError(null);
+  };
 
   const handleSubmit = async () => {
+    if (!form.name) return;
+    const trimmed = form.name.trim();
+    if (
+      trimmed.toLowerCase() !== mcp.name.toLowerCase() &&
+      mcps.some((m) => m.id !== mcp.id && m.name.toLowerCase() === trimmed.toLowerCase())
+    ) {
+      setError(t('mcp.errors.duplicateName', { name: trimmed }));
+      return;
+    }
     try {
       await updateMcp(mcp.id, {
-        name: form.name,
+        name: trimmed,
         transport: form.transport,
         command: form.transport === 'stdio' ? form.command : null,
         url: form.transport !== 'stdio' ? form.url : null,
@@ -319,8 +352,12 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
         description: form.description || null,
       });
       onClose();
-    } catch {
-      // error handled by store
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? t('mcp.errors.updateFailed', { message: e.message })
+          : t('mcp.errors.updateFailed', { message: String(e) }),
+      );
     }
   };
 
@@ -334,9 +371,12 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
             <input
               type="text"
               value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              onChange={(e) => updateForm({ name: e.target.value })}
               className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
+            {error && (
+              <p className="text-sm text-red-500 dark:text-red-400 mt-1">{error}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{t('mcp.transport')}</label>

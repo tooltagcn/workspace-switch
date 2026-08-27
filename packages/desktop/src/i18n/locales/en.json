@@ -342,7 +342,12 @@
     "secretStored": "Secret stored securely",
     "secretDeleted": "Secret deleted",
     "keychainUnavailable": "Keychain is unavailable. Allow storing secrets in plaintext in the database?",
-    "secretEnvVar": "Secret environment variable"
+    "secretEnvVar": "Secret environment variable",
+    "errors": {
+      "duplicateName": "An MCP server named \"{{name}}\" already exists.",
+      "createFailed": "Failed to create MCP server: {{message}}",
+      "updateFailed": "Failed to update MCP server: {{message}}"
+    }
   },
   "apply": {
     "title": "Apply to Agent",

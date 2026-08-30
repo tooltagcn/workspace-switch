@@ -8,7 +8,7 @@ export interface WsApi {
   updateAgentTemplate: (id: string, templateId: string | null) => Promise<any>;
   updateAgentMcpConfigPath: (id: string, mcpConfigPath: string | null) => Promise<any>;
   listTemplates: () => Promise<any[]>;
-  listSkills: () => Promise<any>;
+  listSkills: (filter?: { tags?: string[]; agentId?: string }) => Promise<any>;
   getSkill: (id: string) => Promise<any>;
   createSkill: (data: unknown) => Promise<any>;
   updateSkill: (id: string, data: unknown) => Promise<any>;
@@ -30,7 +30,7 @@ export interface WsApi {
   listSkillProviders: () => Promise<{ id: string; name: string; description: string; inputPlaceholder: string }[]>;
   openDirectoryDialog: () => Promise<{ canceled: boolean; path: string | null }>;
   openFileDialog: () => Promise<{ canceled: boolean; path: string | null }>;
-  listMcps: () => Promise<any>;
+  listMcps: (filter?: { tags?: string[]; agentId?: string }) => Promise<any>;
   getMcp: (id: string) => Promise<any>;
   createMcp: (data: unknown) => Promise<any>;
   updateMcp: (id: string, data: unknown) => Promise<any>;

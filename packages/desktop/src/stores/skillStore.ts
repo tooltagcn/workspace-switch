@@ -11,11 +11,17 @@ export interface Skill {
   updatedAt: string;
 }
 
+export interface SkillListFilter {
+  tags?: string[];
+  agentId?: string;
+}
+
 interface SkillStore {
   skills: Skill[];
   loading: boolean;
   error: string | null;
-  fetchSkills: () => Promise<void>;
+  filter: SkillListFilter;
+  fetchSkills: (filter?: SkillListFilter) => Promise<void>;
   createSkill: (data: unknown) => Promise<Skill>;
   updateSkill: (id: string, data: unknown) => Promise<Skill>;
   deleteSkill: (id: string) => Promise<void>;
@@ -30,10 +36,12 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
   skills: [],
   loading: false,
   error: null,
-  fetchSkills: async () => {
-    set({ loading: true, error: null });
+  filter: {},
+  fetchSkills: async (filter) => {
+    const active = filter ?? get().filter;
+    set({ loading: true, error: null, filter: active });
     try {
-      const skills = await api.listSkills();
+      const skills = await api.listSkills(active);
       set({ skills, loading: false });
     } catch (err) {
       set({ error: String(err), loading: false });

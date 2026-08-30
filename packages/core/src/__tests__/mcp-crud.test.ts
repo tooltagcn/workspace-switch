@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { migrate } from '../db/migrate.js';
+import { createAgent } from '../agent/registry.js';
 import {
   listMcps,
   getMcp,
@@ -150,6 +151,37 @@ describe('MCP tags', () => {
     const backend = listMcps(db, { tags: ['backend'] });
     expect(backend).toHaveLength(2);
     expect(backend.map((m) => m.name).sort()).toEqual(['api-server', 'fs-server']);
+  });
+
+  it('filters MCP servers by agent', () => {
+    const claude = createAgent(db, { id: 'claude', name: 'Claude', configDirName: '.claude' });
+    const codex = createAgent(db, { id: 'codex', name: 'Codex', configDirName: '.codex' });
+    const applied = createMcp(db, { name: 'applied-server' });
+    createMcp(db, { name: 'unapplied-server' });
+    db
+      .prepare(
+        "INSERT INTO resource_agent (resource_type, resource_id, agent_id) VALUES ('mcp', ?, ?)",
+      )
+      .run(applied.id, claude.id);
+
+    expect(listMcps(db, { agentId: claude.id }).map((m) => m.name)).toEqual(['applied-server']);
+    expect(listMcps(db, { agentId: codex.id })).toEqual([]);
+    expect(listMcps(db, { agentId: 'nonexistent' })).toEqual([]);
+  });
+
+  it('filters MCP servers by agent and tag together', () => {
+    const claude = createAgent(db, { id: 'claude', name: 'Claude', configDirName: '.claude' });
+    const tagged = createMcp(db, { name: 'tagged-applied', tags: ['backend'] });
+    createMcp(db, { name: 'tagged-unapplied', tags: ['backend'] });
+    createMcp(db, { name: 'applied-other-tag', tags: ['frontend'] });
+    db
+      .prepare(
+        "INSERT INTO resource_agent (resource_type, resource_id, agent_id) VALUES ('mcp', ?, ?)",
+      )
+      .run(tagged.id, claude.id);
+
+    const result = listMcps(db, { agentId: claude.id, tags: ['backend'] });
+    expect(result.map((m) => m.name)).toEqual(['tagged-applied']);
   });
 
   it('addMcpTag throws for non-existent MCP server', () => {

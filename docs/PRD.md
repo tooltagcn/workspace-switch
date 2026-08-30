@@ -365,7 +365,7 @@ WS 通过这套机制让"用户级 / 项目级"在底层共享同一份语义，
 - 提供"同时清理 symlink"选项
 
 #### 7.1.4 内置 Agent 模板（v1.0 至少包含）
-Claude Code、Codex、OpenCode、OpenClaude、Hermes、Cursor、GitHub Copilot、Qwen Code、Gemini CLI、Qoder、Factory、Droid、Aider（≥ 12 个）—— 每个模板预填其默认的 **配置目录名**（如 Claude Code = `.claude`、Codex = `.agents`）。
+Claude Code、Codex、OpenCode、OpenClaude、Hermes、Cursor、GitHub Copilot、Qwen Code、Gemini CLI、Qoder、Factory、Droid、Aider、CodeBuddy、Kiro CLI（≥ 12 个）—— 每个模板预填其默认的 **配置目录名**（如 Claude Code = `.claude`、Codex = `.agents`）。
 
 ### 7.2 Skill 管理（Master Workspace 视角，P0）
 

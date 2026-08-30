@@ -78,23 +78,32 @@ function applyMcpTags(db: Database.Database, mcpId: string, tagNames: string[]):
 }
 
 export function listMcps(db: Database.Database, filter?: McpListFilter): McpServer[] {
-  let rows: McpRow[];
+  const joins: string[] = [];
+  const conditions: string[] = [];
+  const params: unknown[] = [];
 
   if (filter?.tags && filter.tags.length > 0) {
-    const placeholders = filter.tags.map(() => '?').join(', ');
-    const params = [...filter.tags];
-    rows = db
-      .prepare(
-        `SELECT DISTINCT m.* FROM mcp m
-         JOIN resource_tag rt ON rt.resource_type = 'mcp' AND rt.resource_id = m.id
-         JOIN tag t ON t.id = rt.tag_id
-         WHERE t.name IN (${placeholders})
-         ORDER BY m.name`,
-      )
-      .all(...params) as McpRow[];
-  } else {
-    rows = db.prepare('SELECT * FROM mcp ORDER BY name').all() as McpRow[];
+    joins.push(
+      `JOIN resource_tag rt ON rt.resource_type = 'mcp' AND rt.resource_id = m.id`,
+      `JOIN tag t ON t.id = rt.tag_id`,
+    );
+    conditions.push(`t.name IN (${filter.tags.map(() => '?').join(', ')})`);
+    params.push(...filter.tags);
   }
+
+  if (filter?.agentId) {
+    conditions.push(
+      `EXISTS (SELECT 1 FROM resource_agent ra
+               WHERE ra.resource_type = 'mcp' AND ra.resource_id = m.id AND ra.agent_id = ?)`,
+    );
+    params.push(filter.agentId);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const sql = ['SELECT DISTINCT m.*', 'FROM mcp m', ...joins, where, 'ORDER BY m.name']
+    .filter(Boolean)
+    .join(' ');
+  const rows = db.prepare(sql).all(...params) as McpRow[];
 
   const appliedMcps = db
     .prepare(

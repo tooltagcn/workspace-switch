@@ -101,6 +101,7 @@ import {
   getSetting,
   setSetting,
 } from '@ws/core';
+import type { SkillListFilter, McpListFilter } from '@ws/core';
 import { getSymlinkImpl } from '@ws/core';
 import os from 'node:os';
 import path from 'node:path';
@@ -179,8 +180,8 @@ export function registerIpcHandlers(): void {
   });
 
   // Skill handlers
-  ipcMain.handle('skill:list', () => {
-    try { return listSkills(getDb()); } catch (e) { logger.error('skill:list error:', e); throw e; }
+  ipcMain.handle('skill:list', (_event, filter?: SkillListFilter) => {
+    try { return listSkills(getDb(), filter); } catch (e) { logger.error('skill:list error:', e); throw e; }
   });
   ipcMain.handle('skill:get', (_event, id: string) => getSkill(getDb(), id));
   ipcMain.handle('skill:create', (_event, data) => createSkill(getDb(), data));
@@ -333,7 +334,7 @@ export function registerIpcHandlers(): void {
   });
 
   // MCP handlers
-  ipcMain.handle('mcp:list', () => listMcps(getDb()));
+  ipcMain.handle('mcp:list', (_event, filter?: McpListFilter) => listMcps(getDb(), filter));
   ipcMain.handle('mcp:get', (_event, id: string) => getMcp(getDb(), id));
   ipcMain.handle('mcp:create', (_event, data) => {
     try {

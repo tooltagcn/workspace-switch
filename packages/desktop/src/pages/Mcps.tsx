@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useMcpStore, type McpServer } from '../stores/mcpStore.js';
+import { useAgentStore } from '../stores/agentStore.js';
 import { api } from '../lib/ipc.js';
 import ApplyToAgentDialog from './components/ApplyToAgentDialog.js';
 import type { ApplyResource } from './components/ApplyToAgentDialog.js';
@@ -10,20 +11,7 @@ import McpDebugPanel from '../components/McpDebugPanel.js';
 
 function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose: () => void; onApply: () => void; onDebug: () => void }) {
   const { t } = useTranslation();
-  const { testMcp, testingMcpIds } = useMcpStore();
-  const [showEnv, setShowEnv] = useState(false);
-  const [showTools, setShowTools] = useState(false);
-  const [showPrompts, setShowPrompts] = useState(false);
-  const [tools, setTools] = useState<Array<{ id: string; name: string; description: string | null }>>([]);
-  const [prompts, setPrompts] = useState<Array<{ id: string; name: string; description: string | null }>>([]);
-  const isTesting = testingMcpIds.has(mcp.id);
-
-  useEffect(() => {
-    if (mcp.testStatus === 'passed') {
-      api.getMcpTools(mcp.id).then(setTools).catch(() => {});
-      api.getMcpPrompts(mcp.id).then(setPrompts).catch(() => {});
-    }
-  }, [mcp.id, mcp.testStatus]);
+  const appliedAgents = mcp.applied?.agents ?? [];
 
   const statusColor: Record<string, string> = {
     untested: 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300',
@@ -33,25 +21,18 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96 max-h-[80vh] overflow-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">{mcp.name}</h3>
-        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96 min-w-0 shrink-0 max-h-[80vh] flex flex-col sticky top-6 self-start">
+      <div className="flex justify-between items-start gap-2 mb-4">
+        <h3 className="text-lg font-semibold break-all">{mcp.name}</h3>
+        <button onClick={onClose} className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
       </div>
-      <div className="space-y-3">
+      <div className="flex-1 overflow-auto space-y-3">
         <div>
           <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.testStatus')}</span>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="mt-1">
             <span className={`text-xs px-2 py-0.5 rounded ${statusColor[mcp.testStatus] ?? statusColor.untested}`}>
               {t(`mcp.statusLabels.${mcp.testStatus}` as any)}
             </span>
-            <button
-              onClick={() => testMcp(mcp.id)}
-              disabled={isTesting}
-              className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-            >
-              {isTesting ? t('mcp.testing') : t('mcp.test')}
-            </button>
           </div>
           {mcp.testStatus === 'failed' && mcp.testError && (
             <p className="text-xs text-red-500 dark:text-red-400 mt-1 break-all">{mcp.testError}</p>
@@ -69,89 +50,37 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
         {mcp.command && (
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.command')}</span>
-            <p className="text-sm font-mono mt-1">{mcp.command} {mcp.args.join(' ')}</p>
+            <p className="text-sm font-mono mt-1 break-all">{mcp.command} {mcp.args.join(' ')}</p>
           </div>
         )}
         {mcp.url && (
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.url')}</span>
-            <p className="text-sm font-mono mt-1">{mcp.url}</p>
+            <p className="text-sm font-mono mt-1 break-all">{mcp.url}</p>
           </div>
         )}
         <div>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.description')}</span>
-          <p className="text-sm mt-1">{mcp.description ?? '-'}</p>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('common.description')}</span>
+          <p className="text-sm mt-1 break-all">{mcp.description ?? '-'}</p>
         </div>
-        {Object.keys(mcp.env).length > 0 && (
-          <div>
-            <button
-              onClick={() => setShowEnv(!showEnv)}
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700"
-            >
-              {t('mcp.envVars')} ({Object.keys(mcp.env).length}) {showEnv ? '▾' : '▸'}
-            </button>
-            {showEnv && (
-              <div className="mt-2 space-y-1">
-                {Object.entries(mcp.env).map(([key, _val]) => (
-                  <div key={key} className="flex justify-between text-xs font-mono">
-                    <span className="text-gray-600 dark:text-gray-300">{key}</span>
-                    <span className="text-gray-400 dark:text-gray-500">{t('mcp.masked')}</span>
-                  </div>
-                ))}
-              </div>
+        <div>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.appliedTo')}</span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {appliedAgents.length === 0 ? (
+              <span className="text-sm text-gray-400 dark:text-gray-500">{t('mcp.notApplied')}</span>
+            ) : (
+              appliedAgents.map((agentName) => (
+                <span key={agentName} className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">{agentName}</span>
+              ))
             )}
           </div>
-        )}
-        {mcp.testStatus === 'passed' && (
-          <>
-            <div>
-              <button
-                onClick={() => setShowTools(!showTools)}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700"
-              >
-                {t('mcp.tools')} ({tools.length}) {showTools ? '▾' : '▸'}
-              </button>
-              {showTools && (
-                <div className="mt-2 space-y-1">
-                  {tools.length === 0 ? (
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('mcp.noTools')}</p>
-                  ) : (
-                    tools.map((tool) => (
-                      <div key={tool.id} className="text-xs p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                        <div className="font-mono font-medium text-gray-700 dark:text-gray-200">{tool.name}</div>
-                        {tool.description && <div className="text-gray-500 dark:text-gray-400 mt-0.5">{tool.description}</div>}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-            <div>
-              <button
-                onClick={() => setShowPrompts(!showPrompts)}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700"
-              >
-                {t('mcp.prompts')} ({prompts.length}) {showPrompts ? '▾' : '▸'}
-              </button>
-              {showPrompts && (
-                <div className="mt-2 space-y-1">
-                  {prompts.length === 0 ? (
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('mcp.noPrompts')}</p>
-                  ) : (
-                    prompts.map((p) => (
-                      <div key={p.id} className="text-xs p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                        <div className="font-mono font-medium text-gray-700 dark:text-gray-200">{p.name}</div>
-                        {p.description && <div className="text-gray-500 dark:text-gray-400 mt-0.5">{p.description}</div>}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        </div>
         <div>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{t('common.tags')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.env')}</span>
+          <p className="text-sm mt-1">{Object.keys(mcp.env).length > 0 ? `${Object.keys(mcp.env).length} vars` : '-'}</p>
+        </div>
+        <div>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.tags')}</span>
           <div className="flex flex-wrap gap-1 mt-1">
             {mcp.tags.length === 0 ? (
               <span className="text-sm text-gray-400 dark:text-gray-500">{t('common.none')}</span>
@@ -162,20 +91,20 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
             )}
           </div>
         </div>
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={onDebug}
-            className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm"
-          >
-            {t('mcp.debug')}
-          </button>
-          <button
-            onClick={onApply}
-            className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
-          >
-            {t('skill.apply')}
-          </button>
-        </div>
+      </div>
+      <div className="flex gap-2 mt-4 pt-4 border-t dark:border-gray-700">
+        <button
+          onClick={onDebug}
+          className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm"
+        >
+          {t('mcp.debug')}
+        </button>
+        <button
+          onClick={onApply}
+          className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
+        >
+          {t('skill.apply')}
+        </button>
       </div>
     </div>
   );
@@ -821,6 +750,7 @@ function McpTagManager({ onClose }: { onClose: () => void }) {
 export default function Mcps() {
   const { t } = useTranslation();
   const { mcps, loading, fetchMcps, deleteMcp, testMcp, testingMcpIds, batchTesting, batchProgress, startBatchTest, syncMcp } = useMcpStore();
+  const { agents, fetchAgents } = useAgentStore();
   const [selectedMcp, setSelectedMcp] = useState<McpServer | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingMcp, setEditingMcp] = useState<McpServer | null>(null);
@@ -836,6 +766,7 @@ export default function Mcps() {
   const [bulkUnapplyResources, setBulkUnapplyResources] = useState<ApplyResource[] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('');
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
 
   const allTags = Array.from(new Set(mcps.flatMap((m) => m.tags))).sort((a, b) => a.localeCompare(b));
 
@@ -908,8 +839,12 @@ export default function Mcps() {
   };
 
   useEffect(() => {
-    fetchMcps();
-  }, [fetchMcps]);
+    fetchAgents();
+  }, [fetchAgents]);
+
+  useEffect(() => {
+    fetchMcps({ agentId: selectedAgentId || undefined });
+  }, [fetchMcps, selectedAgentId]);
 
   if (loading) return <div>{t('common.loading')}</div>;
 
@@ -1006,15 +941,25 @@ export default function Mcps() {
               <option key={tag} value={tag}>{tag}</option>
             ))}
           </select>
+          <select
+            value={selectedAgentId}
+            onChange={(e) => setSelectedAgentId(e.target.value)}
+            className="px-3 py-1.5 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">{t('common.allAgents')}</option>
+            {agents.map((agent) => (
+              <option key={agent.id} value={agent.id}>{agent.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
       <div className="flex gap-6">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 overflow-x-auto">
           {filteredMcps.length === 0 ? (
             <p className="text-gray-600 dark:text-gray-300">{t('common.noData')}</p>
           ) : (
-            <table className="w-full bg-white dark:bg-gray-800 rounded-lg shadow">
+            <table className="w-full bg-white dark:bg-gray-800 rounded-lg shadow" style={{ tableLayout: 'fixed' }}>
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th className="px-4 py-2 text-left w-8">
@@ -1031,7 +976,7 @@ export default function Mcps() {
                   <th className="px-4 py-2 text-left">{t('mcp.tags')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.command')}</th>
                   <th className="px-4 py-2 text-left">{t('mcp.env')}</th>
-                  <th className="px-4 py-2 text-left">{t('common.actions')}</th>
+                  <th className="px-4 py-2 text-left w-56">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1065,11 +1010,14 @@ export default function Mcps() {
                     <td className="px-4 py-2">
                       {mcp.applied && mcp.applied.agents.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {mcp.applied.agents.map((agentName) => (
-                            <span key={agentName} className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">
+                          {mcp.applied.agents.slice(0, 3).map((agentName) => (
+                            <span key={agentName} className="text-xs px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">
                               {agentName}
                             </span>
                           ))}
+                          {mcp.applied.agents.length > 3 && (
+                            <span className="text-xs text-gray-400 dark:text-gray-500">+{mcp.applied.agents.length - 3}</span>
+                          )}
                           {mcp.applied.outOfSync && (
                             <button
                               onClick={(e) => {
@@ -1095,30 +1043,30 @@ export default function Mcps() {
                         {mcp.tags.length > 3 && <span className="text-xs text-gray-400 dark:text-gray-500">+{mcp.tags.length - 3}</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-2 font-mono text-sm text-gray-600 dark:text-gray-300">
+                    <td className="px-4 py-2 font-mono text-sm text-gray-600 dark:text-gray-300 truncate max-w-[200px]" title={mcp.command ?? mcp.url ?? ''}>
                       {mcp.command ?? mcp.url ?? '-'}
                     </td>
                     <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
                       {Object.keys(mcp.env).length > 0 ? `${Object.keys(mcp.env).length} vars` : '-'}
                     </td>
                     <td className="px-4 py-2">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <button
                           onClick={(e) => { e.stopPropagation(); testMcp(mcp.id); }}
                           disabled={testingMcpIds.has(mcp.id)}
-                          className="text-sm text-green-600 dark:text-green-400 hover:text-green-800 disabled:opacity-50"
+                          className="text-sm text-green-600 dark:text-green-400 hover:text-green-800 disabled:opacity-50 whitespace-nowrap"
                         >
                           {testingMcpIds.has(mcp.id) ? t('mcp.testing') : t('mcp.test')}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setDebugMcp(mcp); }}
-                          className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800"
+                          className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 whitespace-nowrap"
                         >
                           {t('mcp.debug')}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditingMcp(mcp); }}
-                          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800"
+                          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 whitespace-nowrap"
                         >
                           {t('common.edit')}
                         </button>
@@ -1130,7 +1078,7 @@ export default function Mcps() {
                               if (selectedMcp?.id === mcp.id) setSelectedMcp(null);
                             }
                           }}
-                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-800"
+                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 whitespace-nowrap"
                         >
                           {t('common.delete')}
                         </button>
@@ -1169,7 +1117,10 @@ export default function Mcps() {
         <ApplyToAgentDialog
           resourceType="mcp"
           resources={[{ id: selectedMcp.id, name: selectedMcp.name }]}
-          onClose={() => setShowApplyDialog(false)}
+          onClose={() => {
+            setShowApplyDialog(false);
+            fetchMcps();
+          }}
         />
       )}
 

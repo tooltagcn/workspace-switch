@@ -24,7 +24,7 @@ import {
   fixMcpConsistency,
   createSecretStore,
 } from '@ws/core';
-import type { McpTransport, ScannedMcp, WsMcpSchema } from '@ws/core';
+import type { McpTransport, ScannedMcp, WsMcpSchema, McpListFilter } from '@ws/core';
 import { createContext, cleanupContext } from '../lib/context.js';
 import { outputJson, outputTable, success, fail } from '../lib/output.js';
 
@@ -37,10 +37,13 @@ export function registerMcp(program: Command): void {
     .command('list')
     .description('List MCP servers')
     .option('--tag <tag>', 'Filter by tag')
+    .option('--agent <agentId>', 'Filter by agent')
     .action(async (options, cmd) => {
       const ctx = createContext(cmd);
       try {
-        const filter = options.tag ? { tags: [options.tag] } : undefined;
+        const filter: McpListFilter = {};
+        if (options.tag) filter.tags = [options.tag];
+        if (options.agent) filter.agentId = options.agent;
         const mcps = listMcps(ctx.db, filter);
 
         const appliedMcps = ctx.db

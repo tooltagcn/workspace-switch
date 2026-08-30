@@ -24,4 +24,5 @@ export interface UpdateSkillInput {
 
 export interface SkillListFilter {
   tags?: string[];
+  agentId?: string;
 }

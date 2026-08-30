@@ -279,6 +279,39 @@ exports[`Agent template rendering snapshots > Hermes (hermes) > renders stdio MC
 "
 `;
 
+exports[`Agent template rendering snapshots > Kiro CLI (kiro-cli) > renders SSE MCP snapshot 1`] = `
+"{
+  "mcpServers": {
+    "remote-server": {
+      "url": "http://localhost:3000/sse",
+      "env": {
+        "API_KEY": "\${API_KEY}"
+      }
+    }
+  }
+}
+"
+`;
+
+exports[`Agent template rendering snapshots > Kiro CLI (kiro-cli) > renders stdio MCP snapshot 1`] = `
+"{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "\${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+"
+`;
+
 exports[`Agent template rendering snapshots > OpenClaude (openclaude) > renders SSE MCP snapshot 1`] = `
 "{
   "mcpServers": {

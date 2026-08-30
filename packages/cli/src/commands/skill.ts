@@ -22,7 +22,7 @@ import {
   checkSkillConsistency,
   fixSkillConsistency,
 } from '@ws/core';
-import type { ScannedSkill } from '@ws/core';
+import type { ScannedSkill, SkillListFilter } from '@ws/core';
 import { createContext, cleanupContext } from '../lib/context.js';
 import { outputJson, outputTable, success, fail, verbose } from '../lib/output.js';
 
@@ -39,7 +39,9 @@ export function registerSkill(program: Command): void {
     .action(async (options, cmd) => {
       const ctx = createContext(cmd);
       try {
-        const filter = options.tag ? { tags: [options.tag] } : undefined;
+        const filter: SkillListFilter = {};
+        if (options.tag) filter.tags = [options.tag];
+        if (options.agent) filter.agentId = options.agent;
         const skills = listSkills(ctx.db, filter);
 
         if (ctx.json) {

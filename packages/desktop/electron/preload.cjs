@@ -13,7 +13,7 @@ const api = {
   listTemplates: () => ipcRenderer.invoke('template:list'),
 
   // Skill operations
-  listSkills: () => ipcRenderer.invoke('skill:list'),
+  listSkills: (filter) => ipcRenderer.invoke('skill:list', filter),
   getSkill: (id) => ipcRenderer.invoke('skill:get', id),
   createSkill: (data) => ipcRenderer.invoke('skill:create', data),
   updateSkill: (id, data) => ipcRenderer.invoke('skill:update', id, data),
@@ -39,7 +39,7 @@ const api = {
   openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
 
   // MCP operations
-  listMcps: () => ipcRenderer.invoke('mcp:list'),
+  listMcps: (filter) => ipcRenderer.invoke('mcp:list', filter),
   getMcp: (id) => ipcRenderer.invoke('mcp:get', id),
   createMcp: (data) => ipcRenderer.invoke('mcp:create', data),
   updateMcp: (id, data) => ipcRenderer.invoke('mcp:update', id, data),

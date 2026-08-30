@@ -19,6 +19,7 @@ const TEMPLATE_FILES = [
   'droid.json',
   'aider.json',
   'codebuddy.json',
+  'kiro-cli.json',
 ];
 
 let cachedTemplates: AgentTemplate[] | null = null;

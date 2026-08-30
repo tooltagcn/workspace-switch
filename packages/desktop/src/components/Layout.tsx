@@ -45,6 +45,7 @@ export default function Layout() {
     { path: '/mcps', label: t('nav.mcps') },
     { path: '/projects', label: t('nav.projects') },
     { path: '/providers', label: t('nav.providers') },
+    { path: '/grammar', label: t('nav.grammar') },
     { path: '/settings', label: t('nav.settings') },
   ];
 

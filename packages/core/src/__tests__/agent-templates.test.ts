@@ -7,9 +7,9 @@ import { initBuiltinAgents } from '../agent/init-builtins.js';
 import { listAgents } from '../agent/registry.js';
 
 describe('Agent templates', () => {
-  it('loads 15 built-in templates', () => {
+  it('loads 16 built-in templates', () => {
     const templates = loadTemplates();
-    expect(templates).toHaveLength(15);
+    expect(templates).toHaveLength(16);
     const ids = templates.map((t) => t.id).sort();
     expect(ids).toEqual([
       'aider',
@@ -22,6 +22,7 @@ describe('Agent templates', () => {
       'factory',
       'gemini-cli',
       'hermes',
+      'kiro-cli',
       'openclaude',
       'opencode',
       'qoder',
@@ -92,10 +93,10 @@ describe('initBuiltinAgents', () => {
     db.close();
   });
 
-  it('creates all 15 builtin agents', () => {
+  it('creates all 16 builtin agents', () => {
     initBuiltinAgents(db, '/Users/test');
     const agents = listAgents(db);
-    expect(agents).toHaveLength(15);
+    expect(agents).toHaveLength(16);
     for (const a of agents) {
       expect(a.builtin).toBe(true);
     }
@@ -112,6 +113,6 @@ describe('initBuiltinAgents', () => {
     initBuiltinAgents(db, '/Users/test');
     initBuiltinAgents(db, '/Users/test');
     const agents = listAgents(db);
-    expect(agents).toHaveLength(15);
+    expect(agents).toHaveLength(16);
   });
 });

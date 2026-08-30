@@ -8,6 +8,7 @@ import Mcps from './pages/Mcps.js';
 import Providers from './pages/Providers.js';
 import Settings from './pages/Settings.js';
 import Projects from './pages/Projects.js';
+import Grammar from './pages/Grammar.js';
 import { useUiStore } from './stores/uiStore.js';
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="mcps" element={<Mcps />} />
         <Route path="projects" element={<Projects />} />
         <Route path="providers" element={<Providers />} />
+        <Route path="grammar" element={<Grammar />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

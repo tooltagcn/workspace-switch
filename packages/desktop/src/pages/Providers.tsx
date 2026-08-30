@@ -41,33 +41,35 @@ function ProviderDetail({
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">{provider.name}</h3>
-        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96 min-w-0 shrink-0 max-h-[80vh] flex flex-col sticky top-6 self-start">
+      <div className="flex justify-between items-start gap-2 mb-4">
+        <h3 className="text-lg font-semibold break-all">{provider.name}</h3>
+        <button onClick={onClose} className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600">
           ✕
         </button>
       </div>
-      <div className="space-y-2 mb-4">
-        {fields.map((f) => (
-          <div key={f.label} className="flex justify-between text-sm">
-            <span className="text-gray-500 dark:text-gray-400">{f.label}</span>
-            <span className="font-mono text-right max-w-[200px] truncate">{f.value}</span>
-          </div>
-        ))}
-      </div>
-      {provider.models.length > 0 && (
-        <div className="mb-4">
-          <span className="text-sm text-gray-500 dark:text-gray-400">{t('provider.models')}</span>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {provider.models.map((m) => (
-              <span key={m} className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-900 rounded">
-                {m}
-              </span>
-            ))}
-          </div>
+      <div className="flex-1 overflow-auto">
+        <div className="space-y-2 mb-4">
+          {fields.map((f) => (
+            <div key={f.label} className="flex justify-between text-sm">
+              <span className="text-gray-500 dark:text-gray-400">{f.label}</span>
+              <span className="font-mono text-right max-w-[200px] truncate">{f.value}</span>
+            </div>
+          ))}
         </div>
-      )}
+        {provider.models.length > 0 && (
+          <div className="mb-4">
+            <span className="text-sm text-gray-500 dark:text-gray-400">{t('provider.models')}</span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {provider.models.map((m) => (
+                <span key={m} className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-900 rounded">
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       {keytarOk && (
         <div className="border-t dark:border-gray-700 pt-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
@@ -286,7 +288,7 @@ export default function Providers() {
       </div>
 
       <div className="flex gap-6">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 overflow-x-auto">
           {providers.length === 0 ? (
             <p className="text-gray-600 dark:text-gray-300">{t('provider.noProviders')}</p>
           ) : (

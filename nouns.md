@@ -8,7 +8,7 @@
 |------|-----------|
 | **Master Workspace** | 用户信任目录，Skill/MCP 唯一可信源。DB: `~/.workspace_switch/ws.db`，结构: `<ws>/skills/`, `<ws>/mcp/` |
 | **Agent** | AI 编码工具实例（Claude Code, Codex, Cursor…）。关键属性: `configDirName`, `skillDir`, `mcpFile`, `mcpField`, `enabled` |
-| **Agent Template** | 静态 JSON，描述 Agent 配置结构。内置 14 个模板 |
+| **Agent Template** | 静态 JSON，描述 Agent 配置结构。内置 16 个模板 |
 | **Skill** | 可复用指令包，目录形式存于 `<ws>/skills/`。Apply 时创建 **symlink**（非拷贝）。支持 Tag、Git/本地/归档导入、Registry 搜索 |
 | **MCP** | MCP Server 配置，JSON Schema 存于 `<ws>/mcp/`。Apply 时**模板渲染 + JSON 合并**（非 symlink）。传输: stdio/sse/http |
 | **Provider** | LLM API 提供商配置。API Key 存 Keychain(keytar)，SQLite 只存引用名 |

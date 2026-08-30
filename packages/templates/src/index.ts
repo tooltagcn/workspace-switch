@@ -30,6 +30,7 @@ const TEMPLATE_FILES = [
   'droid.json',
   'aider.json',
   'codebuddy.json',
+  'kiro-cli.json',
 ];
 
 const thisDir = path.dirname(fileURLToPath(import.meta.url));

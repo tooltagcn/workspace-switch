@@ -65,7 +65,7 @@ workspace-switch/
 - **Project 管理** — 按项目启用/禁用 Agent、按项目应用 Skill
 - **全局搜索** — `Cmd+K` / `Ctrl+K` 打开，按类型分组，键盘导航
 - **设置页** — 工作区路径、主题、语言、API Key 管理
-- **14 个内置 Agent 模板** — Claude Code、Codex、Cursor、Copilot、Qoder CN、OpenCode、OpenClaude、Hermes、Qwen Code、Gemini CLI、Qoder、Factory、Droid、Aider
+- **16 个内置 Agent 模板** — Claude Code、Codex、Cursor、Copilot、Qoder CN、OpenCode、OpenClaude、Hermes、Qwen Code、Gemini CLI、Qoder、Factory、Droid、Aider、CodeBuddy、Kiro CLI
 
 ### 方式一：源码直接运行（开发模式）
 

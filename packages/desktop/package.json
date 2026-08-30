@@ -35,7 +35,7 @@
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -b && cp electron/preload.cjs dist/electron/preload.cjs && electron .\"",
     "electron:build": "pnpm --filter @ws/core build && tsc -b && vite build && cp electron/preload.cjs dist/electron/preload.cjs && electron-builder",
-    "postinstall": "node -e \"try{require('electron-rebuild')}catch(e){process.exit(0)}\" && electron-rebuild -f -w better-sqlite3 -w keytar || true",
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3 -w keytar",
     "typecheck": "tsc -b"
   },
   "dependencies": {

@@ -49,23 +49,32 @@ function getOrCreateTag(db: Database.Database, tagName: string): string {
 }
 
 export function listSkills(db: Database.Database, filter?: SkillListFilter): Skill[] {
-  let rows: SkillRow[];
+  const joins: string[] = [];
+  const conditions: string[] = [];
+  const params: unknown[] = [];
 
   if (filter?.tags && filter.tags.length > 0) {
-    const placeholders = filter.tags.map(() => '?').join(', ');
-    const params = [...filter.tags];
-    rows = db
-      .prepare(
-        `SELECT DISTINCT s.* FROM skill s
-         JOIN resource_tag rt ON rt.resource_type = 'skill' AND rt.resource_id = s.id
-         JOIN tag t ON t.id = rt.tag_id
-         WHERE t.name IN (${placeholders})
-         ORDER BY s.name`,
-      )
-      .all(...params) as SkillRow[];
-  } else {
-    rows = db.prepare('SELECT * FROM skill ORDER BY name').all() as SkillRow[];
+    joins.push(
+      `JOIN resource_tag rt ON rt.resource_type = 'skill' AND rt.resource_id = s.id`,
+      `JOIN tag t ON t.id = rt.tag_id`,
+    );
+    conditions.push(`t.name IN (${filter.tags.map(() => '?').join(', ')})`);
+    params.push(...filter.tags);
   }
+
+  if (filter?.agentId) {
+    conditions.push(
+      `EXISTS (SELECT 1 FROM resource_agent ra
+               WHERE ra.resource_type = 'skill' AND ra.resource_id = s.id AND ra.agent_id = ?)`,
+    );
+    params.push(filter.agentId);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const sql = ['SELECT DISTINCT s.*', 'FROM skill s', ...joins, where, 'ORDER BY s.name']
+    .filter(Boolean)
+    .join(' ');
+  const rows = db.prepare(sql).all(...params) as SkillRow[];
 
   return rows.map((row) => rowToSkill(row, getTagsForSkill(db, row.id)));
 }

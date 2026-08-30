@@ -10,6 +10,7 @@
     "mcps": "MCP Servers",
     "providers": "Providers",
     "projects": "Projects",
+    "grammar": "Grammar",
     "settings": "Settings"
   },
   "common": {
@@ -50,7 +51,8 @@
     "sort": "Sort",
     "tags": "Tags",
     "filterByTag": "Filter by tag",
-    "allTags": "All tags"
+    "allTags": "All tags",
+    "allAgents": "All agents"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -475,5 +477,13 @@
       "imported": "Imported {{count}} item(s) into the Master Workspace config.",
       "allSynced": "All scanned config is already synced to the Master Workspace."
     }
+  },
+  "grammar": {
+    "title": "Common Conjunctions Table",
+    "description": "Conjunctions generally include adversative, hypothetical, conditional relationships, etc. Combining two or more sentences that are closely related in meaning is called a compound sentence, also known as a conjunction sentence. Compound sentences are usually connected by some conjunction words.",
+    "relationship": "Relationship Type",
+    "description": "Description",
+    "conjunctions": "Conjunctions",
+    "example": "Example"
   }
 }

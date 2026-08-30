@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { migrate } from '../db/migrate.js';
+import { createAgent } from '../agent/registry.js';
 import {
   listSkills,
   getSkill,
@@ -141,6 +142,37 @@ describe('Skill tags', () => {
   it('returns empty for tag filter with no matches', () => {
     createSkill(db, { name: 's1', tags: ['a'] });
     expect(listSkills(db, { tags: ['nonexistent'] })).toEqual([]);
+  });
+
+  it('filters skills by agent', () => {
+    const claude = createAgent(db, { id: 'claude', name: 'Claude', configDirName: '.claude' });
+    const codex = createAgent(db, { id: 'codex', name: 'Codex', configDirName: '.codex' });
+    const applied = createSkill(db, { name: 'applied-skill' });
+    createSkill(db, { name: 'unapplied-skill' });
+    db
+      .prepare(
+        "INSERT INTO resource_agent (resource_type, resource_id, agent_id, symlinked) VALUES ('skill', ?, ?, 1)",
+      )
+      .run(applied.id, claude.id);
+
+    expect(listSkills(db, { agentId: claude.id }).map((s) => s.name)).toEqual(['applied-skill']);
+    expect(listSkills(db, { agentId: codex.id })).toEqual([]);
+    expect(listSkills(db, { agentId: 'nonexistent' })).toEqual([]);
+  });
+
+  it('filters skills by agent and tag together', () => {
+    const claude = createAgent(db, { id: 'claude', name: 'Claude', configDirName: '.claude' });
+    const tagged = createSkill(db, { name: 'tagged-applied', tags: ['frontend'] });
+    createSkill(db, { name: 'tagged-unapplied', tags: ['frontend'] });
+    createSkill(db, { name: 'applied-other-tag', tags: ['backend'] });
+    db
+      .prepare(
+        "INSERT INTO resource_agent (resource_type, resource_id, agent_id, symlinked) VALUES ('skill', ?, ?, 1)",
+      )
+      .run(tagged.id, claude.id);
+
+    const result = listSkills(db, { agentId: claude.id, tags: ['frontend'] });
+    expect(result.map((s) => s.name)).toEqual(['tagged-applied']);
   });
 
   it('addTag throws for non-existent skill', () => {

@@ -22,12 +22,12 @@ function AgentDetail({ agent, onClose }: { agent: Agent; onClose: () => void }) 
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">{agent.name}</h3>
-        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96 min-w-0 shrink-0 max-h-[80vh] flex flex-col sticky top-6 self-start">
+      <div className="flex justify-between items-start gap-2 mb-4">
+        <h3 className="text-lg font-semibold break-all">{agent.name}</h3>
+        <button onClick={onClose} className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
       </div>
-      <div className="space-y-2">
+      <div className="flex-1 overflow-auto space-y-2">
         {fields.map((f) => (
           <div key={f.label} className="flex justify-between text-sm">
             <span className="text-gray-500 dark:text-gray-400">{f.label}</span>
@@ -524,7 +524,7 @@ export default function Agents() {
       </div>
 
       <div className="flex gap-6">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 overflow-x-auto">
           {agents.length === 0 ? (
             <p className="text-gray-600 dark:text-gray-300">{t('common.noData')}</p>
           ) : (

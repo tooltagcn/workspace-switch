@@ -47,6 +47,7 @@ export interface UpdateMcpInput {
 
 export interface McpListFilter {
   tags?: string[];
+  agentId?: string;
 }
 
 export interface McpTestResult {

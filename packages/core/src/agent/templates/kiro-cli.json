@@ -1,0 +1,20 @@
+{
+  "id": "kiro-cli",
+  "name": "Kiro CLI",
+  "configDirName": ".kiro",
+  "mcpFile": "settings/mcp.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "kiro-cli",
+  "targetFormat": "json-map",
+  "entryFormat": {
+    "format": "json-map",
+    "envTransform": "${VAR}",
+    "fieldMapping": {
+      "command": "command",
+      "args": "args",
+      "url": "url",
+      "env": "env"
+    }
+  }
+}

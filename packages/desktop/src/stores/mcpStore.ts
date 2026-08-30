@@ -30,6 +30,11 @@ export interface BatchTestProgress {
   currentMcpName: string;
 }
 
+export interface McpListFilter {
+  tags?: string[];
+  agentId?: string;
+}
+
 interface McpStore {
   mcps: McpServer[];
   loading: boolean;
@@ -37,7 +42,8 @@ interface McpStore {
   testingMcpIds: Set<string>;
   batchTesting: boolean;
   batchProgress: BatchTestProgress | null;
-  fetchMcps: () => Promise<void>;
+  filter: McpListFilter;
+  fetchMcps: (filter?: McpListFilter) => Promise<void>;
   createMcp: (data: unknown) => Promise<McpServer>;
   updateMcp: (id: string, data: unknown) => Promise<McpServer>;
   deleteMcp: (id: string) => Promise<void>;
@@ -62,10 +68,12 @@ export const useMcpStore = create<McpStore>((set, get) => ({
   testingMcpIds: new Set(),
   batchTesting: false,
   batchProgress: null,
-  fetchMcps: async () => {
-    set({ loading: true, error: null });
+  filter: {},
+  fetchMcps: async (filter) => {
+    const active = filter ?? get().filter;
+    set({ loading: true, error: null, filter: active });
     try {
-      const mcps = await api.listMcps();
+      const mcps = await api.listMcps(active);
       set({ mcps, loading: false });
     } catch (err) {
       set({ error: String(err), loading: false });

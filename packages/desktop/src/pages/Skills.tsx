@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useSkillStore, type Skill } from '../stores/skillStore.js';
+import { useAgentStore } from '../stores/agentStore.js';
 import { api } from '../lib/ipc.js';
 import ApplyToAgentDialog from './components/ApplyToAgentDialog.js';
 import type { ApplyResource } from './components/ApplyToAgentDialog.js';
@@ -9,19 +10,43 @@ import BulkActionBar from '../components/BulkActionBar.js';
 import SkillDiscoveryPanel from './components/SkillDiscoveryPanel.js';
 import ApplyScanWizard from './components/ApplyScanWizard.js';
 
-function SkillDetail({ skill, onClose, onApply }: { skill: Skill; onClose: () => void; onApply: () => void }) {
+type AppliedAgent = { agentId: string; agentName: string };
+
+function SkillDetail({
+  skill,
+  appliedAgents,
+  onClose,
+  onApply,
+}: {
+  skill: Skill;
+  appliedAgents: AppliedAgent[];
+  onClose: () => void;
+  onApply: () => void;
+}) {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">{skill.name}</h3>
-        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96 min-w-0 shrink-0 max-h-[80vh] flex flex-col sticky top-6 self-start">
+      <div className="flex justify-between items-start gap-2 mb-4">
+        <h3 className="text-lg font-semibold break-all">{skill.name}</h3>
+        <button onClick={onClose} className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600">✕</button>
       </div>
-      <div className="space-y-3">
+      <div className="flex-1 overflow-auto space-y-3">
         <div>
           <span className="text-sm text-gray-500 dark:text-gray-400">{t('skill.description')}</span>
-          <p className="text-sm mt-1">{skill.description ?? '-'}</p>
+          <p className="text-sm mt-1 break-all">{skill.description ?? '-'}</p>
+        </div>
+        <div>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('skill.appliedAgents')}</span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {appliedAgents.length === 0 ? (
+              <span className="text-sm text-gray-400 dark:text-gray-500">{t('skill.notApplied')}</span>
+            ) : (
+              appliedAgents.map((agent) => (
+                <span key={agent.agentId} className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">{agent.agentName}</span>
+              ))
+            )}
+          </div>
         </div>
         <div>
           <span className="text-sm text-gray-500 dark:text-gray-400">{t('skill.tags')}</span>
@@ -39,9 +64,11 @@ function SkillDetail({ skill, onClose, onApply }: { skill: Skill; onClose: () =>
           <span className="text-sm text-gray-500 dark:text-gray-400">{t('skill.sourcePath')}</span>
           <p className="text-sm font-mono mt-1 truncate">{skill.sourcePath ?? '-'}</p>
         </div>
+      </div>
+      <div className="mt-4 pt-4 border-t dark:border-gray-700">
         <button
           onClick={onApply}
-          className="w-full mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
+          className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
         >
           {t('skill.apply')}
         </button>
@@ -682,6 +709,7 @@ function SkillDoctorDialog({ onClose }: { onClose: () => void }) {
 export default function Skills() {
   const { t } = useTranslation();
   const { skills, loading, fetchSkills, deleteSkill } = useSkillStore();
+  const { agents, fetchAgents } = useAgentStore();
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [showAddWizard, setShowAddWizard] = useState(false);
   const [showTagManager, setShowTagManager] = useState(false);
@@ -691,6 +719,7 @@ export default function Skills() {
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('');
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [bulkAction, setBulkAction] = useState<'tag' | 'apply' | 'unapply' | 'delete' | null>(null);
@@ -749,11 +778,12 @@ export default function Skills() {
   };
 
   useEffect(() => {
-    const loadAll = async () => {
-      await fetchSkills();
-    };
-    loadAll();
-  }, [fetchSkills]);
+    fetchAgents();
+  }, [fetchAgents]);
+
+  useEffect(() => {
+    fetchSkills({ agentId: selectedAgentId || undefined });
+  }, [fetchSkills, selectedAgentId]);
 
   useEffect(() => {
     if (skills.length === 0) return;
@@ -841,10 +871,20 @@ export default function Skills() {
             <option key={tag} value={tag}>{tag}</option>
           ))}
         </select>
+        <select
+          value={selectedAgentId}
+          onChange={(e) => setSelectedAgentId(e.target.value)}
+          className="px-3 py-2 text-sm border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        >
+          <option value="">{t('common.allAgents')}</option>
+          {agents.map((agent) => (
+            <option key={agent.id} value={agent.id}>{agent.name}</option>
+          ))}
+        </select>
       </div>
 
       <div className="flex gap-6">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 overflow-x-auto">
           {filtered.length === 0 ? (
             <p className="text-gray-600 dark:text-gray-300">{t('common.noData')}</p>
           ) : (
@@ -924,7 +964,12 @@ export default function Skills() {
         </div>
 
         {selectedSkill && (
-          <SkillDetail skill={selectedSkill} onClose={() => setSelectedSkill(null)} onApply={() => setShowApplyDialog(true)} />
+          <SkillDetail
+            skill={selectedSkill}
+            appliedAgents={appliedAgentsMap.get(selectedSkill.id) ?? []}
+            onClose={() => setSelectedSkill(null)}
+            onApply={() => setShowApplyDialog(true)}
+          />
         )}
       </div>
 
@@ -937,7 +982,10 @@ export default function Skills() {
         <ApplyToAgentDialog
           resourceType="skill"
           resources={[{ id: selectedSkill.id, name: selectedSkill.name }]}
-          onClose={() => setShowApplyDialog(false)}
+          onClose={() => {
+            setShowApplyDialog(false);
+            fetchSkills();
+          }}
         />
       )}
 

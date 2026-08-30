@@ -10,6 +10,7 @@
     "mcps": "MCP 服务器",
     "providers": "提供商",
     "projects": "项目",
+    "grammar": "关联词",
     "settings": "设置"
   },
   "common": {
@@ -50,7 +51,8 @@
     "sort": "排序",
     "tags": "标签",
     "filterByTag": "按标签筛选",
-    "allTags": "全部标签"
+    "allTags": "全部标签",
+    "allAgents": "全部 Agent"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -475,5 +477,13 @@
       "imported": "已将 {{count}} 项导入主工作区配置。",
       "allSynced": "所有扫描到的配置均已同步到主工作区。"
     }
+  },
+  "grammar": {
+    "title": "常规关联词表格",
+    "description": "关联词一般分转折关系、假设关系、条件关系等。把两个或两个以上在意义上有密切联系的句子组合在一起，叫复句，也叫关联句。复句通常用一些关联词语来连接。",
+    "relationship": "关系类型",
+    "description": "说明",
+    "conjunctions": "关联词",
+    "example": "示例"
   }
 }

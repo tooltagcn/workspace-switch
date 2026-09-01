@@ -8,6 +8,7 @@ import type { ApplyResource } from './components/ApplyToAgentDialog.js';
 import UnapplyFromAgentDialog from './components/UnapplyFromAgentDialog.js';
 import BulkActionBar from '../components/BulkActionBar.js';
 import McpDebugPanel from '../components/McpDebugPanel.js';
+import McpEnvEditor, { buildEnvPayload, rowsFromEnv, isEnvRef, type EnvVarRow } from '../components/McpEnvEditor.js';
 
 function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose: () => void; onApply: () => void; onDebug: () => void }) {
   const { t } = useTranslation();
@@ -76,8 +77,18 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
           </div>
         </div>
         <div>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.env')}</span>
-          <p className="text-sm mt-1">{Object.keys(mcp.env).length > 0 ? `${Object.keys(mcp.env).length} vars` : '-'}</p>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.envVars')}</span>
+          {Object.keys(mcp.env).length === 0 ? (
+            <p className="text-sm mt-1 text-gray-400 dark:text-gray-500">-</p>
+          ) : (
+            <div className="mt-1 space-y-1">
+              {Object.entries(mcp.env).map(([key, value]) => (
+                <p key={key} className="text-xs font-mono break-all">
+                  {key}={isEnvRef(value) ? t('mcp.masked') : value}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.tags')}</span>
@@ -121,6 +132,7 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
     args: '',
     description: '',
   });
+  const [envRows, setEnvRows] = useState<EnvVarRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const updateForm = (patch: Partial<typeof form>) => {
@@ -135,6 +147,7 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
       setError(t('mcp.errors.duplicateName', { name: trimmed }));
       return;
     }
+    const { env, secretEnv } = buildEnvPayload(envRows);
     try {
       await createMcp({
         name: trimmed,
@@ -142,6 +155,8 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
         command: form.transport === 'stdio' ? form.command : null,
         url: form.transport !== 'stdio' ? form.url : null,
         args: form.args ? form.args.split(' ').filter(Boolean) : [],
+        env,
+        ...(Object.keys(secretEnv).length > 0 ? { secretEnv } : {}),
         description: form.description || null,
       });
       onClose();
@@ -227,6 +242,7 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
               className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <McpEnvEditor rows={envRows} onChange={setEnvRows} />
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>
@@ -254,6 +270,7 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
     args: mcp.args.join(' '),
     description: mcp.description ?? '',
   });
+  const [envRows, setEnvRows] = useState<EnvVarRow[]>(rowsFromEnv(mcp.env));
   const [error, setError] = useState<string | null>(null);
 
   const updateForm = (patch: Partial<typeof form>) => {
@@ -271,6 +288,7 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
       setError(t('mcp.errors.duplicateName', { name: trimmed }));
       return;
     }
+    const { env, secretEnv } = buildEnvPayload(envRows, mcp.env);
     try {
       await updateMcp(mcp.id, {
         name: trimmed,
@@ -278,6 +296,8 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
         command: form.transport === 'stdio' ? form.command : null,
         url: form.transport !== 'stdio' ? form.url : null,
         args: form.args ? form.args.split(' ').filter(Boolean) : [],
+        env,
+        ...(Object.keys(secretEnv).length > 0 ? { secretEnv } : {}),
         description: form.description || null,
       });
       onClose();
@@ -360,6 +380,7 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
               className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <McpEnvEditor rows={envRows} onChange={setEnvRows} />
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>

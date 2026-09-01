@@ -4,10 +4,41 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { randomUUID } from 'node:crypto';
-import type { McpServer, McpTestResult, McpTool, McpPrompt, TestMcpOptions, McpTestReport, BatchTestProgress } from './types.js';
+import type { McpServer, McpTestResult, McpTool, McpPrompt, TestMcpOptions, McpTestReport, BatchTestProgress, SecretStore } from './types.js';
 import { getMcp, listMcps, saveTestResult, saveTools, savePrompts } from './manager.js';
 
-function createTransport(mcp: McpServer) {
+const ENV_REF_PREFIX = 'env:';
+
+/**
+ * Resolves `env:VAR` references (Keychain-backed secrets) into real values.
+ * Throws when a reference cannot be resolved, so the failure surfaces as a test error
+ * instead of the child process silently receiving the literal `env:VAR` string.
+ */
+export async function resolveEnvSecrets(
+  env: Record<string, string>,
+  mcpName: string,
+  secretStore?: SecretStore,
+): Promise<Record<string, string>> {
+  const resolved: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (!value.startsWith(ENV_REF_PREFIX)) {
+      resolved[key] = value;
+      continue;
+    }
+    if (!secretStore) {
+      throw new Error(`No secret store available to resolve environment variable "${key}"`);
+    }
+    const varName = value.slice(ENV_REF_PREFIX.length);
+    const secret = await secretStore.getSecret(mcpName, varName);
+    if (secret === null) {
+      throw new Error(`Secret not found for environment variable "${key}" (MCP "${mcpName}")`);
+    }
+    resolved[key] = secret;
+  }
+  return resolved;
+}
+
+async function createTransport(mcp: McpServer, secretStore?: SecretStore) {
   switch (mcp.transport) {
     case 'sse':
       if (!mcp.url) throw new Error('SSE transport requires a URL');
@@ -16,13 +47,15 @@ function createTransport(mcp: McpServer) {
       if (!mcp.url) throw new Error('HTTP transport requires a URL');
       return new StreamableHTTPClientTransport(new URL(mcp.url));
     case 'stdio':
-    default:
+    default: {
       if (!mcp.command) throw new Error('stdio transport requires a command');
+      const env = await resolveEnvSecrets(mcp.env, mcp.name, secretStore);
       return new StdioClientTransport({
         command: mcp.command,
         args: mcp.args,
-        env: { ...process.env as Record<string, string>, ...mcp.env },
+        env: { ...process.env as Record<string, string>, ...env },
       });
+    }
   }
 }
 
@@ -41,12 +74,13 @@ export async function testMcpConnection(
 ): Promise<McpTestReport> {
   const timeout = options?.timeout ?? 30000;
   const client = new Client({ name: 'workspace-switch-tester', version: '1.0.0' });
-  const transport = createTransport(mcp);
 
   const abortTimer = new AbortController();
   const timeoutId = setTimeout(() => abortTimer.abort(), timeout);
 
   try {
+    const transport = await createTransport(mcp, options?.secretStore);
+
     await Promise.race([
       client.connect(transport),
       new Promise<never>((_, reject) => {
@@ -182,12 +216,13 @@ export async function callMcpTool(
 ): Promise<{ content: Array<{ type: string; text?: string; [key: string]: unknown }>; isError?: boolean }> {
   const timeout = options?.timeout ?? 30000;
   const client = new Client({ name: 'workspace-switch-debugger', version: '1.0.0' });
-  const transport = createTransport(mcp);
 
   const abortTimer = new AbortController();
   const timeoutId = setTimeout(() => abortTimer.abort(), timeout);
 
   try {
+    const transport = await createTransport(mcp, options?.secretStore);
+
     await Promise.race([
       client.connect(transport),
       new Promise<never>((_, reject) => {

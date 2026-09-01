@@ -76,6 +76,7 @@ export interface McpPrompt {
 
 export interface TestMcpOptions {
   timeout?: number;
+  secretStore?: SecretStore;
 }
 
 export interface McpTestReport {

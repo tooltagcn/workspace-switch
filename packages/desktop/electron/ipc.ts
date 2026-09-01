@@ -336,9 +336,18 @@ export function registerIpcHandlers(): void {
   // MCP handlers
   ipcMain.handle('mcp:list', (_event, filter?: McpListFilter) => listMcps(getDb(), filter));
   ipcMain.handle('mcp:get', (_event, id: string) => getMcp(getDb(), id));
-  ipcMain.handle('mcp:create', (_event, data) => {
+  ipcMain.handle('mcp:create', async (_event, data) => {
     try {
-      const result = createMcp(getDb(), data);
+      const { secretEnv, ...input } = data ?? {};
+      if (secretEnv && Object.keys(secretEnv).length > 0) {
+        const secretStore = await createSecretStore(getDb());
+        input.env = { ...input.env };
+        for (const [key, value] of Object.entries(secretEnv as Record<string, string>)) {
+          await secretStore.storeSecret(input.name, key, value);
+          input.env[key] = `env:${key}`;
+        }
+      }
+      const result = createMcp(getDb(), input);
       saveMcpToWorkspace(dataDir, {
         name: result.name,
         transport: result.transport ?? 'stdio',
@@ -354,9 +363,20 @@ export function registerIpcHandlers(): void {
       throw e;
     }
   });
-  ipcMain.handle('mcp:update', (_event, id: string, data) => {
+  ipcMain.handle('mcp:update', async (_event, id: string, data) => {
     try {
-      const result = updateMcp(getDb(), id, data);
+      const { secretEnv, ...patch } = data ?? {};
+      if (secretEnv && Object.keys(secretEnv).length > 0) {
+        const existing = getMcp(getDb(), id);
+        if (!existing) throw new Error(`MCP server not found: ${id}`);
+        const secretStore = await createSecretStore(getDb());
+        patch.env = { ...(patch.env ?? existing.env) };
+        for (const [key, value] of Object.entries(secretEnv as Record<string, string>)) {
+          await secretStore.storeSecret(existing.name, key, value);
+          patch.env[key] = `env:${key}`;
+        }
+      }
+      const result = updateMcp(getDb(), id, patch);
       if (result) {
         saveMcpToWorkspace(dataDir, {
           name: result.name,
@@ -495,7 +515,7 @@ export function registerIpcHandlers(): void {
   // MCP test handlers
   ipcMain.handle('mcp:test', async (_event, mcpId: string) => {
     try {
-      const report = await runTestAndPersist(getDb(), mcpId);
+      const report = await runTestAndPersist(getDb(), mcpId, { secretStore: await createSecretStore(getDb()) });
       return report;
     } catch (e) {
       logger.error('mcp:test error:', e);
@@ -506,6 +526,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('mcp:batchTest', async (event) => {
     try {
       const result = await batchTestMcps(getDb(), {
+        secretStore: await createSecretStore(getDb()),
         onProgress: (progress) => {
           event.sender.send('mcp:batch-test-progress', progress);
         },
@@ -524,7 +545,7 @@ export function registerIpcHandlers(): void {
     try {
       const mcp = getMcp(getDb(), mcpId);
       if (!mcp) throw new Error(`MCP server not found: ${mcpId}`);
-      return await callMcpTool(mcp, toolName, args);
+      return await callMcpTool(mcp, toolName, args, { secretStore: await createSecretStore(getDb()) });
     } catch (e) {
       logger.error('mcp:callTool error:', e);
       throw e;

@@ -4,7 +4,7 @@ import { migrate } from '../db/migrate.js';
 import { loadTemplates, getTemplate } from '../agent/template-loader.js';
 import { expandAgentPaths, resolveCandidateDirNames } from '../agent/expand-paths.js';
 import { initBuiltinAgents } from '../agent/init-builtins.js';
-import { listAgents } from '../agent/registry.js';
+import { listAgents, getAgent, updateAgent } from '../agent/registry.js';
 
 describe('Agent templates', () => {
   it('loads 16 built-in templates', () => {
@@ -114,5 +114,59 @@ describe('initBuiltinAgents', () => {
     initBuiltinAgents(db, '/Users/test');
     const agents = listAgents(db);
     expect(agents).toHaveLength(16);
+  });
+
+  it('preserves user-customized builtin fields on re-init', () => {
+    initBuiltinAgents(db, '/Users/test');
+    updateAgent(db, 'claude-code', {
+      mcpFile: 'custom.json',
+      mcpField: 'customField',
+      skillDir: 'custom-skills',
+      envTransform: 'bare',
+    });
+
+    initBuiltinAgents(db, '/Users/test');
+    const agent = getAgent(db, 'claude-code')!;
+    expect(agent.mcpFile).toBe('custom.json');
+    expect(agent.mcpField).toBe('customField');
+    expect(agent.skillDir).toBe('custom-skills');
+    expect(agent.envTransform).toBe('bare');
+  });
+
+  it('migrates stale legacy defaults but not unrelated custom values', () => {
+    initBuiltinAgents(db, '/Users/test');
+
+    // Simulate an opencode row seeded from the OLD template version.
+    updateAgent(db, 'opencode', {
+      configDirName: '.opencode',
+      userRoot: '/Users/test/.opencode',
+      mcpFile: 'config.json',
+      mcpField: 'mcpServers',
+      envTransform: '${env:VAR}',
+      fieldMapping: { command: 'command', args: 'args', url: 'url', env: 'env' },
+    });
+    // Add a customization unrelated to the legacy-declared fields.
+    updateAgent(db, 'opencode', { skillDir: 'my-commands' });
+
+    initBuiltinAgents(db, '/Users/test');
+    const agent = getAgent(db, 'opencode')!;
+    expect(agent.configDirName).toBe('.config/opencode');
+    expect(agent.userRoot).toBe('/Users/test/.config/opencode');
+    expect(agent.mcpFile).toBe('opencode.jsonc');
+    expect(agent.mcpField).toBe('mcp');
+    expect(agent.envTransform).toBe('{env:VAR}');
+    expect(agent.fieldMapping).toEqual({
+      command: 'command', args: 'args', url: 'url', env: 'environment',
+    });
+    expect(agent.skillDir).toBe('my-commands');
+  });
+
+  it('fills empty fields from the template on re-init', () => {
+    initBuiltinAgents(db, '/Users/test');
+    updateAgent(db, 'claude-code', { mcpFile: '' });
+
+    initBuiltinAgents(db, '/Users/test');
+    const agent = getAgent(db, 'claude-code')!;
+    expect(agent.mcpFile).toBe('settings.json');
   });
 });

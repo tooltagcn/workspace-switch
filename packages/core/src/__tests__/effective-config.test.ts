@@ -158,4 +158,56 @@ describe('effectiveAsTemplate', () => {
 
     expect(result.entryFormat?.fieldMapping).toEqual(customMapping);
   });
+
+  it('preserves dialect-only entryFormat fields (commandArray, typeByTransport, staticEntryFields)', () => {
+    const opencodeTemplate: AgentTemplate = {
+      ...jsonTemplate,
+      id: 'opencode',
+      mcpFile: 'opencode.jsonc',
+      mcpField: 'mcp',
+      entryFormat: {
+        format: 'json-map',
+        envTransform: '{env:VAR}',
+        commandArray: true,
+        typeByTransport: { stdio: 'local', sse: 'remote' },
+        staticEntryFields: { enabled: true },
+        fieldMapping: { command: 'command', args: 'args', url: 'url', env: 'environment' },
+      },
+    };
+
+    const agent = makeAgent();
+    const result = effectiveAsTemplate(agent, opencodeTemplate);
+
+    expect(result.entryFormat?.format).toBe('json-map');
+    expect(result.entryFormat?.commandArray).toBe(true);
+    expect(result.entryFormat?.typeByTransport).toEqual({ stdio: 'local', sse: 'remote' });
+    expect(result.entryFormat?.staticEntryFields).toEqual({ enabled: true });
+    expect(result.entryFormat?.fieldMapping).toEqual({
+      command: 'command', args: 'args', url: 'url', env: 'environment',
+    });
+  });
+
+  it('keeps dialect fields when agent overrides persisted fields', () => {
+    const opencodeTemplate: AgentTemplate = {
+      ...jsonTemplate,
+      id: 'opencode',
+      mcpFile: 'opencode.jsonc',
+      mcpField: 'mcp',
+      entryFormat: {
+        format: 'json-map',
+        envTransform: '{env:VAR}',
+        commandArray: true,
+        staticEntryFields: { enabled: true },
+        fieldMapping: { command: 'command', args: 'args', url: 'url', env: 'environment' },
+      },
+    };
+
+    const agent = makeAgent({ envTransform: 'bare', fieldMapping: { command: 'cmd' } });
+    const result = effectiveAsTemplate(agent, opencodeTemplate);
+
+    expect(result.entryFormat?.envTransform).toBe('bare');
+    expect(result.entryFormat?.fieldMapping).toEqual({ command: 'cmd' });
+    expect(result.entryFormat?.commandArray).toBe(true);
+    expect(result.entryFormat?.staticEntryFields).toEqual({ enabled: true });
+  });
 });

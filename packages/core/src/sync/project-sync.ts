@@ -221,11 +221,10 @@ export async function syncProjectMcpToWorkspace(
     }
 
     const field = template.mcpField;
-    const fieldMapping = template.entryFormat?.fieldMapping;
     const afterObj = mutateConfig(existing, field, {
       type: 'add',
       name: mcpName,
-      entry: buildMcpEntry(schemaWithSecrets, fieldMapping),
+      entry: buildMcpEntry(schemaWithSecrets, template.entryFormat),
     });
     const after = serializeConfigFile(afterObj, template);
 

@@ -19,6 +19,27 @@ const sseMcp: WsMcpSchema = {
   env: { API_KEY: 'env:API_KEY' },
 };
 
+describe('OpenCode MCP entry dialect', () => {
+  const template = loadTemplates().find((t) => t.id === 'opencode')!;
+  const parsed = (result: string) => JSON.parse(result).mcp;
+
+  it('renders a bare binary command as an array', () => {
+    const binaryMcp: WsMcpSchema = {
+      name: 'codebase-memory',
+      transport: 'stdio',
+      command: '/Users/lykos/.local/bin/codebase-memory-mcp',
+    };
+    const entry = parsed(renderMcpForAgent(binaryMcp, template))['codebase-memory'];
+    expect(entry.command).toEqual(['/Users/lykos/.local/bin/codebase-memory-mcp']);
+    expect(entry.type).toBe('local');
+  });
+
+  it('emits enabled flag on every entry', () => {
+    const entry = parsed(renderMcpForAgent(sseMcp, template))['remote-server'];
+    expect(entry.enabled).toBe(true);
+  });
+});
+
 describe('Agent template rendering snapshots', () => {
   const templates = loadTemplates();
 

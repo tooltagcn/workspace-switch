@@ -177,18 +177,33 @@ function jsonEntryToSchema(
   name: string,
   config: Record<string, unknown>,
 ): WsMcpSchema | null {
-  if (config.command) {
+  const envCandidate = config.env ?? config.environment;
+  const hasEnv = !!envCandidate && typeof envCandidate === 'object' && !Array.isArray(envCandidate);
+  const env: Record<string, string> | undefined = hasEnv ? (envCandidate as Record<string, string>) : undefined;
+
+  const commandValue = config.command;
+  if (Array.isArray(commandValue) && commandValue.length > 0) {
     const schema: WsMcpSchema = {
       name,
       transport: 'stdio',
-      command: config.command as string,
+      command: String(commandValue[0]),
+    };
+    const rest = (commandValue as unknown[]).slice(1).filter((a) => typeof a === 'string') as string[];
+    if (rest.length > 0) schema.args = rest;
+    if (env) schema.env = env;
+    return schema;
+  }
+
+  if (typeof commandValue === 'string' && commandValue) {
+    const schema: WsMcpSchema = {
+      name,
+      transport: 'stdio',
+      command: commandValue,
     };
     if (Array.isArray(config.args)) {
       schema.args = config.args as string[];
     }
-    if (config.env && typeof config.env === 'object') {
-      schema.env = config.env as Record<string, string>;
-    }
+    if (env) schema.env = env;
     return schema;
   }
 
@@ -198,9 +213,7 @@ function jsonEntryToSchema(
       transport: 'sse',
       url: config.url as string,
     };
-    if (config.env && typeof config.env === 'object') {
-      schema.env = config.env as Record<string, string>;
-    }
+    if (env) schema.env = env;
     return schema;
   }
 

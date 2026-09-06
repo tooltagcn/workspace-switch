@@ -1,8 +1,48 @@
 import type { McpRenderer } from './types.js';
 import type { WsMcpSchema } from './schema.js';
-import type { AgentTemplate } from '../agent/template-types.js';
+import type { AgentTemplate, EntryFormat } from '../agent/template-types.js';
 
 const renderers = new Map<string, McpRenderer>();
+
+export function buildMcpEntry(
+  schema: WsMcpSchema,
+  entryFormat?: EntryFormat,
+): Record<string, unknown> {
+  const map = entryFormat?.fieldMapping ?? { command: 'command', args: 'args', url: 'url', env: 'env' };
+  const mergeArgs = entryFormat?.mergeArgs ?? false;
+  const commandArray = entryFormat?.commandArray ?? false;
+  const typeByTransport = entryFormat?.typeByTransport;
+  const staticEntryFields = entryFormat?.staticEntryFields;
+  const entry: Record<string, unknown> = {};
+
+  if (schema.transport === 'stdio') {
+    if (schema.command) {
+      const commandKey = map.command ?? 'command';
+      if (commandArray) {
+        entry[commandKey] = [schema.command, ...(schema.args ?? [])];
+      } else if (mergeArgs && schema.args && schema.args.length > 0) {
+        entry[commandKey] = [schema.command, ...schema.args];
+      } else {
+        entry[commandKey] = schema.command;
+        if (schema.args && schema.args.length > 0) entry[map.args ?? 'args'] = schema.args;
+      }
+    }
+  } else {
+    if (schema.url) entry[map.url ?? 'url'] = schema.url;
+  }
+
+  if (staticEntryFields) {
+    Object.assign(entry, staticEntryFields);
+  }
+
+  const type = typeByTransport?.[schema.transport];
+  if (type) entry.type = type;
+
+  if (schema.env && Object.keys(schema.env).length > 0) {
+    entry[map.env ?? 'env'] = { ...schema.env };
+  }
+  return entry;
+}
 
 export function registerRenderer(format: string, renderer: McpRenderer): void {
   renderers.set(format, renderer);
@@ -77,18 +117,15 @@ function fieldName(template: AgentTemplate, internal: string): string {
 
 const jsonMapRenderer: McpRenderer = {
   render(mcp: WsMcpSchema, template: AgentTemplate): string {
-    const entry: Record<string, unknown> = {};
+    const entry = buildMcpEntry(mcp, template.entryFormat);
 
-    if (mcp.transport === 'stdio') {
-      if (mcp.command) entry[fieldName(template, 'command')] = mcp.command;
-      if (mcp.args && mcp.args.length > 0) entry[fieldName(template, 'args')] = mcp.args;
-    } else {
-      if (mcp.url) entry[fieldName(template, 'url')] = mcp.url;
-    }
-
-    const transformedEnv = transformEnv(mcp.env, template.entryFormat?.envTransform ?? '${env:VAR}');
-    if (Object.keys(transformedEnv).length > 0) {
-      entry[fieldName(template, 'env')] = transformedEnv;
+    const envKey = fieldName(template, 'env') ?? 'env';
+    const rawEnv = entry[envKey];
+    if (rawEnv && typeof rawEnv === 'object' && !Array.isArray(rawEnv)) {
+      entry[envKey] = transformEnv(
+        rawEnv as Record<string, string>,
+        template.entryFormat?.envTransform ?? '${env:VAR}',
+      );
     }
 
     const field = template.mcpField ?? 'mcpServers';

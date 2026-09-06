@@ -39,7 +39,7 @@ function resolveEntryFormat(template: AgentTemplate): EntryFormat | undefined {
   return defaultEntryFormat(format);
 }
 
-function detectFormatFromMcpFile(mcpFile: string | null): TargetFormat | null {
+function detectFormatFromMcpFile(mcpFile: string | null | undefined): TargetFormat | null {
   if (!mcpFile) return null;
   if (mcpFile.endsWith('.json')) return 'json-map';
   if (mcpFile.endsWith('.toml')) return 'toml-table';

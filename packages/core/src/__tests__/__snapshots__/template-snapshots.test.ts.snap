@@ -347,11 +347,13 @@ exports[`Agent template rendering snapshots > OpenClaude (openclaude) > renders 
 
 exports[`Agent template rendering snapshots > OpenCode (opencode) > renders SSE MCP snapshot 1`] = `
 "{
-  "mcpServers": {
+  "mcp": {
     "remote-server": {
       "url": "http://localhost:3000/sse",
-      "env": {
-        "API_KEY": "\${env:API_KEY}"
+      "enabled": true,
+      "type": "remote",
+      "environment": {
+        "API_KEY": "{env:API_KEY}"
       }
     }
   }
@@ -361,16 +363,18 @@ exports[`Agent template rendering snapshots > OpenCode (opencode) > renders SSE 
 
 exports[`Agent template rendering snapshots > OpenCode (opencode) > renders stdio MCP snapshot 1`] = `
 "{
-  "mcpServers": {
+  "mcp": {
     "filesystem": {
-      "command": "npx",
-      "args": [
+      "command": [
+        "npx",
         "-y",
         "@modelcontextprotocol/server-filesystem",
         "/tmp"
       ],
-      "env": {
-        "GITHUB_TOKEN": "\${env:GITHUB_TOKEN}"
+      "enabled": true,
+      "type": "local",
+      "environment": {
+        "GITHUB_TOKEN": "{env:GITHUB_TOKEN}"
       }
     }
   }

@@ -1,7 +1,7 @@
 import type { Agent } from './types.js';
 import type { AgentTemplate, EntryFormat, TargetFormat } from './template-types.js';
 
-function detectFormatFromMcpFile(mcpFile: string | null): TargetFormat | null {
+function detectFormatFromMcpFile(mcpFile: string | null | undefined): TargetFormat | null {
   if (!mcpFile) return null;
   if (mcpFile.endsWith('.json')) return 'json-map';
   if (mcpFile.endsWith('.toml')) return 'toml-table';
@@ -29,10 +29,12 @@ export function effectiveAsTemplate(
 
   let entryFormat: EntryFormat | undefined;
   if (targetFormat) {
+    const defaults = defaultEntryFormat(targetFormat);
     entryFormat = {
+      ...(template?.entryFormat ?? defaults),
       format: targetFormat,
-      envTransform: envTransform ?? (targetFormat === 'toml-table' ? 'bare' : '${env:VAR}'),
-      fieldMapping: fieldMapping ?? { command: 'command', args: 'args', url: 'url', env: 'env' },
+      envTransform: envTransform ?? template?.entryFormat?.envTransform ?? defaults.envTransform,
+      fieldMapping: fieldMapping ?? template?.entryFormat?.fieldMapping ?? defaults.fieldMapping,
     };
   }
 

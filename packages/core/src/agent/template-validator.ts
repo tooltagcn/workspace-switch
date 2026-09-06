@@ -79,6 +79,29 @@ export function validateAgentTemplate(data: unknown): TemplateValidationResult {
     }
   }
 
+  if ('legacyDefaults' in obj) {
+    const ld = obj.legacyDefaults;
+    if (typeof ld !== 'object' || ld === null || Array.isArray(ld)) {
+      errors.push('Field "legacyDefaults" must be an object');
+    } else {
+      const ldObj = ld as Record<string, unknown>;
+      for (const field of ['configDirName', 'skillDir', 'mcpFile', 'mcpField', 'envTransform'] as const) {
+        if (field in ldObj && ldObj[field] !== null && typeof ldObj[field] !== 'string') {
+          errors.push(`Field "legacyDefaults.${field}" must be a string or null`);
+        }
+      }
+      if ('targetFormat' in ldObj && ldObj.targetFormat !== null && !VALID_TARGET_FORMATS.includes(ldObj.targetFormat as TargetFormat)) {
+        errors.push(`Field "legacyDefaults.targetFormat" must be one of: ${VALID_TARGET_FORMATS.join(', ')}, or null`);
+      }
+      if ('fieldMapping' in ldObj) {
+        const fm = ldObj.fieldMapping;
+        if (typeof fm !== 'object' || fm === null || Array.isArray(fm)) {
+          errors.push('Field "legacyDefaults.fieldMapping" must be an object');
+        }
+      }
+    }
+  }
+
   if ('entryFormat' in obj) {
     const ef = obj.entryFormat;
     if (typeof ef !== 'object' || ef === null || Array.isArray(ef)) {
@@ -99,6 +122,31 @@ export function validateAgentTemplate(data: unknown): TemplateValidationResult {
           errors.push('Field "entryFormat.fieldMapping" must be an object');
         }
       }
+      if ('mergeArgs' in efObj && typeof efObj.mergeArgs !== 'boolean') {
+        errors.push('Field "entryFormat.mergeArgs" must be a boolean');
+      }
+      if ('commandArray' in efObj && typeof efObj.commandArray !== 'boolean') {
+        errors.push('Field "entryFormat.commandArray" must be a boolean');
+      }
+      if ('staticEntryFields' in efObj) {
+        const sef = efObj.staticEntryFields;
+        if (typeof sef !== 'object' || sef === null || Array.isArray(sef)) {
+          errors.push('Field "entryFormat.staticEntryFields" must be an object');
+        }
+      }
+      if ('typeByTransport' in efObj) {
+        const tbt = efObj.typeByTransport;
+        if (typeof tbt !== 'object' || tbt === null || Array.isArray(tbt)) {
+          errors.push('Field "entryFormat.typeByTransport" must be an object');
+        } else {
+          const tbtObj = tbt as Record<string, unknown>;
+          for (const key of ['stdio', 'sse', 'http']) {
+            if (key in tbtObj && typeof tbtObj[key] !== 'string') {
+              errors.push(`Field "entryFormat.typeByTransport.${key}" must be a string`);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -107,6 +155,7 @@ export function validateAgentTemplate(data: unknown): TemplateValidationResult {
     'candidateDirNames',
     'targetFormat',
     'entryFormat',
+    'legacyDefaults',
   ]);
   for (const key of Object.keys(obj)) {
     if (!knownFields.has(key)) {

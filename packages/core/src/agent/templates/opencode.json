@@ -1,14 +1,36 @@
 {
   "id": "opencode",
   "name": "OpenCode",
-  "configDirName": ".opencode",
-  "mcpFile": "config.json",
-  "mcpField": "mcpServers",
+  "configDirName": ".config/opencode",
+  "candidateDirNames": [".config/opencode", ".opencode"],
+  "mcpFile": "opencode.jsonc",
+  "mcpField": "mcp",
   "skillDir": "commands",
   "icon": "opencode",
   "targetFormat": "json-map",
   "entryFormat": {
     "format": "json-map",
+    "envTransform": "{env:VAR}",
+    "commandArray": true,
+    "typeByTransport": {
+      "stdio": "local",
+      "sse": "remote",
+      "http": "remote"
+    },
+    "staticEntryFields": {
+      "enabled": true
+    },
+    "fieldMapping": {
+      "command": "command",
+      "args": "args",
+      "url": "url",
+      "env": "environment"
+    }
+  },
+  "legacyDefaults": {
+    "configDirName": ".opencode",
+    "mcpFile": "config.json",
+    "mcpField": "mcpServers",
     "envTransform": "${env:VAR}",
     "fieldMapping": {
       "command": "command",

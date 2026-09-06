@@ -178,6 +178,25 @@ describe('Agent Scanner', () => {
       expect(results[0].schema.url).toBe('http://localhost:3000');
     });
 
+    it('scans opencode-style array command and environment', () => {
+      const agent = createAgentWithDirs();
+      createMcpConfigFile(agent.userRoot!, {
+        'codebase-memory-mcp': {
+          command: ['/usr/local/bin/codebase-memory-mcp'],
+          type: 'local',
+          enabled: true,
+          environment: { TOKEN: '{env:TOKEN}' },
+        },
+      });
+
+      const results = scanMcpsFromAgents(db, [agent]);
+      expect(results).toHaveLength(1);
+      expect(results[0].schema.transport).toBe('stdio');
+      expect(results[0].schema.command).toBe('/usr/local/bin/codebase-memory-mcp');
+      expect(results[0].schema.args).toBeUndefined();
+      expect(results[0].schema.env).toEqual({ TOKEN: '{env:TOKEN}' });
+    });
+
     it('classifies MCP as synced when DB matches', () => {
       const agent = createAgentWithDirs();
       createMcpConfigFile(agent.userRoot!, {

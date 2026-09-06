@@ -46,11 +46,10 @@ function applyMcpsToConfig(
   mode: ApplyMode,
 ): Record<string, unknown> {
   const field = template.mcpField!;
-  const fieldMapping = template.entryFormat?.fieldMapping;
   let result = mode === 'strict' ? { ...existing, [field]: {} } : { ...existing };
 
   for (const mcp of mcps) {
-    const entry = buildMcpEntry(mcpServerToSchema(mcp), fieldMapping);
+    const entry = buildMcpEntry(mcpServerToSchema(mcp), template.entryFormat);
     result = mutateConfig(result, field, { type: 'add', name: mcp.name, entry });
   }
   return result;
@@ -98,22 +97,32 @@ export function applyMcpToAgent(
   const afterObj = applyMcpsToConfig(existing, template, mcps, mode);
   const after = serializeConfigFile(afterObj, template);
 
-  const beforeResourceRow = db
-    .prepare(
-      `SELECT * FROM resource_agent WHERE resource_type = 'mcp' AND agent_id = ? AND target_path = ?`,
-    )
-    .get(agentId, filePath) as Record<string, unknown> | undefined;
+  const now = new Date().toISOString();
 
   try {
     const updateDb = db.transaction(() => {
-      if (beforeResourceRow) {
-        db.prepare(
-          `UPDATE resource_agent SET applied_at = datetime('now') WHERE resource_type = 'mcp' AND agent_id = ? AND target_path = ?`,
-        ).run(agentId, filePath);
-      } else {
-        db.prepare(
-          `INSERT INTO resource_agent (resource_type, resource_id, agent_id, target_path) VALUES ('mcp', ?, ?, ?)`,
-        ).run(mcps[0]?.id ?? 'unknown', agentId, filePath);
+      for (const mcp of mcps) {
+        const mcpRow = db
+          .prepare('SELECT config_hash FROM mcp WHERE id = ?')
+          .get(mcp.id) as { config_hash: string | null } | undefined;
+
+        const existingResource = db
+          .prepare(
+            `SELECT 1 FROM resource_agent WHERE resource_type = 'mcp' AND resource_id = ? AND agent_id = ?`,
+          )
+          .get(mcp.id, agentId);
+
+        if (existingResource) {
+          db.prepare(
+            `UPDATE resource_agent SET target_path = ?, applied_config_hash = ?, applied_at = ?
+             WHERE resource_type = 'mcp' AND resource_id = ? AND agent_id = ?`,
+          ).run(filePath, mcpRow?.config_hash ?? null, now, mcp.id, agentId);
+        } else {
+          db.prepare(
+            `INSERT INTO resource_agent (resource_type, resource_id, agent_id, target_path, symlinked, applied_config_hash, applied_at)
+             VALUES ('mcp', ?, ?, ?, 0, ?, ?)`,
+          ).run(mcp.id, agentId, filePath, mcpRow?.config_hash ?? null, now);
+        }
       }
     });
 

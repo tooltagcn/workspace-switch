@@ -31,6 +31,7 @@ const TEMPLATE_FILES = [
   'aider.json',
   'codebuddy.json',
   'kiro-cli.json',
+  'pi.json',
 ];
 
 const thisDir = path.dirname(fileURLToPath(import.meta.url));

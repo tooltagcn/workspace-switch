@@ -1,0 +1,20 @@
+{
+  "id": "pi",
+  "name": "Pi",
+  "configDirName": ".pi/agent",
+  "mcpFile": "mcp.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "pi",
+  "targetFormat": "json-map",
+  "entryFormat": {
+    "format": "json-map",
+    "envTransform": "${env:VAR}",
+    "fieldMapping": {
+      "command": "command",
+      "args": "args",
+      "url": "url",
+      "env": "env"
+    }
+  }
+}

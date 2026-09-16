@@ -20,6 +20,7 @@ const TEMPLATE_FILES = [
   'aider.json',
   'codebuddy.json',
   'kiro-cli.json',
+  'pi.json',
 ];
 
 let cachedTemplates: AgentTemplate[] | null = null;

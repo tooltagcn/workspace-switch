@@ -7,9 +7,9 @@ import { initBuiltinAgents } from '../agent/init-builtins.js';
 import { listAgents, getAgent, updateAgent } from '../agent/registry.js';
 
 describe('Agent templates', () => {
-  it('loads 16 built-in templates', () => {
+  it('loads 17 built-in templates', () => {
     const templates = loadTemplates();
-    expect(templates).toHaveLength(16);
+    expect(templates).toHaveLength(17);
     const ids = templates.map((t) => t.id).sort();
     expect(ids).toEqual([
       'aider',
@@ -25,6 +25,7 @@ describe('Agent templates', () => {
       'kiro-cli',
       'openclaude',
       'opencode',
+      'pi',
       'qoder',
       'qoder-cn',
       'qwen-code',
@@ -93,10 +94,10 @@ describe('initBuiltinAgents', () => {
     db.close();
   });
 
-  it('creates all 16 builtin agents', () => {
+  it('creates all 17 builtin agents', () => {
     initBuiltinAgents(db, '/Users/test');
     const agents = listAgents(db);
-    expect(agents).toHaveLength(16);
+    expect(agents).toHaveLength(17);
     for (const a of agents) {
       expect(a.builtin).toBe(true);
     }
@@ -113,7 +114,7 @@ describe('initBuiltinAgents', () => {
     initBuiltinAgents(db, '/Users/test');
     initBuiltinAgents(db, '/Users/test');
     const agents = listAgents(db);
-    expect(agents).toHaveLength(16);
+    expect(agents).toHaveLength(17);
   });
 
   it('preserves user-customized builtin fields on re-init', () => {

@@ -43,8 +43,8 @@ describe('OpenCode MCP entry dialect', () => {
 describe('Agent template rendering snapshots', () => {
   const templates = loadTemplates();
 
-  it('loads all 16 templates', () => {
-    expect(templates.length).toBe(16);
+  it('loads all 17 templates', () => {
+    expect(templates.length).toBe(17);
   });
 
   it('all templates pass JSON Schema validation', () => {

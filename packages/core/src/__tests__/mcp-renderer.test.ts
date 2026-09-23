@@ -61,6 +61,25 @@ const sseMcp: WsMcpSchema = {
   env: { API_KEY: 'env:API_KEY' },
 };
 
+const httpMcpWithHeaders: WsMcpSchema = {
+  name: 'github',
+  transport: 'http',
+  url: 'https://api.githubcopilot.com/mcp/',
+  headers: { Authorization: 'env:GITHUB_TOKEN' },
+};
+
+const piTemplate: AgentTemplate = {
+  id: 'pi',
+  name: 'Pi',
+  configDirName: '.pi/agent',
+  mcpFile: 'mcp.json',
+  mcpField: 'mcpServers',
+  skillDir: 'skills',
+  icon: 'pi',
+  targetFormat: 'json-map',
+  entryFormat: { format: 'json-map', envTransform: '${env:VAR}' },
+};
+
 describe('renderMcpForAgent', () => {
   describe('Claude Code (json-map)', () => {
     it('renders stdio MCP server', () => {
@@ -106,6 +125,44 @@ describe('renderMcpForAgent', () => {
   describe('Copilot (no MCP support)', () => {
     it('throws when no targetFormat and no mcpFile', () => {
       expect(() => renderMcpForAgent(stdioMcp, copilotTemplate)).toThrow();
+    });
+  });
+
+  describe('header rendering', () => {
+    it('renders http headers for json-map agents and transforms env refs', () => {
+      const result = renderMcpForAgent(httpMcpWithHeaders, claudeTemplate);
+      const parsed = JSON.parse(result);
+      expect(parsed.mcpServers.github.url).toBe('https://api.githubcopilot.com/mcp/');
+      expect(parsed.mcpServers.github.headers).toEqual({
+        Authorization: '${env:GITHUB_TOKEN}',
+      });
+    });
+
+    it('renders http headers for the Pi template', () => {
+      const result = renderMcpForAgent(httpMcpWithHeaders, piTemplate);
+      const parsed = JSON.parse(result);
+      expect(parsed.mcpServers.github.headers.Authorization).toBe('${env:GITHUB_TOKEN}');
+    });
+
+    it('renders http headers as a toml inline table', () => {
+      const result = renderMcpForAgent(httpMcpWithHeaders, codexTemplate);
+      expect(result).toContain('headers = { Authorization = "GITHUB_TOKEN" }');
+    });
+
+    it('leaves plain header values unchanged', () => {
+      const mcp: WsMcpSchema = {
+        name: 'plain',
+        transport: 'http',
+        url: 'http://localhost/mcp',
+        headers: { 'X-Trace': 'on' },
+      };
+      const parsed = JSON.parse(renderMcpForAgent(mcp, claudeTemplate));
+      expect(parsed.mcpServers.plain.headers).toEqual({ 'X-Trace': 'on' });
+    });
+
+    it('omits headers when none are configured', () => {
+      const parsed = JSON.parse(renderMcpForAgent(sseMcp, claudeTemplate));
+      expect(parsed.mcpServers['remote-server'].headers).toBeUndefined();
     });
   });
 

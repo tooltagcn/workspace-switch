@@ -219,6 +219,20 @@ export async function syncProjectMcpToWorkspace(
         }
       }
     }
+    if (trustedSchema.headers) {
+      schemaWithSecrets.headers = { ...trustedSchema.headers };
+      if (secretStore) {
+        for (const [key, value] of Object.entries(schemaWithSecrets.headers)) {
+          if (typeof value === 'string' && value.startsWith('env:')) {
+            const varName = value.slice(4);
+            const resolved = await secretStore.getSecret(mcpName, varName);
+            if (resolved !== null) {
+              schemaWithSecrets.headers[key] = resolved;
+            }
+          }
+        }
+      }
+    }
 
     const field = template.mcpField;
     const afterObj = mutateConfig(existing, field, {

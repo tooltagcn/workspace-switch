@@ -35,6 +35,17 @@ describe('validateWsSchema', () => {
     expect(result.valid).toBe(true);
   });
 
+  it('passes for http schema with headers', () => {
+    const schema: WsMcpSchema = {
+      name: 'github',
+      transport: 'http',
+      url: 'https://api.githubcopilot.com/mcp/',
+      headers: { Authorization: 'env:GITHUB_TOKEN' },
+    };
+    const result = validateWsSchema(schema);
+    expect(result.valid).toBe(true);
+  });
+
   it('fails when name is missing', () => {
     const schema = { name: '', transport: 'stdio' as const, command: 'cmd' };
     const result = validateWsSchema(schema as WsMcpSchema);

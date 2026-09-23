@@ -47,6 +47,21 @@ describe('YAML renderer round-trip', () => {
     expect(entry.url).toBe('http://localhost:3000');
   });
 
+  it('round-trips HTTP headers to ${env:VAR} form', () => {
+    const mcp: WsMcpSchema = {
+      name: 'github',
+      transport: 'http',
+      url: 'https://api.githubcopilot.com/mcp/',
+      headers: { Authorization: 'env:GITHUB_TOKEN' },
+    };
+
+    const rendered = yamlRenderer.render(mcp, template);
+    const parsed = yamlRenderer.parse(rendered, 'mcpServers');
+
+    const entry = parsed['github'] as Record<string, unknown>;
+    expect(entry.headers).toEqual({ Authorization: '${env:GITHUB_TOKEN}' });
+  });
+
   it('serialize produces valid YAML from config object', () => {
     const config = {
       mcpServers: {

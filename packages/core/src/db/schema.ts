@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS mcp (
   url TEXT,
   args_json TEXT,
   env_json TEXT,
+  headers_json TEXT,
   description TEXT,
   test_status TEXT NOT NULL DEFAULT 'untested',
   test_error TEXT,

@@ -180,6 +180,9 @@ function jsonEntryToSchema(
   const envCandidate = config.env ?? config.environment;
   const hasEnv = !!envCandidate && typeof envCandidate === 'object' && !Array.isArray(envCandidate);
   const env: Record<string, string> | undefined = hasEnv ? (envCandidate as Record<string, string>) : undefined;
+  const headerCandidate = config.headers;
+  const hasHeaders = !!headerCandidate && typeof headerCandidate === 'object' && !Array.isArray(headerCandidate);
+  const headers: Record<string, string> | undefined = hasHeaders ? (headerCandidate as Record<string, string>) : undefined;
 
   const commandValue = config.command;
   if (Array.isArray(commandValue) && commandValue.length > 0) {
@@ -191,6 +194,7 @@ function jsonEntryToSchema(
     const rest = (commandValue as unknown[]).slice(1).filter((a) => typeof a === 'string') as string[];
     if (rest.length > 0) schema.args = rest;
     if (env) schema.env = env;
+    if (headers) schema.headers = headers;
     return schema;
   }
 
@@ -204,6 +208,7 @@ function jsonEntryToSchema(
       schema.args = config.args as string[];
     }
     if (env) schema.env = env;
+    if (headers) schema.headers = headers;
     return schema;
   }
 
@@ -214,6 +219,7 @@ function jsonEntryToSchema(
       url: config.url as string,
     };
     if (env) schema.env = env;
+    if (headers) schema.headers = headers;
     return schema;
   }
 
@@ -324,6 +330,9 @@ function tomlEntryToSchema(
   name: string,
   config: Record<string, unknown>,
 ): WsMcpSchema | null {
+  const envObj = config.env as Record<string, string> | undefined;
+  const headersObj = config.headers as Record<string, string> | undefined;
+
   if (config.command) {
     const schema: WsMcpSchema = {
       name,
@@ -333,9 +342,8 @@ function tomlEntryToSchema(
     if (Array.isArray(config.args)) {
       schema.args = config.args as string[];
     }
-    if (config.env && typeof config.env === 'object' && !Array.isArray(config.env)) {
-      schema.env = config.env as Record<string, string>;
-    }
+    if (envObj && typeof envObj === 'object') schema.env = envObj;
+    if (headersObj && typeof headersObj === 'object') schema.headers = headersObj;
     return schema;
   }
 
@@ -345,9 +353,8 @@ function tomlEntryToSchema(
       transport: 'sse',
       url: config.url as string,
     };
-    if (config.env && typeof config.env === 'object' && !Array.isArray(config.env)) {
-      schema.env = config.env as Record<string, string>;
-    }
+    if (envObj && typeof envObj === 'object') schema.env = envObj;
+    if (headersObj && typeof headersObj === 'object') schema.headers = headersObj;
     return schema;
   }
 

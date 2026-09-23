@@ -6,6 +6,7 @@ export function computeConfigHash(fields: {
   url: string | null;
   argsJson: string | null;
   envJson: string | null;
+  headersJson?: string | null;
 }): string {
   const raw = [
     fields.transport ?? '',
@@ -13,6 +14,9 @@ export function computeConfigHash(fields: {
     fields.url ?? '',
     fields.argsJson ?? '',
     fields.envJson ?? '',
-  ].join('|');
-  return createHash('sha256').update(raw).digest('hex');
+  ];
+  // Only fold headers in when present so configs created before header support
+  // keep a stable hash (empty headers must not invalidate applied state).
+  if (fields.headersJson) raw.push(fields.headersJson);
+  return createHash('sha256').update(raw.join('|')).digest('hex');
 }

@@ -16,6 +16,7 @@ export function migrate(db: Database.Database): void {
   db.exec(SCHEMA_SQL);
 
   addColumnIfMissing(db, 'mcp', 'test_status', "TEXT NOT NULL DEFAULT 'untested'");
+  addColumnIfMissing(db, 'mcp', 'headers_json', 'TEXT');
   addColumnIfMissing(db, 'mcp', 'test_error', 'TEXT');
   addColumnIfMissing(db, 'mcp', 'tested_at', 'TEXT');
   addColumnIfMissing(db, 'mcp', 'config_hash', 'TEXT');

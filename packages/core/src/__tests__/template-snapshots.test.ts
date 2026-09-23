@@ -40,6 +40,22 @@ describe('OpenCode MCP entry dialect', () => {
   });
 });
 
+describe('Pi MCP entry dialect', () => {
+  const template = loadTemplates().find((t) => t.id === 'pi')!;
+
+  it('renders http headers with env refs for a hosted MCP server', () => {
+    const httpMcp: WsMcpSchema = {
+      name: 'github',
+      transport: 'http',
+      url: 'https://api.githubcopilot.com/mcp/',
+      headers: { Authorization: 'env:GITHUB_TOKEN' },
+    };
+    const entry = JSON.parse(renderMcpForAgent(httpMcp, template)).mcpServers.github;
+    expect(entry.url).toBe('https://api.githubcopilot.com/mcp/');
+    expect(entry.headers).toEqual({ Authorization: '${env:GITHUB_TOKEN}' });
+  });
+});
+
 describe('Agent template rendering snapshots', () => {
   const templates = loadTemplates();
 

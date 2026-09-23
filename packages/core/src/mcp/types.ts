@@ -10,6 +10,7 @@ export interface McpServer {
   url: string | null;
   args: string[];
   env: Record<string, string>;
+  headers: Record<string, string>;
   description: string | null;
   tags: string[];
   testStatus: McpTestStatus;
@@ -31,6 +32,7 @@ export interface CreateMcpInput {
   url?: string | null;
   args?: string[];
   env?: Record<string, string>;
+  headers?: Record<string, string>;
   description?: string | null;
   tags?: string[];
 }
@@ -42,6 +44,7 @@ export interface UpdateMcpInput {
   url?: string | null;
   args?: string[];
   env?: Record<string, string>;
+  headers?: Record<string, string>;
   description?: string | null;
 }
 

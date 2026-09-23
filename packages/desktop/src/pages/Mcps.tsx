@@ -9,6 +9,7 @@ import UnapplyFromAgentDialog from './components/UnapplyFromAgentDialog.js';
 import BulkActionBar from '../components/BulkActionBar.js';
 import McpDebugPanel from '../components/McpDebugPanel.js';
 import McpEnvEditor, { buildEnvPayload, rowsFromEnv, isEnvRef, type EnvVarRow } from '../components/McpEnvEditor.js';
+import McpHeadersEditor, { buildHeaderPayload, rowsFromHeaders, type HeaderRow } from '../components/McpHeadersEditor.js';
 
 function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose: () => void; onApply: () => void; onDebug: () => void }) {
   const { t } = useTranslation();
@@ -91,6 +92,20 @@ function McpDetail({ mcp, onClose, onApply, onDebug }: { mcp: McpServer; onClose
           )}
         </div>
         <div>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.headers')}</span>
+          {Object.keys(mcp.headers).length === 0 ? (
+            <p className="text-sm mt-1 text-gray-400 dark:text-gray-500">-</p>
+          ) : (
+            <div className="mt-1 space-y-1">
+              {Object.entries(mcp.headers).map(([key, value]) => (
+                <p key={key} className="text-xs font-mono break-all">
+                  {key}: {isEnvRef(value) ? t('mcp.masked') : value}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
           <span className="text-sm text-gray-500 dark:text-gray-400">{t('mcp.tags')}</span>
           <div className="flex flex-wrap gap-1 mt-1">
             {mcp.tags.length === 0 ? (
@@ -133,6 +148,7 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
     description: '',
   });
   const [envRows, setEnvRows] = useState<EnvVarRow[]>([]);
+  const [headerRows, setHeaderRows] = useState<HeaderRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const updateForm = (patch: Partial<typeof form>) => {
@@ -148,6 +164,7 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
       return;
     }
     const { env, secretEnv } = buildEnvPayload(envRows);
+    const { headers, secretHeaders } = buildHeaderPayload(headerRows);
     try {
       await createMcp({
         name: trimmed,
@@ -156,7 +173,9 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
         url: form.transport !== 'stdio' ? form.url : null,
         args: form.args ? form.args.split(' ').filter(Boolean) : [],
         env,
+        headers,
         ...(Object.keys(secretEnv).length > 0 ? { secretEnv } : {}),
+        ...(Object.keys(secretHeaders).length > 0 ? { secretHeaders } : {}),
         description: form.description || null,
       });
       onClose();
@@ -242,6 +261,9 @@ function McpAddDialog({ onClose }: { onClose: () => void }) {
               className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          {form.transport !== 'stdio' && (
+            <McpHeadersEditor rows={headerRows} onChange={setHeaderRows} />
+          )}
           <McpEnvEditor rows={envRows} onChange={setEnvRows} />
         </div>
         <div className="flex justify-end gap-3 mt-6">
@@ -271,6 +293,7 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
     description: mcp.description ?? '',
   });
   const [envRows, setEnvRows] = useState<EnvVarRow[]>(rowsFromEnv(mcp.env));
+  const [headerRows, setHeaderRows] = useState<HeaderRow[]>(rowsFromHeaders(mcp.headers));
   const [error, setError] = useState<string | null>(null);
 
   const updateForm = (patch: Partial<typeof form>) => {
@@ -289,6 +312,7 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
       return;
     }
     const { env, secretEnv } = buildEnvPayload(envRows, mcp.env);
+    const { headers, secretHeaders } = buildHeaderPayload(headerRows, mcp.headers);
     try {
       await updateMcp(mcp.id, {
         name: trimmed,
@@ -297,7 +321,9 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
         url: form.transport !== 'stdio' ? form.url : null,
         args: form.args ? form.args.split(' ').filter(Boolean) : [],
         env,
+        headers,
         ...(Object.keys(secretEnv).length > 0 ? { secretEnv } : {}),
+        ...(Object.keys(secretHeaders).length > 0 ? { secretHeaders } : {}),
         description: form.description || null,
       });
       onClose();
@@ -380,6 +406,9 @@ function McpEditDialog({ mcp, onClose }: { mcp: McpServer; onClose: () => void }
               className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          {form.transport !== 'stdio' && (
+            <McpHeadersEditor rows={headerRows} onChange={setHeaderRows} />
+          )}
           <McpEnvEditor rows={envRows} onChange={setEnvRows} />
         </div>
         <div className="flex justify-end gap-3 mt-6">

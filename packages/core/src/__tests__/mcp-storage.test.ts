@@ -31,6 +31,19 @@ describe('MCP workspace storage', () => {
     expect(loaded).toEqual(sampleSchema);
   });
 
+  it('round-trips HTTP headers', () => {
+    const httpSchema: WsMcpSchema = {
+      name: 'gh',
+      transport: 'http',
+      url: 'https://api.githubcopilot.com/mcp/',
+      headers: { Authorization: 'env:GITHUB_TOKEN' },
+    };
+    saveMcpToWorkspace(tmpDir, httpSchema);
+    const loaded = loadMcpFromWorkspace(tmpDir, 'gh');
+    expect(loaded).toEqual(httpSchema);
+    expect(loaded!.headers).toEqual({ Authorization: 'env:GITHUB_TOKEN' });
+  });
+
   it('returns null for non-existent MCP', () => {
     expect(loadMcpFromWorkspace(tmpDir, 'nonexistent')).toBeNull();
   });

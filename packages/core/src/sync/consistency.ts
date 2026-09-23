@@ -312,6 +312,7 @@ export function fixMcpConsistency(
           url: schema.url ?? null,
           args: schema.args ?? [],
           env: schema.env ?? {},
+          headers: schema.headers ?? {},
           description: schema.description ?? null,
         });
         result.synced.push(item.name);

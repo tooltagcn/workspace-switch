@@ -106,8 +106,8 @@ export function importScannedMcps(
       const id = randomUUID();
       const schema = mcp.schema;
       db.prepare(
-        `INSERT INTO mcp (id, name, transport, command, url, args_json, env_json, description, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO mcp (id, name, transport, command, url, args_json, env_json, headers_json, description, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         id,
         schema.name,
@@ -116,6 +116,7 @@ export function importScannedMcps(
         schema.url ?? null,
         schema.args ? JSON.stringify(schema.args) : null,
         schema.env ? JSON.stringify(schema.env) : null,
+        schema.headers ? JSON.stringify(schema.headers) : null,
         schema.description ?? null,
         now,
         now,

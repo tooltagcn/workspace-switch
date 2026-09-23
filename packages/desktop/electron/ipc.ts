@@ -134,7 +134,7 @@ function getDataDir() {
   return dataDir;
 }
 
-function ensureMcpInWorkspace(mcp: { name: string; transport: string | null; command: string | null; url: string | null; args: string[]; env: Record<string, string>; description: string | null }): void {
+function ensureMcpInWorkspace(mcp: { name: string; transport: string | null; command: string | null; url: string | null; args: string[]; env: Record<string, string>; headers: Record<string, string>; description: string | null }): void {
   const workspaceDir = getDataDir();
   if (!loadMcpFromWorkspace(workspaceDir, mcp.name)) {
     saveMcpToWorkspace(workspaceDir, {
@@ -144,6 +144,7 @@ function ensureMcpInWorkspace(mcp: { name: string; transport: string | null; com
       url: mcp.url ?? undefined,
       args: mcp.args.length > 0 ? mcp.args : undefined,
       env: Object.keys(mcp.env).length > 0 ? mcp.env : undefined,
+      headers: Object.keys(mcp.headers).length > 0 ? mcp.headers : undefined,
       description: mcp.description ?? undefined,
     });
   }
@@ -338,13 +339,21 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('mcp:get', (_event, id: string) => getMcp(getDb(), id));
   ipcMain.handle('mcp:create', async (_event, data) => {
     try {
-      const { secretEnv, ...input } = data ?? {};
+      const { secretEnv, secretHeaders, ...input } = data ?? {};
       if (secretEnv && Object.keys(secretEnv).length > 0) {
         const secretStore = await createSecretStore(getDb());
         input.env = { ...input.env };
         for (const [key, value] of Object.entries(secretEnv as Record<string, string>)) {
           await secretStore.storeSecret(input.name, key, value);
           input.env[key] = `env:${key}`;
+        }
+      }
+      if (secretHeaders && Object.keys(secretHeaders).length > 0) {
+        const secretStore = await createSecretStore(getDb());
+        input.headers = { ...input.headers };
+        for (const [key, value] of Object.entries(secretHeaders as Record<string, string>)) {
+          await secretStore.storeSecret(input.name, key, value);
+          input.headers[key] = `env:${key}`;
         }
       }
       const result = createMcp(getDb(), input);
@@ -355,6 +364,7 @@ export function registerIpcHandlers(): void {
         url: result.url ?? undefined,
         args: result.args.length > 0 ? result.args : undefined,
         env: Object.keys(result.env).length > 0 ? result.env : undefined,
+        headers: Object.keys(result.headers).length > 0 ? result.headers : undefined,
         description: result.description ?? undefined,
       });
       return result;
@@ -365,7 +375,7 @@ export function registerIpcHandlers(): void {
   });
   ipcMain.handle('mcp:update', async (_event, id: string, data) => {
     try {
-      const { secretEnv, ...patch } = data ?? {};
+      const { secretEnv, secretHeaders, ...patch } = data ?? {};
       if (secretEnv && Object.keys(secretEnv).length > 0) {
         const existing = getMcp(getDb(), id);
         if (!existing) throw new Error(`MCP server not found: ${id}`);
@@ -374,6 +384,16 @@ export function registerIpcHandlers(): void {
         for (const [key, value] of Object.entries(secretEnv as Record<string, string>)) {
           await secretStore.storeSecret(existing.name, key, value);
           patch.env[key] = `env:${key}`;
+        }
+      }
+      if (secretHeaders && Object.keys(secretHeaders).length > 0) {
+        const existing = getMcp(getDb(), id);
+        if (!existing) throw new Error(`MCP server not found: ${id}`);
+        const secretStore = await createSecretStore(getDb());
+        patch.headers = { ...(patch.headers ?? existing.headers) };
+        for (const [key, value] of Object.entries(secretHeaders as Record<string, string>)) {
+          await secretStore.storeSecret(existing.name, key, value);
+          patch.headers[key] = `env:${key}`;
         }
       }
       const result = updateMcp(getDb(), id, patch);
@@ -385,6 +405,7 @@ export function registerIpcHandlers(): void {
           url: result.url ?? undefined,
           args: result.args.length > 0 ? result.args : undefined,
           env: Object.keys(result.env).length > 0 ? result.env : undefined,
+          headers: Object.keys(result.headers).length > 0 ? result.headers : undefined,
           description: result.description ?? undefined,
         });
       }

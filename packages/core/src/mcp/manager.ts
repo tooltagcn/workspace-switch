@@ -11,6 +11,7 @@ interface McpRow {
   url: string | null;
   args_json: string | null;
   env_json: string | null;
+  headers_json: string | null;
   description: string | null;
   test_status: string;
   test_error: string | null;
@@ -29,6 +30,7 @@ function rowToMcp(row: McpRow, tags: string[]): McpServer {
     url: row.url,
     args: row.args_json ? JSON.parse(row.args_json) as string[] : [],
     env: row.env_json ? JSON.parse(row.env_json) as Record<string, string> : {},
+    headers: row.headers_json ? JSON.parse(row.headers_json) as Record<string, string> : {},
     description: row.description,
     tags,
     testStatus: (row.test_status || 'untested') as McpTestStatus,
@@ -165,17 +167,22 @@ export function createMcp(db: Database.Database, input: CreateMcpInput): McpServ
   const now = new Date().toISOString();
   const argsJson = input.args ? JSON.stringify(input.args) : null;
   const envJson = input.env ? JSON.stringify(input.env) : null;
+  const headersJson =
+    input.headers && Object.keys(input.headers).length > 0
+      ? JSON.stringify(input.headers)
+      : null;
   const configHash = computeConfigHash({
     transport: input.transport ?? null,
     command: input.command ?? null,
     url: input.url ?? null,
     argsJson,
     envJson,
+    headersJson,
   });
 
   db.prepare(
-    `INSERT INTO mcp (id, name, transport, command, url, args_json, env_json, description, test_status, config_hash, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'untested', ?, ?, ?)`,
+    `INSERT INTO mcp (id, name, transport, command, url, args_json, env_json, headers_json, description, test_status, config_hash, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'untested', ?, ?, ?)`,
   ).run(
     id,
     input.name,
@@ -184,6 +191,7 @@ export function createMcp(db: Database.Database, input: CreateMcpInput): McpServ
     input.url ?? null,
     argsJson,
     envJson,
+    headersJson,
     input.description ?? null,
     configHash,
     now,
@@ -224,6 +232,14 @@ export function updateMcp(
   const newUrl = input.url !== undefined ? input.url : existing.url;
   const newArgsJson = input.args !== undefined ? JSON.stringify(input.args) : (existing.args.length > 0 ? JSON.stringify(existing.args) : null);
   const newEnvJson = input.env !== undefined ? JSON.stringify(input.env) : (Object.keys(existing.env).length > 0 ? JSON.stringify(existing.env) : null);
+  const newHeadersJson =
+    input.headers !== undefined
+      ? Object.keys(input.headers).length > 0
+        ? JSON.stringify(input.headers)
+        : null
+      : Object.keys(existing.headers).length > 0
+        ? JSON.stringify(existing.headers)
+        : null;
 
   if (input.name !== undefined) {
     fields.push('name = ?');
@@ -249,6 +265,10 @@ export function updateMcp(
     fields.push('env_json = ?');
     values.push(newEnvJson);
   }
+  if (input.headers !== undefined) {
+    fields.push('headers_json = ?');
+    values.push(newHeadersJson);
+  }
   if (input.description !== undefined) {
     fields.push('description = ?');
     values.push(input.description);
@@ -262,6 +282,7 @@ export function updateMcp(
     url: newUrl,
     argsJson: newArgsJson,
     envJson: newEnvJson,
+    headersJson: newHeadersJson,
   });
 
   // Read current config_hash from DB row directly

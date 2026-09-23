@@ -8,7 +8,7 @@ export function buildMcpEntry(
   schema: WsMcpSchema,
   entryFormat?: EntryFormat,
 ): Record<string, unknown> {
-  const map = entryFormat?.fieldMapping ?? { command: 'command', args: 'args', url: 'url', env: 'env' };
+  const map = entryFormat?.fieldMapping ?? { command: 'command', args: 'args', url: 'url', env: 'env', headers: 'headers' };
   const mergeArgs = entryFormat?.mergeArgs ?? false;
   const commandArray = entryFormat?.commandArray ?? false;
   const typeByTransport = entryFormat?.typeByTransport;
@@ -40,6 +40,9 @@ export function buildMcpEntry(
 
   if (schema.env && Object.keys(schema.env).length > 0) {
     entry[map.env ?? 'env'] = { ...schema.env };
+  }
+  if (schema.headers && Object.keys(schema.headers).length > 0) {
+    entry[map.headers ?? 'headers'] = { ...schema.headers };
   }
   return entry;
 }
@@ -90,13 +93,15 @@ function transformConfigEnv(
       for (const [name, entry] of Object.entries(value as Record<string, unknown>)) {
         if (typeof entry === 'object' && entry !== null && !Array.isArray(entry)) {
           const entryObj = { ...(entry as Record<string, unknown>) };
-          if (entryObj.env && typeof entryObj.env === 'object' && !Array.isArray(entryObj.env)) {
-            const envObj: Record<string, string> = {};
-            for (const [ek, ev] of Object.entries(entryObj.env as Record<string, string>)) {
-              const match = typeof ev === 'string' ? ev.match(/^env:(.+)$/) : null;
-              envObj[ek] = match ? formatVar(match[1]) : ev;
+          for (const mapKey of ['env', 'headers'] as const) {
+            if (entryObj[mapKey] && typeof entryObj[mapKey] === 'object' && !Array.isArray(entryObj[mapKey])) {
+              const obj: Record<string, string> = {};
+              for (const [ek, ev] of Object.entries(entryObj[mapKey] as Record<string, string>)) {
+                const match = typeof ev === 'string' ? ev.match(/^env:(.+)$/) : null;
+                obj[ek] = match ? formatVar(match[1]) : ev;
+              }
+              entryObj[mapKey] = obj;
             }
-            entryObj.env = envObj;
           }
           section[name] = entryObj;
         } else {
@@ -124,6 +129,15 @@ const jsonMapRenderer: McpRenderer = {
     if (rawEnv && typeof rawEnv === 'object' && !Array.isArray(rawEnv)) {
       entry[envKey] = transformEnv(
         rawEnv as Record<string, string>,
+        template.entryFormat?.envTransform ?? '${env:VAR}',
+      );
+    }
+
+    const headersKey = fieldName(template, 'headers') ?? 'headers';
+    const rawHeaders = entry[headersKey];
+    if (rawHeaders && typeof rawHeaders === 'object' && !Array.isArray(rawHeaders)) {
+      entry[headersKey] = transformEnv(
+        rawHeaders as Record<string, string>,
         template.entryFormat?.envTransform ?? '${env:VAR}',
       );
     }
@@ -173,6 +187,14 @@ const tomlTableRenderer: McpRenderer = {
         .map(([k, v]) => `${k} = ${v}`)
         .join(', ');
       lines.push(`${fieldName(template, 'env')} = { ${envPairs} }`);
+    }
+
+    const transformedHeaders = transformEnv(mcp.headers, template.entryFormat?.envTransform ?? 'bare');
+    if (Object.keys(transformedHeaders).length > 0) {
+      const headerPairs = Object.entries(transformedHeaders)
+        .map(([k, v]) => `${k} = ${v}`)
+        .join(', ');
+      lines.push(`${fieldName(template, 'headers')} = { ${headerPairs} }`);
     }
 
     return lines.join('\n') + '\n';
@@ -249,14 +271,14 @@ const tomlTableRenderer: McpRenderer = {
           if (typeof entry === 'object' && entry !== null && !Array.isArray(entry)) {
             lines.push(`[${key}.${name}]`);
             for (const [k, v] of Object.entries(entry as Record<string, unknown>)) {
-              if (k === 'env' && typeof v === 'object' && v !== null) {
-                const envPairs = Object.entries(v as Record<string, string>)
+              if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+                const pairs = Object.entries(v as Record<string, string>)
                   .map(([ek, ev]) => {
                     const resolved = typeof ev === 'string' && ev.startsWith('env:') ? `"${ev.slice(4)}"` : `"${ev}"`;
                     return `${ek} = ${resolved}`;
                   })
                   .join(', ');
-                lines.push(`env = { ${envPairs} }`);
+                lines.push(`${k} = { ${pairs} }`);
               } else if (Array.isArray(v)) {
                 lines.push(`${k} = [${v.map((i) => `"${i}"`).join(', ')}]`);
               } else {

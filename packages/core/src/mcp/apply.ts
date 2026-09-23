@@ -35,6 +35,7 @@ function mcpServerToSchema(server: McpServer): WsMcpSchema {
   if (server.url) schema.url = server.url;
   if (server.args.length > 0) schema.args = server.args;
   if (Object.keys(server.env).length > 0) schema.env = server.env;
+  if (Object.keys(server.headers).length > 0) schema.headers = server.headers;
   if (server.description) schema.description = server.description;
   return schema;
 }

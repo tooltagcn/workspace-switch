@@ -9,6 +9,7 @@ export interface McpServer {
   url: string | null;
   args: string[];
   env: Record<string, string>;
+  headers: Record<string, string>;
   description: string | null;
   tags: string[];
   testStatus: 'untested' | 'passed' | 'failed' | 'config_changed';

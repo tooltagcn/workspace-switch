@@ -122,6 +122,8 @@ export function registerMcp(program: Command): void {
     .option('--args <args...>', 'Command arguments')
     .option('--env <pairs...>', 'Environment variables (KEY=VALUE)')
     .option('--secret-env <pairs...>', 'Secret environment variables (KEY=VALUE, stored securely)')
+    .option('--header <pairs...>', 'HTTP headers (KEY=VALUE, for sse/http)')
+    .option('--secret-header <pairs...>', 'Secret HTTP headers (KEY=VALUE, stored securely)')
     .option('--description <desc>', 'Description')
     .action(async (options, cmd) => {
       const ctx = createContext(cmd);
@@ -149,6 +151,29 @@ export function registerMcp(program: Command): void {
           }
         }
 
+        const headers: Record<string, string> = {};
+        if (options.header) {
+          for (const pair of options.header) {
+            const eqIdx = pair.indexOf('=');
+            if (eqIdx > 0) {
+              headers[pair.slice(0, eqIdx)] = pair.slice(eqIdx + 1);
+            }
+          }
+        }
+
+        if (options.secretHeader) {
+          const secretStore = await createSecretStore(ctx.db);
+          for (const pair of options.secretHeader) {
+            const eqIdx = pair.indexOf('=');
+            if (eqIdx > 0) {
+              const key = pair.slice(0, eqIdx);
+              const value = pair.slice(eqIdx + 1);
+              await secretStore.storeSecret(options.name, key, value);
+              headers[key] = `env:${key}`;
+            }
+          }
+        }
+
         const server = createMcp(ctx.db, {
           name: options.name,
           transport: options.transport as McpTransport,
@@ -156,6 +181,7 @@ export function registerMcp(program: Command): void {
           url: options.url ?? null,
           args: options.args ?? [],
           env,
+          headers,
           description: options.description ?? null,
         });
 
@@ -168,6 +194,7 @@ export function registerMcp(program: Command): void {
         if (server.url) schema.url = server.url;
         if (server.args.length > 0) schema.args = server.args;
         if (Object.keys(server.env).length > 0) schema.env = server.env;
+        if (Object.keys(server.headers).length > 0) schema.headers = server.headers;
         if (server.description) schema.description = server.description;
         saveMcpToWorkspace(ctx.dataDir, schema);
 
@@ -191,6 +218,8 @@ export function registerMcp(program: Command): void {
     .option('--url <url>', 'URL')
     .option('--env <pairs...>', 'Environment variables (KEY=VALUE)')
     .option('--secret-env <pairs...>', 'Secret environment variables (KEY=VALUE, stored securely)')
+    .option('--header <pairs...>', 'HTTP headers (KEY=VALUE, for sse/http)')
+    .option('--secret-header <pairs...>', 'Secret HTTP headers (KEY=VALUE, stored securely)')
     .option('--description <desc>', 'Description')
     .action(async (options, cmd) => {
       const ctx = createContext(cmd);
@@ -231,6 +260,37 @@ export function registerMcp(program: Command): void {
           }
 
           patch.env = env;
+        }
+
+        if (options.header || options.secretHeader) {
+          const existing = getMcp(ctx.db, options.id);
+          if (!existing) fail(`MCP server not found: ${options.id}`);
+
+          const headers: Record<string, string> = { ...existing.headers };
+
+          if (options.header) {
+            for (const pair of options.header) {
+              const eqIdx = pair.indexOf('=');
+              if (eqIdx > 0) {
+                headers[pair.slice(0, eqIdx)] = pair.slice(eqIdx + 1);
+              }
+            }
+          }
+
+          if (options.secretHeader) {
+            const secretStore = await createSecretStore(ctx.db);
+            for (const pair of options.secretHeader) {
+              const eqIdx = pair.indexOf('=');
+              if (eqIdx > 0) {
+                const key = pair.slice(0, eqIdx);
+                const value = pair.slice(eqIdx + 1);
+                await secretStore.storeSecret(existing.name, key, value);
+                headers[key] = `env:${key}`;
+              }
+            }
+          }
+
+          patch.headers = headers;
         }
 
         const updated = updateMcp(ctx.db, options.id, patch);
@@ -559,6 +619,7 @@ export function registerMcp(program: Command): void {
           if (m.url) schema.url = m.url;
           if (m.args.length > 0) schema.args = m.args;
           if (Object.keys(m.env).length > 0) schema.env = m.env;
+          if (Object.keys(m.headers).length > 0) schema.headers = m.headers;
           const validation = validateWsSchema(schema);
           return { name: m.name, valid: validation.valid, errors: validation.errors };
         });

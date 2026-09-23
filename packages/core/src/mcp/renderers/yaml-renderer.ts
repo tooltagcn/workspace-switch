@@ -61,6 +61,11 @@ export const yamlRenderer: McpRenderer = {
       entry.env = transformedEnv;
     }
 
+    const transformedHeaders = transformEnv(mcp.headers);
+    if (Object.keys(transformedHeaders).length > 0) {
+      entry.headers = transformedHeaders;
+    }
+
     const field = template.mcpField ?? 'mcpServers';
     const lines: string[] = [];
     lines.push(`${field}:`);
@@ -166,8 +171,8 @@ export const yamlRenderer: McpRenderer = {
           if (typeof entry === 'object' && entry !== null && !Array.isArray(entry)) {
             lines.push(`  ${name}:`);
             for (const [k, v] of Object.entries(entry as Record<string, unknown>)) {
-              if (k === 'env' && typeof v === 'object' && v !== null) {
-                lines.push(`    env:`);
+              if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+                lines.push(`    ${k}:`);
                 for (const [ek, ev] of Object.entries(v as Record<string, string>)) {
                   const resolved = typeof ev === 'string' && ev.startsWith('env:')
                     ? `\${env:${ev.slice(4)}}`

@@ -34,6 +34,7 @@ describe('MCP CRUD', () => {
       command: 'npx',
       args: ['mcp-server'],
       env: { API_KEY: 'secret' },
+      headers: { Authorization: 'env:GITHUB_TOKEN' },
     });
     expect(mcp.id).toBeDefined();
     expect(mcp.name).toBe('my-server');
@@ -41,7 +42,46 @@ describe('MCP CRUD', () => {
     expect(mcp.command).toBe('npx');
     expect(mcp.args).toEqual(['mcp-server']);
     expect(mcp.env).toEqual({ API_KEY: 'secret' });
+    expect(mcp.headers).toEqual({ Authorization: 'env:GITHUB_TOKEN' });
     expect(mcp.tags).toEqual([]);
+  });
+
+  it('persists headers across get and update', () => {
+    const mcp = createMcp(db, {
+      name: 'gh',
+      transport: 'http',
+      url: 'https://api.githubcopilot.com/mcp/',
+      headers: { Authorization: 'env:GITHUB_TOKEN' },
+    });
+    expect(getMcp(db, mcp.id)!.headers).toEqual({ Authorization: 'env:GITHUB_TOKEN' });
+
+    const updated = updateMcp(db, mcp.id, {
+      headers: { Authorization: 'env:GH_TOKEN', 'X-Trace': 'on' },
+    });
+    expect(updated!.headers).toEqual({ Authorization: 'env:GH_TOKEN', 'X-Trace': 'on' });
+    expect(getMcp(db, mcp.id)!.headers).toEqual({ Authorization: 'env:GH_TOKEN', 'X-Trace': 'on' });
+  });
+
+  it('marks test status config_changed when headers change', () => {
+    const mcp = createMcp(db, { name: 'hdr-hash', transport: 'http', url: 'http://x', headers: { A: '1' } });
+    db.prepare("UPDATE mcp SET test_status = 'passed' WHERE id = ?").run(mcp.id);
+    const updated = updateMcp(db, mcp.id, { headers: { A: '2' } });
+    expect(updated!.testStatus).toBe('config_changed');
+  });
+
+  it('treats empty headers as absent for hash compatibility', () => {
+    const withoutHeaders = createMcp(db, { name: 'no-hdrs', transport: 'http', url: 'http://x' });
+    const withEmptyHeaders = createMcp(db, {
+      name: 'empty-hdrs',
+      transport: 'http',
+      url: 'http://x',
+      headers: {},
+    });
+    expect(withEmptyHeaders.headers).toEqual({});
+    const hashOf = (id: string) =>
+      (db.prepare('SELECT config_hash FROM mcp WHERE id = ?').get(id) as { config_hash: string })
+        .config_hash;
+    expect(hashOf(withoutHeaders.id)).toBe(hashOf(withEmptyHeaders.id));
   });
 
   it('lists MCP servers', () => {
@@ -99,10 +139,11 @@ describe('MCP CRUD', () => {
     expect(updateMcp(db, mcp.id, { name: 'renamed-ok' })!.name).toBe('renamed-ok');
   });
 
-  it('defaults args and env to empty', () => {
+  it('defaults args, env and headers to empty', () => {
     const mcp = createMcp(db, { name: 'minimal' });
     expect(mcp.args).toEqual([]);
     expect(mcp.env).toEqual({});
+    expect(mcp.headers).toEqual({});
   });
 });
 

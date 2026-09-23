@@ -40,12 +40,20 @@ export async function resolveEnvSecrets(
 
 async function createTransport(mcp: McpServer, secretStore?: SecretStore) {
   switch (mcp.transport) {
-    case 'sse':
+    case 'sse': {
       if (!mcp.url) throw new Error('SSE transport requires a URL');
-      return new SSEClientTransport(new URL(mcp.url));
-    case 'http':
+      const headers = await resolveEnvSecrets(mcp.headers, mcp.name, secretStore);
+      return new SSEClientTransport(new URL(mcp.url), {
+        requestInit: { headers },
+      });
+    }
+    case 'http': {
       if (!mcp.url) throw new Error('HTTP transport requires a URL');
-      return new StreamableHTTPClientTransport(new URL(mcp.url));
+      const headers = await resolveEnvSecrets(mcp.headers, mcp.name, secretStore);
+      return new StreamableHTTPClientTransport(new URL(mcp.url), {
+        requestInit: { headers },
+      });
+    }
     case 'stdio':
     default: {
       if (!mcp.command) throw new Error('stdio transport requires a command');

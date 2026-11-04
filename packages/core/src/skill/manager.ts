@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Skill, CreateSkillInput, UpdateSkillInput, SkillListFilter } from './types.js';
+import { validateSkillContent } from './validator.js';
 
 interface SkillRow {
   id: string;
@@ -202,7 +203,12 @@ function setSkillTags(db: Database.Database, skillId: string, tagNames: string[]
 export interface CreateManualSkillOptions {
   skillsDir: string;
   name: string;
-  description: string;
+  description?: string;
+  /**
+   * Full SKILL.md content in the universal skill format. When omitted, a
+   * template is generated from name + description.
+   */
+  content?: string;
 }
 
 export interface ManualSkillResult {
@@ -211,17 +217,8 @@ export interface ManualSkillResult {
   skillMdPath: string;
 }
 
-export function createSkillManually(options: CreateManualSkillOptions): ManualSkillResult {
-  const { skillsDir, name, description } = options;
-
-  const skillDir = path.join(skillsDir, name);
-  if (fs.existsSync(skillDir)) {
-    throw new Error(`Skill "${name}" already exists in ${skillsDir}`);
-  }
-
-  fs.mkdirSync(skillDir, { recursive: true });
-
-  const skillMd = `---
+export function skillMdTemplate(name: string, description: string): string {
+  return `---
 name: ${name}
 description: ${description}
 ---
@@ -238,9 +235,29 @@ Describe how to use this skill here.
 
 Add examples of how this skill is used.
 `;
+}
+
+export function createSkillManually(options: CreateManualSkillOptions): ManualSkillResult {
+  const { skillsDir, name, description = '', content } = options;
+
+  const skillDir = path.join(skillsDir, name);
+  if (fs.existsSync(skillDir)) {
+    throw new Error(`Skill "${name}" already exists in ${skillsDir}`);
+  }
+
+  const finalContent = content ?? skillMdTemplate(name, description);
+  const validation = validateSkillContent(finalContent);
+  if (!validation.valid) {
+    throw new Error(`Invalid SKILL.md content: ${validation.errors.join('; ')}`);
+  }
+  if (validation.name !== name) {
+    throw new Error(`Frontmatter name "${validation.name}" must match the skill name "${name}"`);
+  }
+
+  fs.mkdirSync(skillDir, { recursive: true });
 
   const skillMdPath = path.join(skillDir, 'SKILL.md');
-  fs.writeFileSync(skillMdPath, skillMd, 'utf-8');
+  fs.writeFileSync(skillMdPath, finalContent, 'utf-8');
 
   return { name, dir: skillDir, skillMdPath };
 }

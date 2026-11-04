@@ -178,6 +178,20 @@ describe('Agent Scanner', () => {
       expect(results[0].schema.url).toBe('http://localhost:3000');
     });
 
+    it('honors an explicit transport field on url entries (kimi-style)', () => {
+      const agent = createAgentWithDirs();
+      createMcpConfigFile(agent.userRoot!, {
+        'http-server': { url: 'https://mcp.example.com/mcp', transport: 'http' },
+        'sse-server': { url: 'https://mcp.example.com/sse', transport: 'sse' },
+      });
+
+      const results = scanMcpsFromAgents(db, [agent]);
+      expect(results).toHaveLength(2);
+      const byName = Object.fromEntries(results.map((r) => [r.name, r.schema]));
+      expect(byName['http-server'].transport).toBe('http');
+      expect(byName['sse-server'].transport).toBe('sse');
+    });
+
     it('scans opencode-style array command and environment', () => {
       const agent = createAgentWithDirs();
       createMcpConfigFile(agent.userRoot!, {

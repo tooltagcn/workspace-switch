@@ -27,6 +27,8 @@ interface SkillStore {
   deleteSkill: (id: string) => Promise<void>;
   addTag: (skillId: string, tag: string) => Promise<void>;
   removeTag: (skillId: string, tag: string) => Promise<void>;
+  getSkillContent: (id: string) => Promise<any>;
+  saveSkillContent: (id: string, content: string) => Promise<any>;
   checkConsistency: () => Promise<any>;
   fixConsistency: () => Promise<any>;
   scanApplyStatus: () => Promise<any>;
@@ -70,6 +72,16 @@ export const useSkillStore = create<SkillStore>((set, get) => ({
     await api.removeSkillTag(skillId, tag);
     const skill = await api.getSkill(skillId);
     set({ skills: get().skills.map((s) => (s.id === skillId ? skill : s)) });
+  },
+  getSkillContent: async (id) => {
+    return api.getSkillContent(id);
+  },
+  saveSkillContent: async (id, content) => {
+    const result = await api.saveSkillContent(id, content);
+    if (result?.skill) {
+      set({ skills: get().skills.map((s) => (s.id === id ? result.skill : s)) });
+    }
+    return result;
   },
   checkConsistency: async () => {
     return api.checkSkillConsistency();

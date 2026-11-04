@@ -11,6 +11,10 @@ import {
   createSkill,
   updateSkill,
   deleteSkill,
+  readSkillContent,
+  saveSkillContent,
+  createSkillManually,
+  validateSkillContent,
   addTag as addSkillTag,
   removeTag as removeSkillTag,
   listMcps,
@@ -191,6 +195,18 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('skill:addTag', (_event, skillId: string, tag: string) => addSkillTag(getDb(), skillId, tag));
   ipcMain.handle('skill:removeTag', (_event, skillId: string, tag: string) => removeSkillTag(getDb(), skillId, tag));
 
+  // Skill content (SKILL.md) read/save
+  ipcMain.handle('skill:getContent', (_event, skillId: string) => {
+    try {
+      return readSkillContent(getDb(), skillId, getDataDir());
+    } catch (e) { logger.error('skill:getContent error:', e); throw e; }
+  });
+  ipcMain.handle('skill:saveContent', (_event, skillId: string, content: string) => {
+    try {
+      return saveSkillContent(getDb(), skillId, content, getDataDir());
+    } catch (e) { logger.error('skill:saveContent error:', e); throw e; }
+  });
+
   ipcMain.handle('mcp:addTag', (_event, mcpId: string, tag: string) => addMcpTag(getDb(), mcpId, tag));
   ipcMain.handle('mcp:removeTag', (_event, mcpId: string, tag: string) => removeMcpTag(getDb(), mcpId, tag));
 
@@ -274,6 +290,20 @@ export function registerIpcHandlers(): void {
       const result = await importSkillFromArchive(archivePath, name, { skillsDir, onDuplicate: 'rename' });
       return createSkill(getDb(), { name: result.name, sourcePath: result.dir });
     } catch (e) { logger.error('skill:importArchive error:', e); throw e; }
+  });
+
+  // Skill manual create (from the SKILL.md editor)
+  ipcMain.handle('skill:createManual', (_event, name: string, content: string) => {
+    try {
+      const skillsDir = path.join(getDataDir(), 'skills');
+      const result = createSkillManually({ skillsDir, name, content });
+      const validation = validateSkillContent(content);
+      return createSkill(getDb(), {
+        name: result.name,
+        sourcePath: result.dir,
+        description: validation.description ?? null,
+      });
+    } catch (e) { logger.error('skill:createManual error:', e); throw e; }
   });
 
   // Skill discovery (pluggable providers)

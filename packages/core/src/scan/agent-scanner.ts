@@ -215,7 +215,9 @@ function jsonEntryToSchema(
   if (config.url) {
     const schema: WsMcpSchema = {
       name,
-      transport: 'sse',
+      // Agents that persist an explicit `transport` key (e.g. Kimi Code) round-trip
+      // exactly; url-only entries keep the historical default of SSE.
+      transport: config.transport === 'http' ? 'http' : 'sse',
       url: config.url as string,
     };
     if (env) schema.env = env;

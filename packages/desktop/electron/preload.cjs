@@ -20,6 +20,9 @@ const api = {
   deleteSkill: (id) => ipcRenderer.invoke('skill:delete', id),
   addSkillTag: (skillId, tag) => ipcRenderer.invoke('skill:addTag', skillId, tag),
   removeSkillTag: (skillId, tag) => ipcRenderer.invoke('skill:removeTag', skillId, tag),
+  getSkillContent: (id) => ipcRenderer.invoke('skill:getContent', id),
+  saveSkillContent: (id, content) => ipcRenderer.invoke('skill:saveContent', id, content),
+  createManualSkill: (name, content) => ipcRenderer.invoke('skill:createManual', name, content),
 
   // Skill scan / apply
   scanSkills: () => ipcRenderer.invoke('skill:scan'),

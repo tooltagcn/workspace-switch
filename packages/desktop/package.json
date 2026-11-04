@@ -39,6 +39,11 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
+    "@uiw/react-codemirror": "^4.25.12",
     "@ws/core": "workspace:*",
     "better-sqlite3": "^13.0.2",
     "flexsearch": "^0.8.212",

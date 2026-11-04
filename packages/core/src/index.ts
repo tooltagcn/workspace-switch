@@ -38,6 +38,7 @@ export {
   removeTag,
   setTags,
   createSkillManually,
+  skillMdTemplate,
 } from './skill/manager.js';
 export type { CreateManualSkillOptions, ManualSkillResult } from './skill/manager.js';
 export type { SkillApplyState, SkillApplyCell, SkillApplyRow, SkillApplyScanResult } from './skill/apply-status.js';
@@ -57,7 +58,10 @@ export { SkillsShProvider } from './skill/discovery/skills-sh.js';
 export { GitHubUrlProvider } from './skill/discovery/github-url.js';
 
 export type { ValidationResult } from './skill/validator.js';
-export { validateSkill } from './skill/validator.js';
+export { validateSkill, validateSkillContent } from './skill/validator.js';
+
+export type { SkillContentResult, SaveSkillContentResult } from './skill/content.js';
+export { readSkillContent, saveSkillContent } from './skill/content.js';
 
 export { initWorkspace } from './workspace/init.js';
 export type { InitWorkspaceResult, WorkspaceSubDir } from './workspace/init.js';

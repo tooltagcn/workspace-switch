@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { loadTemplates } from '../agent/template-loader.js';
 import { renderMcpForAgent } from '../mcp/renderer.js';
 import { validateAgentTemplate } from '../agent/template-validator.js';
 import type { WsMcpSchema } from '../mcp/schema.js';
+
+const savedEnv: Record<string, string> = {};
 
 const stdioMcp: WsMcpSchema = {
   name: 'filesystem',
@@ -56,11 +58,92 @@ describe('Pi MCP entry dialect', () => {
   });
 });
 
+describe('Kimi MCP entry dialect', () => {
+  const template = loadTemplates().find((t) => t.id === 'kimi')!;
+  const parsed = (result: string) => JSON.parse(result).mcpServers;
+
+  it('marks sse entries with an explicit transport field', () => {
+    const entry = parsed(renderMcpForAgent(sseMcp, template))['remote-server'];
+    expect(entry.url).toBe('http://localhost:3000/sse');
+    expect(entry.transport).toBe('sse');
+  });
+
+  it('marks http entries with an explicit transport field', () => {
+    const httpMcp: WsMcpSchema = {
+      name: 'github',
+      transport: 'http',
+      url: 'https://api.githubcopilot.com/mcp/',
+    };
+    const entry = parsed(renderMcpForAgent(httpMcp, template)).github;
+    expect(entry.url).toBe('https://api.githubcopilot.com/mcp/');
+    expect(entry.transport).toBe('http');
+  });
+
+  it('omits the transport field for stdio entries', () => {
+    const entry = parsed(renderMcpForAgent(stdioMcp, template)).filesystem;
+    expect(entry.command).toBe('npx');
+    expect(entry).not.toHaveProperty('transport');
+  });
+
+  it('resolves env references from the process environment', () => {
+    const prev = process.env.WS_KIMI_TEST_TOKEN;
+    process.env.WS_KIMI_TEST_TOKEN = 'secret-value';
+    try {
+      const mcp: WsMcpSchema = {
+        name: 'github',
+        transport: 'stdio',
+        command: 'npx',
+        env: { GITHUB_TOKEN: 'env:WS_KIMI_TEST_TOKEN' },
+      };
+      const entry = parsed(renderMcpForAgent(mcp, template)).github;
+      expect(entry.env).toEqual({ GITHUB_TOKEN: 'secret-value' });
+    } finally {
+      if (prev === undefined) delete process.env.WS_KIMI_TEST_TOKEN;
+      else process.env.WS_KIMI_TEST_TOKEN = prev;
+    }
+  });
+
+  it('keeps the env reference text when the variable is unset', () => {
+    const prev = process.env.WS_KIMI_TEST_UNSET;
+    delete process.env.WS_KIMI_TEST_UNSET;
+    try {
+      const mcp: WsMcpSchema = {
+        name: 'github',
+        transport: 'stdio',
+        command: 'npx',
+        env: { GITHUB_TOKEN: 'env:WS_KIMI_TEST_UNSET' },
+      };
+      const entry = parsed(renderMcpForAgent(mcp, template)).github;
+      expect(entry.env).toEqual({ GITHUB_TOKEN: 'env:WS_KIMI_TEST_UNSET' });
+    } finally {
+      if (prev !== undefined) process.env.WS_KIMI_TEST_UNSET = prev;
+    }
+  });
+});
+
 describe('Agent template rendering snapshots', () => {
   const templates = loadTemplates();
 
-  it('loads all 17 templates', () => {
-    expect(templates.length).toBe(17);
+  beforeAll(() => {
+    // Kimi resolves `env:VAR` refs from process.env at render time; pin the
+    // variables used by the fixture MCPs so snapshots stay deterministic.
+    for (const key of ['GITHUB_TOKEN', 'API_KEY']) {
+      const prev = process.env[key];
+      if (prev !== undefined) {
+        savedEnv[key] = prev;
+        delete process.env[key];
+      }
+    }
+  });
+
+  afterAll(() => {
+    for (const [key, value] of Object.entries(savedEnv)) {
+      process.env[key] = value;
+    }
+  });
+
+  it('loads all 18 templates', () => {
+    expect(templates.length).toBe(18);
   });
 
   it('all templates pass JSON Schema validation', () => {

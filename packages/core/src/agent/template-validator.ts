@@ -147,6 +147,19 @@ export function validateAgentTemplate(data: unknown): TemplateValidationResult {
           }
         }
       }
+      if ('transportByTransport' in efObj) {
+        const tbt = efObj.transportByTransport;
+        if (typeof tbt !== 'object' || tbt === null || Array.isArray(tbt)) {
+          errors.push('Field "entryFormat.transportByTransport" must be an object');
+        } else {
+          const tbtObj = tbt as Record<string, unknown>;
+          for (const key of ['stdio', 'sse', 'http']) {
+            if (key in tbtObj && typeof tbtObj[key] !== 'string') {
+              errors.push(`Field "entryFormat.transportByTransport.${key}" must be a string`);
+            }
+          }
+        }
+      }
     }
   }
 

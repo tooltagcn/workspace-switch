@@ -9,6 +9,8 @@ import UnapplyFromAgentDialog from './components/UnapplyFromAgentDialog.js';
 import BulkActionBar from '../components/BulkActionBar.js';
 import SkillDiscoveryPanel from './components/SkillDiscoveryPanel.js';
 import ApplyScanWizard from './components/ApplyScanWizard.js';
+import SkillContentEditor from './components/SkillContentEditor.js';
+import SkillCodeEditor from './components/SkillCodeEditor.js';
 
 type AppliedAgent = { agentId: string; agentName: string };
 
@@ -17,11 +19,13 @@ function SkillDetail({
   appliedAgents,
   onClose,
   onApply,
+  onEditContent,
 }: {
   skill: Skill;
   appliedAgents: AppliedAgent[];
   onClose: () => void;
   onApply: () => void;
+  onEditContent: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -65,7 +69,13 @@ function SkillDetail({
           <p className="text-sm font-mono mt-1 truncate">{skill.sourcePath ?? '-'}</p>
         </div>
       </div>
-      <div className="mt-4 pt-4 border-t dark:border-gray-700">
+      <div className="mt-4 pt-4 border-t dark:border-gray-700 space-y-2">
+        <button
+          onClick={onEditContent}
+          className="w-full px-4 py-2 border dark:border-gray-700 border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+        >
+          {t('skill.editor.editContent')}
+        </button>
         <button
           onClick={onApply}
           className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
@@ -96,11 +106,65 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
   const [localError, setLocalError] = useState('');
   const [localSuccess, setLocalSuccess] = useState(false);
 
+  // Manual create state
+  const [manualName, setManualName] = useState('');
+  const [manualContent, setManualContent] = useState('');
+  const [manualTouched, setManualTouched] = useState(false);
+  const [manualCreating, setManualCreating] = useState(false);
+  const [manualError, setManualError] = useState('');
+  const [manualSuccess, setManualSuccess] = useState(false);
+
   const tabs = [
     { label: t('skill.addWizard.onlineSearch'), desc: t('skill.addWizard.onlineSearchDesc') },
     { label: t('skill.addWizard.archiveUpload'), desc: t('skill.addWizard.archiveUploadDesc') },
     { label: t('skill.addWizard.localImport'), desc: t('skill.addWizard.localImportDesc') },
+    { label: t('skill.addWizard.manualCreate'), desc: t('skill.addWizard.manualCreateDesc') },
   ];
+
+  const buildManualTemplate = (name: string) => {
+    const desc = t('skill.addWizard.manualDefaultDescription');
+    const n = name || 'my-skill';
+    return `---
+name: ${n}
+description: ${desc}
+---
+
+# ${n}
+
+${desc}
+
+## Usage
+
+Describe how to use this skill here.
+
+## Examples
+
+Add examples of how this skill is used.
+`;
+  };
+
+  const handleManualNameChange = (name: string) => {
+    setManualName(name);
+    if (!manualTouched) {
+      setManualContent(buildManualTemplate(name));
+    }
+  };
+
+  const handleManualCreate = async () => {
+    if (!manualName.trim()) return;
+    setManualCreating(true);
+    setManualError('');
+    setManualSuccess(false);
+    try {
+      await api.createManualSkill(manualName.trim(), manualContent);
+      await useSkillStore.getState().fetchSkills();
+      setManualSuccess(true);
+    } catch (err) {
+      setManualError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setManualCreating(false);
+    }
+  };
 
   const handleArchiveBrowse = async () => {
     const result = await api.openFileDialog();
@@ -165,7 +229,7 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[600px]">
+      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 ${activeTab === 3 ? 'w-[768px] max-w-[94vw]' : 'w-[600px]'} max-h-[92vh] flex flex-col`}>
         <h3 className="text-lg font-semibold mb-4">{t('skill.addWizard.title')}</h3>
         <div className="flex border-b dark:border-gray-700 mb-4">
           {tabs.map((tab, i) => (
@@ -272,9 +336,51 @@ function SkillAddWizard({ onClose }: { onClose: () => void }) {
               </div>
             </div>
           )}
+          {activeTab === 3 && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  {t('skill.addWizard.skillName')}
+                </label>
+                <input
+                  type="text"
+                  value={manualName}
+                  onChange={(e) => handleManualNameChange(e.target.value)}
+                  placeholder="my-skill"
+                  className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="h-[340px]">
+                <SkillCodeEditor
+                  value={manualContent}
+                  onChange={(val) => {
+                    setManualContent(val);
+                    setManualTouched(true);
+                  }}
+                />
+              </div>
+              {manualError && (
+                <p className="text-sm text-red-600 dark:text-red-400 break-all">{manualError}</p>
+              )}
+              {manualSuccess && (
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  {t('skill.addWizard.createSuccess')}
+                </p>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800">{t('common.cancel')}</button>
+          {activeTab === 3 && (
+            <button
+              onClick={handleManualCreate}
+              disabled={!manualName.trim() || manualCreating}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+            >
+              {manualCreating ? t('skill.addWizard.creating') : t('skill.addWizard.create')}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -717,6 +823,7 @@ export default function Skills() {
   const [showDoctor, setShowDoctor] = useState(false);
   const [showApplyScan, setShowApplyScan] = useState(false);
   const [showApplyDialog, setShowApplyDialog] = useState(false);
+  const [showContentEditor, setShowContentEditor] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
@@ -969,9 +1076,20 @@ export default function Skills() {
             appliedAgents={appliedAgentsMap.get(selectedSkill.id) ?? []}
             onClose={() => setSelectedSkill(null)}
             onApply={() => setShowApplyDialog(true)}
+            onEditContent={() => setShowContentEditor(true)}
           />
         )}
       </div>
+
+      {showContentEditor && selectedSkill && (
+        <SkillContentEditor
+          skill={selectedSkill}
+          onClose={() => {
+            setShowContentEditor(false);
+            fetchSkills();
+          }}
+        />
+      )}
 
       {showAddWizard && <SkillAddWizard onClose={() => setShowAddWizard(false)} />}
       {showTagManager && <TagManager onClose={() => setShowTagManager(false)} />}

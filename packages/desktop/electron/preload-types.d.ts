@@ -15,6 +15,9 @@ export interface WsApi {
   deleteSkill: (id: string) => Promise<any>;
   addSkillTag: (skillId: string, tag: string) => Promise<any>;
   removeSkillTag: (skillId: string, tag: string) => Promise<any>;
+  getSkillContent: (id: string) => Promise<any>;
+  saveSkillContent: (id: string, content: string) => Promise<any>;
+  createManualSkill: (name: string, content: string) => Promise<any>;
   scanSkills: () => Promise<any>;
   applySkill: (skillId: string, agentId: string) => Promise<any>;
   unapplySkill: (skillId: string, agentId: string) => Promise<any>;

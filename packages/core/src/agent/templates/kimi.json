@@ -1,0 +1,25 @@
+{
+  "id": "kimi",
+  "name": "Kimi",
+  "configDirName": ".kimi-code",
+  "candidateDirNames": [".kimi-code", ".kimi"],
+  "mcpFile": "mcp.json",
+  "mcpField": "mcpServers",
+  "skillDir": "skills",
+  "icon": "kimi",
+  "targetFormat": "json-map",
+  "entryFormat": {
+    "format": "json-map",
+    "envTransform": "resolve",
+    "transportByTransport": {
+      "sse": "sse",
+      "http": "http"
+    },
+    "fieldMapping": {
+      "command": "command",
+      "args": "args",
+      "url": "url",
+      "env": "env"
+    }
+  }
+}

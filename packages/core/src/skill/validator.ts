@@ -8,9 +8,9 @@ export interface ValidationResult {
   description?: string;
 }
 
-function parseFrontmatter(content: string): Record<string, string> {
+function parseFrontmatter(content: string): Record<string, string> | null {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) return {};
+  if (!match) return null;
 
   const fields: Record<string, string> = {};
   for (const line of match[1].split('\n')) {
@@ -24,6 +24,29 @@ function parseFrontmatter(content: string): Record<string, string> {
     if (key) fields[key] = value;
   }
   return fields;
+}
+
+export function validateSkillContent(content: string): ValidationResult {
+  const errors: string[] = [];
+  const frontmatter = parseFrontmatter(content);
+
+  if (!frontmatter) {
+    return { valid: false, errors: ['Missing frontmatter block (SKILL.md must start with --- ... ---)'] };
+  }
+
+  const name = frontmatter.name;
+  if (!name) {
+    errors.push('Missing "name" in SKILL.md frontmatter');
+  }
+
+  const description = frontmatter.description;
+  if (!description) {
+    errors.push('Missing "description" in SKILL.md frontmatter');
+  } else if (description.length < 10) {
+    errors.push(`Description must be at least 10 characters (got ${description.length})`);
+  }
+
+  return { valid: errors.length === 0, errors, name, description };
 }
 
 export function validateSkill(skillDir: string, skillsDir?: string): ValidationResult {
@@ -40,7 +63,7 @@ export function validateSkill(skillDir: string, skillsDir?: string): ValidationR
   }
 
   const content = fs.readFileSync(skillMdPath, 'utf-8');
-  const frontmatter = parseFrontmatter(content);
+  const frontmatter = parseFrontmatter(content) ?? {};
 
   const name = frontmatter.name;
   if (!name) {
@@ -66,7 +89,7 @@ export function validateSkill(skillDir: string, skillsDir?: string): ValidationR
 
       const siblingContent = fs.readFileSync(siblingMd, 'utf-8');
       const siblingFm = parseFrontmatter(siblingContent);
-      if (siblingFm.name === name) {
+      if (siblingFm?.name === name) {
         errors.push(`Duplicate skill name "${name}" found in ${sibling.name}`);
       }
     }

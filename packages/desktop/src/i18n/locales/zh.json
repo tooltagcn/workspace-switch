@@ -10,7 +10,6 @@
     "mcps": "MCP 服务器",
     "providers": "提供商",
     "projects": "项目",
-    "grammar": "关联词",
     "settings": "设置"
   },
   "common": {
@@ -164,7 +163,13 @@
       "importing": "导入中...",
       "importSuccess": "导入成功",
       "selectedFile": "已选文件",
-      "selectedFolder": "已选文件夹"
+      "selectedFolder": "已选文件夹",
+      "manualCreate": "手工新建",
+      "manualCreateDesc": "在 SKILL.md 编辑器中从零创建 skill",
+      "manualDefaultDescription": "描述这个 skill 的用途",
+      "create": "创建",
+      "creating": "创建中...",
+      "createSuccess": "创建成功"
     },
     "tagManager": {
       "title": "标签管理",
@@ -235,6 +240,18 @@
       "resyncAll": "重新同步全部漂移",
       "resyncDone": "已重新同步 {{count}} 个技能。",
       "resyncError": "重新同步失败，请重试。"
+    },
+    "editor": {
+      "editContent": "编辑内容",
+      "title": "编辑 SKILL.md — {{name}}",
+      "filePath": "文件",
+      "hint": "SKILL.md 遵循通用 Skill 格式：YAML frontmatter（name、description）+ Markdown 正文。保存后已通过 symlink 应用的 Agent 立即生效。",
+      "saving": "保存中...",
+      "saveSuccess": "已保存，已应用的 Agent 立即生效。",
+      "saveFailed": "保存失败",
+      "validationFailed": "内容不符合通用 Skill 格式：",
+      "unsavedConfirm": "放弃未保存的修改？",
+      "loadError": "加载 SKILL.md 失败"
     }
   },
   "mcp": {
@@ -492,13 +509,5 @@
       "imported": "已将 {{count}} 项导入主工作区配置。",
       "allSynced": "所有扫描到的配置均已同步到主工作区。"
     }
-  },
-  "grammar": {
-    "title": "常规关联词表格",
-    "description": "关联词一般分转折关系、假设关系、条件关系等。把两个或两个以上在意义上有密切联系的句子组合在一起，叫复句，也叫关联句。复句通常用一些关联词语来连接。",
-    "relationship": "关系类型",
-    "description": "说明",
-    "conjunctions": "关联词",
-    "example": "示例"
   }
 }

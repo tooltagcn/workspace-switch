@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import fs from 'node:fs';
 import path from 'node:path';
 import {
   listSkills,
@@ -9,6 +10,8 @@ import {
   addTag,
   removeTag,
   setTags,
+  readSkillContent,
+  saveSkillContent,
   importSkillFromLocal,
   importSkillFromGit,
   searchSkillsOnline,
@@ -120,6 +123,44 @@ export function registerSkill(program: Command): void {
           outputJson(updated);
         } else {
           success(`Skill "${updated!.name}" updated`);
+        }
+      } finally {
+        cleanupContext(ctx);
+      }
+    });
+
+  skill
+    .command('content')
+    .description('View or edit SKILL.md content (universal skill format)')
+    .requiredOption('--id <id>', 'Skill ID')
+    .option('--file <path>', 'Write SKILL.md content from a file (omit to print current content)')
+    .action(async (options, cmd) => {
+      const ctx = createContext(cmd);
+      try {
+        if (options.file) {
+          const content = fs.readFileSync(path.resolve(options.file), 'utf-8');
+          const result = saveSkillContent(ctx.db, options.id, content, ctx.dataDir);
+
+          if (ctx.json) {
+            outputJson(result);
+            return;
+          }
+          if (!result.saved) {
+            for (const err of result.validation.errors) {
+              console.error(`  - ${err}`);
+            }
+            fail(`Validation failed, "${result.skill.name}" was not updated`);
+          }
+          success(`Skill "${result.skill.name}" content saved`);
+        } else {
+          const result = readSkillContent(ctx.db, options.id, ctx.dataDir);
+          if (!result) fail(`Skill not found: ${options.id}`);
+
+          if (ctx.json) {
+            outputJson({ path: result!.path, content: result!.content });
+          } else {
+            process.stdout.write(result!.content);
+          }
         }
       } finally {
         cleanupContext(ctx);

@@ -10,6 +10,12 @@ export interface EntryFormat {
   commandArray?: boolean;
   /** Static `type` field added per entry, keyed by transport (`stdio` | `sse` | `http`). */
   typeByTransport?: { stdio?: string; sse?: string; http?: string };
+  /**
+   * Static `transport` field added per entry, keyed by transport. Used by agents whose
+   * config distinguishes transports via an explicit `transport` key (e.g. Kimi Code: SSE
+   * entries require `"transport": "sse"`).
+   */
+  transportByTransport?: { stdio?: string; sse?: string; http?: string };
   /** Static literal fields added to every entry (e.g. `{ enabled: true }`). */
   staticEntryFields?: Record<string, unknown>;
 }

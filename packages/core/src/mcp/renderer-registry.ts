@@ -12,6 +12,7 @@ export function buildMcpEntry(
   const mergeArgs = entryFormat?.mergeArgs ?? false;
   const commandArray = entryFormat?.commandArray ?? false;
   const typeByTransport = entryFormat?.typeByTransport;
+  const transportByTransport = entryFormat?.transportByTransport;
   const staticEntryFields = entryFormat?.staticEntryFields;
   const entry: Record<string, unknown> = {};
 
@@ -37,6 +38,9 @@ export function buildMcpEntry(
 
   const type = typeByTransport?.[schema.transport];
   if (type) entry.type = type;
+
+  const transport = transportByTransport?.[schema.transport];
+  if (transport) entry.transport = transport;
 
   if (schema.env && Object.keys(schema.env).length > 0) {
     entry[map.env ?? 'env'] = { ...schema.env };
@@ -64,6 +68,12 @@ function transformEnvValue(value: string, envTransform: string): string {
   if (!envMatch) return value;
 
   const varName = envMatch[1];
+  if (envTransform === 'resolve') {
+    // Agents without env-var interpolation (e.g. Kimi Code) receive literal values,
+    // so resolve the reference from the current process environment at render time.
+    // Unset variables keep the `env:VAR` reference text so the miss stays visible.
+    return process.env[varName] ?? value;
+  }
   if (envTransform === 'bare') {
     return `"${varName}"`;
   }
@@ -158,8 +168,12 @@ const jsonMapRenderer: McpRenderer = {
 
   serialize(config: Record<string, unknown>, template?: AgentTemplate): string {
     const envTransform = template?.entryFormat?.envTransform ?? '${env:VAR}';
-    const formatVar = (varName: string): string =>
-      envTransform === 'bare' ? `"${varName}"` : envTransform.replace('VAR', varName);
+    const formatVar = (varName: string): string => {
+      if (envTransform === 'resolve') {
+        return process.env[varName] ?? `env:${varName}`;
+      }
+      return envTransform === 'bare' ? `"${varName}"` : envTransform.replace('VAR', varName);
+    };
     const transformed = transformConfigEnv(config, formatVar);
     return JSON.stringify(transformed, null, 2) + '\n';
   },

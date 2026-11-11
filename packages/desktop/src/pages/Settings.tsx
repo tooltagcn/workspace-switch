@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useUiStore } from '../stores/uiStore.js';
 import { useProviderStore } from '../stores/providerStore.js';
+import { providerDomain } from '../lib/providerDomain.js';
 import { api } from '../lib/ipc.js';
 
 export default function Settings() {
@@ -170,7 +171,14 @@ export default function Settings() {
                     key={p.id}
                     className="flex items-center justify-between py-2 border-b dark:border-gray-700 last:border-b-0"
                   >
-                    <span className="font-medium text-sm">{p.name}</span>
+                    <div className="flex items-center min-w-0">
+                      <span className="font-medium text-sm truncate">{p.name}</span>
+                      {providerDomain(p.baseUrl) && (
+                        <span className="ml-2 text-xs font-mono text-gray-400 dark:text-gray-500 truncate">
+                          {providerDomain(p.baseUrl)}
+                        </span>
+                      )}
+                    </div>
                     <span
                       className={`text-xs px-2 py-0.5 rounded ${
                         p.apiKeyRef

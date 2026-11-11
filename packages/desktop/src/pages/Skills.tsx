@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSkillStore, type Skill } from '../stores/skillStore.js';
 import { useAgentStore } from '../stores/agentStore.js';
 import { api } from '../lib/ipc.js';
@@ -834,6 +834,11 @@ export default function Skills() {
   const [bulkUnapplyResources, setBulkUnapplyResources] = useState<ApplyResource[] | null>(null);
   const [appliedAgentsMap, setAppliedAgentsMap] = useState<Map<string, Array<{ agentId: string; agentName: string }>>>(new Map());
 
+  const selectedSkillResources = useMemo<ApplyResource[]>(
+    () => (selectedSkill ? [{ id: selectedSkill.id, name: selectedSkill.name }] : []),
+    [selectedSkill],
+  );
+
   const toggleBulk = (id: string) => {
     setBulkSelected((prev) => {
       const next = new Set(prev);
@@ -1099,7 +1104,7 @@ export default function Skills() {
       {showApplyDialog && selectedSkill && (
         <ApplyToAgentDialog
           resourceType="skill"
-          resources={[{ id: selectedSkill.id, name: selectedSkill.name }]}
+          resources={selectedSkillResources}
           onClose={() => {
             setShowApplyDialog(false);
             fetchSkills();

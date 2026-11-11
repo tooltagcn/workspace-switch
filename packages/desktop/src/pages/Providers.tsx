@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useProviderStore, type Provider } from '../stores/providerStore.js';
+import { providerDomain } from '../lib/providerDomain.js';
 
 function ProviderDetail({
   provider,
@@ -43,7 +44,14 @@ function ProviderDetail({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-96 min-w-0 shrink-0 max-h-[80vh] flex flex-col sticky top-6 self-start">
       <div className="flex justify-between items-start gap-2 mb-4">
-        <h3 className="text-lg font-semibold break-all">{provider.name}</h3>
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold break-all">{provider.name}</h3>
+          {providerDomain(provider.baseUrl) && (
+            <p className="text-xs font-mono text-gray-400 dark:text-gray-500 break-all mt-0.5">
+              {providerDomain(provider.baseUrl)}
+            </p>
+          )}
+        </div>
         <button onClick={onClose} className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600">
           ✕
         </button>
@@ -239,6 +247,11 @@ function ProviderSwitchDialog({
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">{t('provider.switchConfirm')}</p>
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-6">
           <div className="text-sm font-medium">{provider.name}</div>
+          {providerDomain(provider.baseUrl) && (
+            <div className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-0.5">
+              {providerDomain(provider.baseUrl)}
+            </div>
+          )}
           {provider.defaultModel && (
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{provider.defaultModel}</div>
           )}
@@ -309,7 +322,14 @@ export default function Providers() {
                     className={`border-t dark:border-gray-700 cursor-pointer hover:bg-gray-50 ${selectedProvider?.id === p.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
                     onClick={() => setSelectedProvider(p)}
                   >
-                    <td className="px-4 py-2 font-medium">{p.name}</td>
+                    <td className="px-4 py-2">
+                      <div className="font-medium">{p.name}</div>
+                      {providerDomain(p.baseUrl) && (
+                        <div className="text-xs font-mono text-gray-400 dark:text-gray-500 truncate max-w-[220px]">
+                          {providerDomain(p.baseUrl)}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-2 font-mono text-sm text-gray-500 dark:text-gray-400">
                       {p.baseUrl ?? '-'}
                     </td>

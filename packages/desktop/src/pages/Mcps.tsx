@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMcpStore, type McpServer } from '../stores/mcpStore.js';
 import { useAgentStore } from '../stores/agentStore.js';
 import { api } from '../lib/ipc.js';
@@ -818,6 +818,11 @@ export default function Mcps() {
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
 
+  const selectedMcpResources = useMemo<ApplyResource[]>(
+    () => (selectedMcp ? [{ id: selectedMcp.id, name: selectedMcp.name }] : []),
+    [selectedMcp],
+  );
+
   const allTags = Array.from(new Set(mcps.flatMap((m) => m.tags))).sort((a, b) => a.localeCompare(b));
 
   const filteredMcps = mcps.filter((m) => {
@@ -1166,7 +1171,7 @@ export default function Mcps() {
       {showApplyDialog && selectedMcp && (
         <ApplyToAgentDialog
           resourceType="mcp"
-          resources={[{ id: selectedMcp.id, name: selectedMcp.name }]}
+          resources={selectedMcpResources}
           onClose={() => {
             setShowApplyDialog(false);
             fetchMcps();

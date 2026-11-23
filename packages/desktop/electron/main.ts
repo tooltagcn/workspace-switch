@@ -31,6 +31,11 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // 开发模式下 macOS 没有 app bundle，Dock 图标需要手动设置
+  if (process.platform === 'darwin' && isDev) {
+    app.dock?.setIcon(path.join(__dirname, '../../build/icon.png'));
+  }
+
   const dataDir = path.join(os.homedir(), '.workspace_switch');
   initLogger(dataDir);
   logger.info('Electron app ready, registering IPC handlers...');

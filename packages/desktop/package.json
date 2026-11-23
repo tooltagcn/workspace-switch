@@ -22,7 +22,11 @@
       "!node_modules/@ws/core/tsconfig.tsbuildinfo"
     ],
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "icon": "build/icon.png"
     },
     "extraMetadata": {
       "description": "Workspace Switch Desktop",

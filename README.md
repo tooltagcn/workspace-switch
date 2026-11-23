@@ -1,5 +1,13 @@
 # Workspace Switch
 
+<p align="center">
+  <a href="https://tooltag.cn">
+    <img src="assets/logo.png" alt="Workspace Switch" width="160" />
+  </a>
+  <br />
+  本项目是 <a href="https://tooltag.cn">ToolTag</a> 的开源项目之一
+</p>
+
 统一管理 AI 编程助手的配置中枢 —— 在一个地方管理 **Skill**、**MCP Server**、**Provider** 和 **Project**，然后将它们分发到本机安装的所有 AI 编程工具中。
 
 ## 为什么需要 Workspace Switch？

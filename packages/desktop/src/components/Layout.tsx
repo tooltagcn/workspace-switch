@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useUiStore } from '../stores/uiStore.js';
 import GlobalSearch from './GlobalSearch.js';
+import logo from '../assets/logo.png';
 
 export default function Layout() {
   const { t } = useTranslation();
@@ -52,7 +53,8 @@ export default function Layout() {
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {sidebarOpen && (
         <aside className="w-64 bg-white dark:bg-gray-800 shadow-lg">
-          <div className="p-4 border-b dark:border-gray-700">
+          <div className="p-4 border-b dark:border-gray-700 flex items-center gap-2.5">
+            <img src={logo} alt="Workspace Switch" className="h-8 w-8 object-contain" />
             <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t('app.title')}</h1>
           </div>
           <nav className="p-4">

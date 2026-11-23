@@ -25,6 +25,10 @@
       "target": "dmg",
       "icon": "build/icon.icns"
     },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
     "linux": {
       "icon": "build/icon.png"
     },
@@ -38,7 +42,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -b && cp electron/preload.cjs dist/electron/preload.cjs && electron .\"",
-    "electron:build": "pnpm --filter @ws/core build && tsc -b && vite build && cp electron/preload.cjs dist/electron/preload.cjs && electron-builder",
+    "electron:build": "pnpm --filter @ws/core build && tsc -b && vite build && node -e \"require('fs').copyFileSync('electron/preload.cjs','dist/electron/preload.cjs')\" && electron-builder",
     "rebuild:native": "electron-rebuild -f -w better-sqlite3 -w keytar",
     "typecheck": "tsc -b"
   },
